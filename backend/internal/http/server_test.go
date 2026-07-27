@@ -21,7 +21,7 @@ func TestHealth(t *testing.T) {
 
 func TestCreateAndListTask(t *testing.T) {
 	server := NewServer(config.Config{AppEnv: "test"})
-	body := []byte(`{"title":"Tes listrik","category":"Listrik","location":"Jakarta","minBudget":100000,"maxBudget":300000,"schedule":"2026-08-01T09:00:00Z","note":"Kabel perlu dicek"}`)
+	body := []byte(`{"userId":"u1","title":"Tes listrik","category":"Listrik","location":"Jakarta","minBudget":100000,"maxBudget":300000,"schedule":"2026-08-01T09:00:00Z","note":"Kabel perlu dicek"}`)
 	create := httptest.NewRequest(http.MethodPost, "/api/v1/tasks", bytes.NewReader(body))
 	create.Header.Set("Content-Type", "application/json")
 	createResponse := httptest.NewRecorder()

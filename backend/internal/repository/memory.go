@@ -114,7 +114,7 @@ func (m *Memory) VerifyUser(id string) error {
 	return nil
 }
 
-func (m *Memory) Providers(query, category string) []domain.Provider {
+func (m *Memory) Providers(query, category string) ([]domain.Provider, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	result := make([]domain.Provider, 0)
@@ -125,10 +125,10 @@ func (m *Memory) Providers(query, category string) []domain.Provider {
 			result = append(result, provider)
 		}
 	}
-	return result
+	return result, nil
 }
 
-func (m *Memory) CreateTask(task domain.Task) domain.Task {
+func (m *Memory) CreateTask(task domain.Task) (domain.Task, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	task.ID = fmt.Sprintf("TSK-%d", m.nextTask)
@@ -136,10 +136,10 @@ func (m *Memory) CreateTask(task domain.Task) domain.Task {
 	task.Status = "waiting"
 	task.CreatedAt = time.Now()
 	m.tasks[task.ID] = task
-	return task
+	return task, nil
 }
 
-func (m *Memory) Tasks(userID, status string) []domain.Task {
+func (m *Memory) Tasks(userID, status string) ([]domain.Task, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	result := make([]domain.Task, 0)
@@ -148,7 +148,7 @@ func (m *Memory) Tasks(userID, status string) []domain.Task {
 			result = append(result, task)
 		}
 	}
-	return result
+	return result, nil
 }
 
 func (m *Memory) Task(id string) (domain.Task, error) {
@@ -173,13 +173,13 @@ func (m *Memory) UpdateTaskStatus(id, status string) (domain.Task, error) {
 	return task, nil
 }
 
-func (m *Memory) Banners() []domain.Banner {
+func (m *Memory) Banners() ([]domain.Banner, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	return append([]domain.Banner(nil), m.banners...)
+	return append([]domain.Banner(nil), m.banners...), nil
 }
 
-func (m *Memory) Conversations(userID string) []domain.Conversation {
+func (m *Memory) Conversations(userID string) ([]domain.Conversation, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	result := make([]domain.Conversation, 0)
@@ -188,5 +188,5 @@ func (m *Memory) Conversations(userID string) []domain.Conversation {
 			result = append(result, item)
 		}
 	}
-	return result
+	return result, nil
 }

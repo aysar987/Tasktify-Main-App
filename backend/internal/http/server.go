@@ -10,6 +10,10 @@ import (
 )
 
 func NewServer(cfg config.Config) *gin.Engine {
+	return NewServerWithStore(cfg, repository.NewMemory())
+}
+
+func NewServerWithStore(cfg config.Config, store repository.Store) *gin.Engine {
 	if cfg.AppEnv == "production" {
 		gin.SetMode(gin.ReleaseMode)
 	}
@@ -18,7 +22,7 @@ func NewServer(cfg config.Config) *gin.Engine {
 	router.GET("/health", health)
 	api := router.Group("/api/v1")
 	api.GET("/health", health)
-	NewHandler(repository.NewMemory()).RegisterRoutes(api)
+	NewHandler(store).RegisterRoutes(api)
 	router.NoRoute(func(ctx *gin.Context) { fail(ctx, http.StatusNotFound, "route not found") })
 	return router
 }

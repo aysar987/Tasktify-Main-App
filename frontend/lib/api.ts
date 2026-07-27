@@ -36,7 +36,11 @@ export async function createTask(payload: {
   schedule: string;
   note: string;
 }) {
-  const response = await api.post<ApiResponse<Task>>("/tasks", payload);
+  const response = await api.post<ApiResponse<Task>>("/tasks", {
+    ...payload,
+    // Temporary seeded user while authentication is hidden.
+    userId: "00000000-0000-0000-0000-000000000001",
+  });
   return response.data.data;
 }
 

@@ -11,9 +11,9 @@ import (
 	"github.com/tasktify/tasktify/backend/internal/repository"
 )
 
-type Handler struct{ store *repository.Memory }
+type Handler struct{ store repository.Store }
 
-func NewHandler(store *repository.Memory) *Handler { return &Handler{store: store} }
+func NewHandler(store repository.Store) *Handler { return &Handler{store: store} }
 
 func (h *Handler) RegisterRoutes(api *gin.RouterGroup) {
 	api.POST("/auth/register", h.register)
@@ -125,10 +125,20 @@ func (h *Handler) updateUser(ctx *gin.Context) {
 }
 
 func (h *Handler) providers(ctx *gin.Context) {
-	ok(ctx, http.StatusOK, h.store.Providers(ctx.Query("q"), ctx.Query("category")))
+	providers, err := h.store.Providers(ctx.Query("q"), ctx.Query("category"))
+	if err != nil {
+		fail(ctx, http.StatusInternalServerError, "failed to load providers")
+		return
+	}
+	ok(ctx, http.StatusOK, providers)
 }
 func (h *Handler) tasks(ctx *gin.Context) {
-	ok(ctx, http.StatusOK, h.store.Tasks(ctx.DefaultQuery("userId", "u1"), ctx.Query("status")))
+	tasks, err := h.store.Tasks(ctx.Query("userId"), ctx.Query("status"))
+	if err != nil {
+		fail(ctx, http.StatusInternalServerError, "failed to load tasks")
+		return
+	}
+	ok(ctx, http.StatusOK, tasks)
 }
 
 func (h *Handler) createTask(ctx *gin.Context) {
@@ -151,11 +161,15 @@ func (h *Handler) createTask(ctx *gin.Context) {
 		fail(ctx, http.StatusBadRequest, "schedule must use RFC3339 format")
 		return
 	}
-	userID := input.UserID
-	if userID == "" {
-		userID = "u1"
+	if input.UserID == "" {
+		fail(ctx, http.StatusBadRequest, "userId is required")
+		return
 	}
-	task := h.store.CreateTask(domain.Task{UserID: userID, Title: input.Title, Category: input.Category, Location: input.Location, MinBudget: input.MinBudget, MaxBudget: input.MaxBudget, Schedule: schedule, Note: input.Note})
+	task, err := h.store.CreateTask(domain.Task{UserID: input.UserID, Title: input.Title, Category: input.Category, Location: input.Location, MinBudget: input.MinBudget, MaxBudget: input.MaxBudget, Schedule: schedule, Note: input.Note})
+	if err != nil {
+		fail(ctx, http.StatusInternalServerError, "failed to create task")
+		return
+	}
 	ok(ctx, http.StatusCreated, task)
 }
 
@@ -189,7 +203,24 @@ func (h *Handler) updateTaskStatus(ctx *gin.Context) {
 	ok(ctx, http.StatusOK, task)
 }
 
-func (h *Handler) banners(ctx *gin.Context) { ok(ctx, http.StatusOK, h.store.Banners()) }
+func (h *Handler) banners(ctx *gin.Context) {
+	banners, err := h.store.Banners()
+	if err != nil {
+		fail(ctx, http.StatusInternalServerError, "failed to load banners")
+		return
+	}
+	ok(ctx, http.StatusOK, banners)
+}
 func (h *Handler) conversations(ctx *gin.Context) {
-	ok(ctx, http.StatusOK, h.store.Conversations(ctx.DefaultQuery("userId", "u1")))
+	userID := ctx.Query("userId")
+	if userID == "" {
+		fail(ctx, http.StatusBadRequest, "userId is required")
+		return
+	}
+	conversations, err := h.store.Conversations(userID)
+	if err != nil {
+		fail(ctx, http.StatusInternalServerError, "failed to load conversations")
+		return
+	}
+	ok(ctx, http.StatusOK, conversations)
 }
