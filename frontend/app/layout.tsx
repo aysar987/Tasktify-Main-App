@@ -13,6 +13,11 @@ export const metadata: Metadata = {
   description:
     "Find, request and manage local service tasks — plumbers, electricians, and more.",
   manifest: "/manifest.json",
+  icons: {
+    icon: "/images/logo-tasktify.svg",
+    shortcut: "/images/logo-tasktify.svg",
+    apple: "/images/logo-tasktify.svg",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",

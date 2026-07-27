@@ -1,13 +1,31 @@
-import { CheckCircle2 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 
 export function Brand({ compact = false }: { compact?: boolean }) {
   return (
-    <Link href="/dashboard" className="inline-flex items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-orange-200">
-      <span className="grid size-10 place-items-center rounded-xl bg-orange-600 text-white">
-        <CheckCircle2 className="size-6" strokeWidth={2.5} />
-      </span>
-      {!compact && <span className="font-[var(--font-manrope)] text-xl font-extrabold tracking-tight text-slate-950">Tasktify</span>}
+    <Link
+      href="/dashboard"
+      aria-label="Tasktify — buka dashboard"
+      className="inline-flex min-h-11 items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-orange-200"
+    >
+      <Image
+        src="/images/logo-tasktify.svg"
+        alt=""
+        width={391}
+        height={335}
+        priority
+        className="h-10 w-auto shrink-0"
+      />
+      {!compact && (
+        <Image
+          src="/images/wordmark-tasktify.svg"
+          alt="Tasktify"
+          width={511}
+          height={131}
+          priority
+          className="h-7 w-auto"
+        />
+      )}
     </Link>
   );
 }
