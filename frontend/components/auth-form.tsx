@@ -4,6 +4,7 @@ import { LoaderCircle } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
+import { getSiteUrl } from "@/lib/site-url";
 import { getSupabase } from "@/lib/supabase";
 import { inputClass, primaryButton } from "./ui";
 
@@ -30,11 +31,12 @@ export function AuthForm({ mode }: { mode: "login" | "register" | "reset" | "upd
         router.replace(new URLSearchParams(window.location.search).get("next") ?? "/dashboard");
         router.refresh();
       } else if (mode === "register") {
+        const callback = `${getSiteUrl()}/auth/callback?next=${encodeURIComponent("/dashboard")}`;
         const { error: authError } = await supabase.auth.signUp({
           email,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/verify`,
+            emailRedirectTo: callback,
             data: {
               username: String(form.get("username")),
               full_name: String(form.get("fullName")),
@@ -45,8 +47,9 @@ export function AuthForm({ mode }: { mode: "login" | "register" | "reset" | "upd
         if (authError) throw authError;
         router.replace(`/verify?email=${encodeURIComponent(email)}`);
       } else if (mode === "reset") {
+        const next = encodeURIComponent("/reset-password?update=true");
         const { error: authError } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${window.location.origin}/reset-password?update=true`,
+          redirectTo: `${getSiteUrl()}/auth/callback?next=${next}`,
         });
         if (authError) throw authError;
         setMessage("Tautan reset password sudah dikirim ke email Anda.");
