@@ -1,15 +1,19 @@
 services:
-  db:
-    image: postgres:16
-    container_name: tasktify-db
+  postgres:
+    image: postgres:17-alpine
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: mirai14
       POSTGRES_DB: tasktify
+      POSTGRES_USER: tasktify
+      POSTGRES_PASSWORD: tasktify
     ports:
-      - "5433:5432"
+      - "5432:5432"
     volumes:
-      - tasktify_data:/var/lib/postgresql/data
+      - tasktify-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tasktify"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
 volumes:
-  tasktify_data:
+  tasktify-postgres:
