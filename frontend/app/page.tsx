@@ -1,5 +1,5 @@
-import { TasktifyApp } from "@/components/tasktify-app";
+import { redirect } from "next/navigation";
 
 export default function HomePage() {
-  return <TasktifyApp />;
+  redirect("/login");
 }

@@ -1,41 +1,26 @@
-export type Route =
-  | "login"
-  | "register"
-  | "home"
-  | "market"
-  | "provider"
-  | "activity"
-  | "request"
-  | "chat"
-  | "profile";
+export type TaskStatus = "ongoing" | "scheduled" | "history" | "waiting" | "cancelled";
 
 export type Provider = {
-  id: number;
+  id: string;
   name: string;
-  role: string;
-  experience: string;
+  title: string;
+  category: string;
   location: string;
   rating: number;
-  category: string;
-  about: string;
+  jobs: number;
+  verified: boolean;
+  priceFrom: number;
+  initials: string;
 };
-
-export type TaskStatus = "Berjalan" | "Terjadwal" | "Selesai";
 
 export type Task = {
-  id: number;
-  provider: string;
+  id: string;
   title: string;
-  description: string;
+  category: string;
+  location: string;
+  budget: number;
   date: string;
   status: TaskStatus;
-};
-
-export type Chat = {
-  id: number;
-  name: string;
-  role: string;
-  lastMessage: string;
-  date: string;
-  unread?: boolean;
+  provider?: Provider;
+  note: string;
 };
