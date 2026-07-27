@@ -1,9 +1,12 @@
 "use client";
 
-import { Bell, ChevronDown, CircleUserRound, ClipboardList, LayoutDashboard, Menu, MessageSquareText, Plus, Search, Store, X } from "lucide-react";
+import { Bell, CircleUserRound, ClipboardList, LayoutDashboard, LogOut, Menu, MessageSquareText, Plus, Search, Store, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { getProfile } from "@/lib/api";
+import { getSupabase } from "@/lib/supabase";
+import type { Profile } from "@/types";
 import { Brand } from "./brand";
 import { primaryButton } from "./ui";
 
@@ -18,6 +21,18 @@ const navigation = [
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [profile, setProfile] = useState<Profile>();
+  useEffect(() => { getProfile().then(setProfile).catch(() => undefined); }, []);
+  const initials = (profile?.fullName || profile?.username || "U").split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
+  async function logout() {
+    await getSupabase().auth.signOut();
+    window.location.assign("/login");
+  }
+  function search(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const query = String(new FormData(event.currentTarget).get("query") ?? "").trim();
+    if (query) window.location.assign(`/marketplace?q=${encodeURIComponent(query)}`);
+  }
 
   return (
     <div className="min-h-dvh bg-slate-50">
@@ -26,17 +41,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="mx-auto flex h-18 max-w-[1440px] items-center gap-5 px-4 sm:px-6 lg:px-8">
           <button type="button" onClick={() => setOpen(true)} aria-label="Buka menu" className="grid size-11 place-items-center rounded-xl border border-slate-200 lg:hidden"><Menu className="size-5" /></button>
           <Brand />
-          <div className="relative ml-auto hidden max-w-md flex-1 md:block">
+          <form onSubmit={search} className="relative ml-auto hidden max-w-md flex-1 md:block">
             <Search className="absolute left-4 top-1/2 size-5 -translate-y-1/2 text-slate-400" />
-            <input aria-label="Cari task atau penyedia" placeholder="Cari task atau penyedia..." className="min-h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-12 pr-4 outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-100" />
-          </div>
+            <input name="query" aria-label="Cari penyedia" placeholder="Cari penyedia..." className="min-h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-12 pr-4 outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-100" />
+          </form>
           <Link href="/request-task" className={`${primaryButton} ml-auto hidden sm:inline-flex`}><Plus className="size-5" /> Buat task</Link>
           <button type="button" aria-label="Notifikasi" className="relative grid size-11 place-items-center rounded-xl border border-slate-200 bg-white hover:bg-slate-50"><Bell className="size-5" /><span className="absolute right-2 top-2 size-2 rounded-full bg-orange-600" /></button>
           <Link href="/profile" className="flex min-h-11 items-center gap-3 rounded-xl p-1.5 hover:bg-slate-50">
-            <span className="grid size-9 place-items-center rounded-lg bg-slate-900 text-sm font-bold text-white">MA</span>
-            <span className="hidden text-left xl:block"><strong className="block text-sm">Matthew Alden</strong><span className="text-xs text-slate-500">Client</span></span>
-            <ChevronDown className="hidden size-4 text-slate-400 xl:block" />
+            <span className="grid size-9 place-items-center rounded-lg bg-slate-900 text-sm font-bold text-white">{initials}</span>
+            <span className="hidden text-left xl:block"><strong className="block max-w-36 truncate text-sm">{profile?.fullName || profile?.username || "Pengguna"}</strong><span className="text-xs text-slate-500">Client</span></span>
           </Link>
+          <button type="button" onClick={logout} aria-label="Keluar" className="grid size-11 cursor-pointer place-items-center rounded-xl border border-slate-200 text-slate-600 hover:bg-red-50 hover:text-red-700"><LogOut className="size-5" /></button>
         </div>
       </header>
       <div className="mx-auto flex max-w-[1440px]">

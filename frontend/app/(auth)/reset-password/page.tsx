@@ -1,5 +1,6 @@
-import { redirect } from "next/navigation";
+import { AuthForm } from "@/components/auth-form";
 
-export default function ResetPasswordPage() {
-  redirect("/dashboard");
+export default async function ResetPasswordPage({ searchParams }: { searchParams: Promise<{ update?: string }> }) {
+  const { update } = await searchParams;
+  return <AuthForm mode={update === "true" ? "update" : "reset"} />;
 }

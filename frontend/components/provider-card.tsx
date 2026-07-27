@@ -20,7 +20,7 @@ export function ProviderCard({ provider }: { provider: Provider }) {
       <p className="mt-4 flex items-center gap-2 text-sm text-slate-600"><MapPin className="size-4 text-slate-400" />{provider.location}</p>
       <div className="mt-auto flex items-end justify-between gap-3 pt-5">
         <div><span className="block text-xs text-slate-500">Mulai dari</span><strong className="text-sm text-slate-950">{rupiah(provider.priceFrom)}</strong></div>
-        <Link href={`/marketplace?provider=${provider.id}`} className="inline-flex min-h-10 items-center rounded-lg border border-slate-300 px-4 text-sm font-bold transition group-hover:border-orange-600 group-hover:text-orange-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-orange-200">Lihat profil</Link>
+        <Link href={`/request-task?provider=${provider.id}`} className="inline-flex min-h-10 items-center rounded-lg border border-slate-300 px-4 text-sm font-bold transition group-hover:border-orange-600 group-hover:text-orange-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-orange-200">Pilih penyedia</Link>
       </div>
     </article>
   );

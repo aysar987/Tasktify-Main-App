@@ -1,5 +1,5 @@
 import { getSupabase } from "@/lib/supabase";
-import type { Provider, Task, TaskStatus } from "@/types";
+import type { Conversation, Message, Profile, Provider, Task, TaskStatus } from "@/types";
 
 type ProviderRow = {
   id: string;
@@ -81,6 +81,7 @@ export async function createTask(payload: {
   maxBudget: number;
   schedule: string;
   note: string;
+  providerId?: string;
 }) {
   return mapTask(await invokeTasks<TaskRow>({ action: "create", task: payload }));
 }
@@ -88,6 +89,20 @@ export async function createTask(payload: {
 export async function getTasks() {
   const rows = await invokeTasks<TaskRow[]>({ action: "list" });
   return rows.map(mapTask);
+}
+
+export async function getTask(id: string) {
+  const task = (await getTasks()).find((item) => item.id === id);
+  if (!task) throw new Error("Task tidak ditemukan.");
+  return task;
+}
+
+export async function cancelTask(id: string) {
+  const { error } = await getSupabase()
+    .from("tasks")
+    .update({ status: "cancelled" })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
 }
 
 export async function getProviders(query = "", category = "") {
@@ -107,4 +122,86 @@ export async function getProviders(query = "", category = "") {
   const { data, error } = await request;
   if (error) throw new Error(error.message);
   return (data as ProviderRow[]).map(mapProvider);
+}
+
+export async function getProfile(): Promise<Profile> {
+  const { data: auth } = await getSupabase().auth.getUser();
+  if (!auth.user) throw new Error("Silakan masuk terlebih dahulu.");
+  const { data, error } = await getSupabase()
+    .from("profiles")
+    .select("*")
+    .eq("id", auth.user.id)
+    .single();
+  if (error) throw new Error(error.message);
+  return {
+    id: data.id,
+    username: data.username,
+    fullName: data.full_name,
+    phone: data.phone ?? "",
+    email: data.email ?? auth.user.email ?? "",
+    address: data.address ?? "",
+    avatarUrl: data.avatar_url ?? undefined,
+  };
+}
+
+export async function updateProfile(profile: Omit<Profile, "id" | "avatarUrl">) {
+  const { data: auth } = await getSupabase().auth.getUser();
+  if (!auth.user) throw new Error("Silakan masuk terlebih dahulu.");
+  if (profile.email !== auth.user.email) {
+    const { error: emailError } = await getSupabase().auth.updateUser({ email: profile.email });
+    if (emailError) throw new Error(emailError.message);
+  }
+  const { error } = await getSupabase().from("profiles").update({
+    username: profile.username,
+    full_name: profile.fullName,
+    phone: profile.phone || null,
+    email: profile.email,
+    address: profile.address,
+  }).eq("id", auth.user.id);
+  if (error) throw new Error(error.message);
+}
+
+export async function getConversations(): Promise<Conversation[]> {
+  const { data, error } = await getSupabase()
+    .from("conversations")
+    .select("id,last_message,updated_at,provider:providers(*)")
+    .order("updated_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    provider: mapProvider(row.provider as unknown as ProviderRow),
+    lastMessage: row.last_message,
+    updatedAt: row.updated_at,
+  }));
+}
+
+export async function getMessages(conversationId: string): Promise<Message[]> {
+  const { data, error } = await getSupabase()
+    .from("messages")
+    .select("*")
+    .eq("conversation_id", conversationId)
+    .order("created_at");
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    conversationId: row.conversation_id,
+    senderId: row.sender_id,
+    body: row.body,
+    createdAt: row.created_at,
+  }));
+}
+
+export async function sendMessage(conversationId: string, body: string) {
+  const { data: auth } = await getSupabase().auth.getUser();
+  if (!auth.user) throw new Error("Silakan masuk terlebih dahulu.");
+  const { error } = await getSupabase().from("messages").insert({
+    conversation_id: conversationId,
+    sender_id: auth.user.id,
+    body: body.trim(),
+  });
+  if (error) throw new Error(error.message);
+  await getSupabase().from("conversations").update({
+    last_message: body.trim(),
+    updated_at: new Date().toISOString(),
+  }).eq("id", conversationId);
 }

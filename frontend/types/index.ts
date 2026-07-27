@@ -24,3 +24,28 @@ export type Task = {
   provider?: Provider;
   note: string;
 };
+
+export type Profile = {
+  id: string;
+  username: string;
+  fullName: string;
+  phone: string;
+  email: string;
+  address: string;
+  avatarUrl?: string;
+};
+
+export type Conversation = {
+  id: string;
+  provider: Provider;
+  lastMessage: string;
+  updatedAt: string;
+};
+
+export type Message = {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  body: string;
+  createdAt: string;
+};

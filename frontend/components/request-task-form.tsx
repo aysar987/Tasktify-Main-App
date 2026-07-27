@@ -6,7 +6,7 @@ import { FormEvent, useState } from "react";
 import { createTask } from "@/lib/api";
 import { inputClass, primaryButton, secondaryButton } from "./ui";
 
-export function RequestTaskForm() {
+export function RequestTaskForm({ providerId }: { providerId?: string }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -24,6 +24,7 @@ export function RequestTaskForm() {
         maxBudget: Number(form.get("maxBudget")),
         schedule: new Date(String(form.get("schedule"))).toISOString(),
         note: String(form.get("note")),
+        providerId,
       });
       router.push("/task-submitted");
     } catch (cause) {
@@ -35,6 +36,7 @@ export function RequestTaskForm() {
     <form onSubmit={submit} className="grid gap-6 xl:grid-cols-[1fr_340px]">
       <div className="space-y-6 rounded-2xl border border-slate-200 bg-white p-5 md:p-7">
         <fieldset className="space-y-5"><legend className="font-[var(--font-manrope)] text-xl font-extrabold">Detail pekerjaan</legend>
+          {providerId && <p className="rounded-xl border border-blue-200 bg-blue-50 p-3 text-sm font-semibold text-blue-700">Task ini akan dikirim ke penyedia yang Anda pilih dari marketplace.</p>}
           <label className="block text-sm font-bold text-slate-700">Nama task <span className="text-red-600">*</span><input name="title" className={inputClass} required placeholder="Contoh: Perbaiki pipa wastafel bocor" /></label>
           <div className="grid gap-5 md:grid-cols-2"><label className="block text-sm font-bold text-slate-700">Kategori <span className="text-red-600">*</span><select name="category" className={inputClass} required defaultValue=""><option value="" disabled>Pilih kategori</option><option>Listrik</option><option>Plumbing</option><option>AC</option><option>Pertukangan</option><option>Kebersihan</option></select></label><label className="block text-sm font-bold text-slate-700">Lokasi <span className="text-red-600">*</span><input name="location" className={inputClass} required placeholder="Alamat pengerjaan" /></label></div>
           <div className="grid gap-5 md:grid-cols-2"><label className="block text-sm font-bold text-slate-700">Anggaran minimum<input name="minBudget" type="number" min="0" className={inputClass} placeholder="Rp 100.000" /></label><label className="block text-sm font-bold text-slate-700">Anggaran maksimum <span className="text-red-600">*</span><input name="maxBudget" type="number" min="0" className={inputClass} required placeholder="Rp 500.000" /></label></div>

@@ -1,6 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
-const guestUserId = "00000000-0000-0000-0000-000000000001";
 const allowedOrigins = (Deno.env.get("ALLOWED_ORIGINS") ??
   "http://localhost:3000,https://tasktify.id,https://www.tasktify.id")
   .split(",")
@@ -14,6 +13,7 @@ type TaskInput = {
   maxBudget?: number;
   schedule?: string;
   note?: string;
+  providerId?: string;
 };
 
 function corsHeaders(request: Request) {
@@ -74,6 +74,15 @@ Deno.serve(async (request) => {
   });
 
   try {
+    const token = request.headers.get("Authorization")?.replace(/^Bearer\s+/i, "");
+    if (!token) {
+      return json(request, { success: false, message: "Silakan masuk terlebih dahulu." }, 401);
+    }
+    const { data: authData, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !authData.user) {
+      return json(request, { success: false, message: "Sesi tidak valid." }, 401);
+    }
+    const userId = authData.user.id;
     const payload = await request.json();
     const action = payload.action ?? "create";
 
@@ -86,7 +95,7 @@ Deno.serve(async (request) => {
       const { data, error } = await supabase
         .from("tasks")
         .insert({
-          user_id: guestUserId,
+          user_id: userId,
           title: task.title?.trim(),
           category: task.category?.trim(),
           location: task.location?.trim(),
@@ -94,11 +103,27 @@ Deno.serve(async (request) => {
           max_budget: task.maxBudget,
           schedule: task.schedule,
           note: task.note?.trim(),
+          provider_id: task.providerId || null,
+          status: task.providerId ? "scheduled" : "waiting",
         })
         .select("*, provider:providers(*)")
         .single();
 
       if (error) throw error;
+      if (task.providerId) {
+        const { error: conversationError } = await supabase
+          .from("conversations")
+          .upsert(
+            {
+              user_id: userId,
+              provider_id: task.providerId,
+              last_message: `Task ${data.id} dibuat.`,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: "user_id,provider_id" },
+          );
+        if (conversationError) throw conversationError;
+      }
       return json(request, { success: true, data }, 201);
     }
 
@@ -106,7 +131,7 @@ Deno.serve(async (request) => {
       const { data, error } = await supabase
         .from("tasks")
         .select("*, provider:providers(*)")
-        .eq("user_id", guestUserId)
+        .eq("user_id", userId)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
