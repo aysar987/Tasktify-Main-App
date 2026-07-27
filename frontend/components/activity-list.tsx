@@ -10,6 +10,8 @@ const tabs: { value: TaskStatus; label: string }[] = [
   { value: "scheduled", label: "Terjadwal" },
   { value: "history", label: "Riwayat" },
   { value: "waiting", label: "Menunggu" },
+  { value: "cancelled", label: "Dibatalkan" },
+  { value: "rejected", label: "Ditolak" },
 ];
 
 export function ActivityList() {

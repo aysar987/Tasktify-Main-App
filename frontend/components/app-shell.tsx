@@ -1,13 +1,15 @@
 "use client";
 
-import { Bell, CircleUserRound, ClipboardList, LayoutDashboard, LogOut, Menu, MessageSquareText, Plus, Search, Store, X } from "lucide-react";
+import { CircleUserRound, ClipboardList, LayoutDashboard, LogOut, Menu, MessageSquareText, Plus, Search, Store, X } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getProfile } from "@/lib/api";
 import { getSupabase } from "@/lib/supabase";
 import type { Profile } from "@/types";
 import { Brand } from "./brand";
+import { NotificationMenu } from "./notification-menu";
 import { primaryButton } from "./ui";
 
 const navigation = [
@@ -46,10 +48,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <input name="query" aria-label="Cari penyedia" placeholder="Cari penyedia..." className="min-h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-12 pr-4 outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-100" />
           </form>
           <Link href="/request-task" className={`${primaryButton} ml-auto hidden sm:inline-flex`}><Plus className="size-5" /> Buat task</Link>
-          <button type="button" aria-label="Notifikasi" className="relative grid size-11 place-items-center rounded-xl border border-slate-200 bg-white hover:bg-slate-50"><Bell className="size-5" /><span className="absolute right-2 top-2 size-2 rounded-full bg-orange-600" /></button>
+          <NotificationMenu />
           <Link href="/profile" className="flex min-h-11 items-center gap-3 rounded-xl p-1.5 hover:bg-slate-50">
-            <span className="grid size-9 place-items-center rounded-lg bg-slate-900 text-sm font-bold text-white">{initials}</span>
-            <span className="hidden text-left xl:block"><strong className="block max-w-36 truncate text-sm">{profile?.fullName || profile?.username || "Pengguna"}</strong><span className="text-xs text-slate-500">Client</span></span>
+            {profile?.avatarUrl ? <Image unoptimized src={profile.avatarUrl} alt="" width={36} height={36} className="size-9 rounded-lg object-cover" /> : <span className="grid size-9 place-items-center rounded-lg bg-slate-900 text-sm font-bold text-white">{initials}</span>}
+            <span className="hidden text-left xl:block"><strong className="block max-w-36 truncate text-sm">{profile?.fullName || profile?.username || "Pengguna"}</strong><span className="text-xs text-slate-500">{profile?.provider ? "Provider" : "Client"}</span></span>
           </Link>
           <button type="button" onClick={logout} aria-label="Keluar" className="grid size-11 cursor-pointer place-items-center rounded-xl border border-slate-200 text-slate-600 hover:bg-red-50 hover:text-red-700"><LogOut className="size-5" /></button>
         </div>

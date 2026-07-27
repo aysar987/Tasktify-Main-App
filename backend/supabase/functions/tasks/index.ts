@@ -104,7 +104,7 @@ Deno.serve(async (request) => {
           schedule: task.schedule,
           note: task.note?.trim(),
           provider_id: task.providerId || null,
-          status: task.providerId ? "scheduled" : "waiting",
+          status: "waiting",
         })
         .select("*, provider:providers(*)")
         .single();
@@ -123,18 +123,108 @@ Deno.serve(async (request) => {
             { onConflict: "user_id,provider_id" },
           );
         if (conversationError) throw conversationError;
+        const { data: selectedProvider } = await supabase
+          .from("providers")
+          .select("user_id")
+          .eq("id", task.providerId)
+          .single();
+        if (selectedProvider?.user_id) {
+          await supabase.from("notifications").insert({
+            user_id: selectedProvider.user_id,
+            title: "Permintaan task baru",
+            body: `${data.title} menunggu respons Anda.`,
+            href: `/tasks/${data.id}`,
+          });
+        }
       }
       return json(request, { success: true, data }, 201);
     }
 
     if (action === "list") {
-      const { data, error } = await supabase
+      const { data: provider } = await supabase
+        .from("providers")
+        .select("id")
+        .eq("user_id", userId)
+        .maybeSingle();
+      let query = supabase
         .from("tasks")
         .select("*, provider:providers(*)")
-        .eq("user_id", userId)
         .order("created_at", { ascending: false });
+      query = provider
+        ? query.or(`user_id.eq.${userId},provider_id.eq.${provider.id}`)
+        : query.eq("user_id", userId);
+      const { data, error } = await query;
 
       if (error) throw error;
+      return json(request, { success: true, data: (data ?? []).map((item) => ({
+        ...item,
+        perspective: item.user_id === userId ? "client" : "provider",
+      })) });
+    }
+
+    if (action === "transition") {
+      const taskId = String(payload.taskId ?? "");
+      const transition = String(payload.transition ?? "");
+      const transitions: Record<string, { from: string; to: string }> = {
+        accept: { from: "waiting", to: "scheduled" },
+        reject: { from: "waiting", to: "rejected" },
+        start: { from: "scheduled", to: "ongoing" },
+        complete: { from: "ongoing", to: "history" },
+      };
+      const next = transitions[transition];
+      if (!next) return json(request, { success: false, message: "Transisi tidak valid." }, 400);
+
+      const { data: provider } = await supabase
+        .from("providers")
+        .select("id")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (!provider) return json(request, { success: false, message: "Akun provider diperlukan." }, 403);
+
+      const { data, error } = await supabase
+        .from("tasks")
+        .update({ status: next.to })
+        .eq("id", taskId)
+        .eq("provider_id", provider.id)
+        .eq("status", next.from)
+        .select("*, provider:providers(*)")
+        .single();
+      if (error) throw error;
+
+      await supabase.from("notifications").insert({
+        user_id: data.user_id,
+        title: `Task ${data.id} diperbarui`,
+        body: `Status task berubah menjadi ${next.to}.`,
+        href: `/tasks/${data.id}`,
+      });
+      return json(request, { success: true, data });
+    }
+
+    if (action === "cancel") {
+      const { data, error } = await supabase
+        .from("tasks")
+        .update({ status: "cancelled" })
+        .eq("id", String(payload.taskId ?? ""))
+        .eq("user_id", userId)
+        .in("status", ["waiting", "scheduled"])
+        .select("*, provider:providers(*)")
+        .single();
+      if (error) throw error;
+      if (data.provider_id) {
+        const { data: assignedProvider } = await supabase
+          .from("providers")
+          .select("user_id")
+          .eq("id", data.provider_id)
+          .single();
+        if (assignedProvider?.user_id) {
+          await supabase.from("notifications").insert({
+            user_id: assignedProvider.user_id,
+            title: `Task ${data.id} dibatalkan`,
+            body: `${data.title} telah dibatalkan oleh client.`,
+            href: `/tasks/${data.id}`,
+          });
+        }
+      }
       return json(request, { success: true, data });
     }
 

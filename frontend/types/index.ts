@@ -1,4 +1,4 @@
-export type TaskStatus = "ongoing" | "scheduled" | "history" | "waiting" | "cancelled";
+export type TaskStatus = "ongoing" | "scheduled" | "history" | "waiting" | "cancelled" | "rejected";
 
 export type Provider = {
   id: string;
@@ -11,6 +11,7 @@ export type Provider = {
   verified: boolean;
   priceFrom: number;
   initials: string;
+  bio?: string;
 };
 
 export type Task = {
@@ -23,6 +24,7 @@ export type Task = {
   status: TaskStatus;
   provider?: Provider;
   note: string;
+  perspective?: "client" | "provider";
 };
 
 export type Profile = {
@@ -33,11 +35,14 @@ export type Profile = {
   email: string;
   address: string;
   avatarUrl?: string;
+  provider?: Provider;
 };
 
 export type Conversation = {
   id: string;
   provider: Provider;
+  counterpartName: string;
+  counterpartInitials: string;
   lastMessage: string;
   updatedAt: string;
 };
@@ -48,4 +53,19 @@ export type Message = {
   senderId: string;
   body: string;
   createdAt: string;
+};
+
+export type Notification = {
+  id: string;
+  title: string;
+  body: string;
+  href?: string;
+  readAt?: string;
+  createdAt: string;
+};
+
+export type TaskLocation = {
+  latitude: number;
+  longitude: number;
+  updatedAt: string;
 };
