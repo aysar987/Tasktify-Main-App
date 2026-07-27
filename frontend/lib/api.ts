@@ -1,30 +1,76 @@
-import axios from "axios";
-import type { Provider, Task } from "@/types";
+import { getSupabase } from "@/lib/supabase";
+import type { Provider, Task, TaskStatus } from "@/types";
 
-export const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1",
-  timeout: 15_000,
-  headers: { "Content-Type": "application/json" },
-});
+type ProviderRow = {
+  id: string;
+  name: string;
+  title: string;
+  category: string;
+  location: string;
+  rating: number;
+  jobs: number;
+  verified: boolean;
+  price_from: number;
+  initials: string;
+};
 
-type ApiResponse<T> = { success: boolean; data: T; message?: string };
+type TaskRow = {
+  id: string;
+  title: string;
+  category: string;
+  location: string;
+  min_budget: number;
+  max_budget: number;
+  schedule: string;
+  note: string;
+  status: TaskStatus;
+  provider?: ProviderRow | null;
+};
 
-export async function login(identifier: string, password: string) {
-  const response = await api.post<ApiResponse<{ accessToken: string }>>("/auth/login", { identifier, password });
-  return response.data.data;
+function mapProvider(row: ProviderRow): Provider {
+  return {
+    id: row.id,
+    name: row.name,
+    title: row.title,
+    category: row.category,
+    location: row.location,
+    rating: row.rating,
+    jobs: row.jobs,
+    verified: row.verified,
+    priceFrom: row.price_from,
+    initials: row.initials,
+  };
 }
 
-export async function register(username: string, phone: string, email: string, password: string) {
-  const response = await api.post<ApiResponse<{ user: { id: string } }>>("/auth/register", { username, phone, email, password });
-  return response.data.data;
+function mapTask(row: TaskRow): Task {
+  return {
+    id: row.id,
+    title: row.title,
+    category: row.category,
+    location: row.location,
+    budget: row.max_budget,
+    date: new Intl.DateTimeFormat("id-ID", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }).format(new Date(row.schedule)),
+    status: row.status,
+    provider: row.provider ? mapProvider(row.provider) : undefined,
+    note: row.note,
+  };
 }
 
-export async function resetPassword(email: string) {
-  await api.post("/auth/reset-password", { email });
-}
+async function invokeTasks<T>(body: Record<string, unknown>) {
+  const { data, error } = await getSupabase().functions.invoke<{
+    success: boolean;
+    data?: T;
+    message?: string;
+  }>("tasks", { body });
 
-export async function verifyAccount(userId: string, code: string) {
-  await api.post("/auth/verify", { userId, code });
+  if (error) throw new Error(error.message);
+  if (!data?.success || data.data === undefined) {
+    throw new Error(data?.message ?? "Operasi task gagal.");
+  }
+  return data.data;
 }
 
 export async function createTask(payload: {
@@ -36,15 +82,29 @@ export async function createTask(payload: {
   schedule: string;
   note: string;
 }) {
-  const response = await api.post<ApiResponse<Task>>("/tasks", {
-    ...payload,
-    // Temporary seeded user while authentication is hidden.
-    userId: "00000000-0000-0000-0000-000000000001",
-  });
-  return response.data.data;
+  return mapTask(await invokeTasks<TaskRow>({ action: "create", task: payload }));
+}
+
+export async function getTasks() {
+  const rows = await invokeTasks<TaskRow[]>({ action: "list" });
+  return rows.map(mapTask);
 }
 
 export async function getProviders(query = "", category = "") {
-  const response = await api.get<ApiResponse<Provider[]>>("/providers", { params: { q: query, category } });
-  return response.data.data;
+  let request = getSupabase()
+    .from("providers")
+    .select("*")
+    .order("rating", { ascending: false });
+
+  if (category && category !== "Semua") request = request.eq("category", category);
+  if (query.trim()) {
+    const safeQuery = query.trim().replaceAll(",", " ");
+    request = request.or(
+      `name.ilike.%${safeQuery}%,title.ilike.%${safeQuery}%,location.ilike.%${safeQuery}%`,
+    );
+  }
+
+  const { data, error } = await request;
+  if (error) throw new Error(error.message);
+  return (data as ProviderRow[]).map(mapProvider);
 }

@@ -3,7 +3,6 @@
 import { ArrowRight, Check, LoaderCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
-import { isAxiosError } from "axios";
 import { createTask } from "@/lib/api";
 import { inputClass, primaryButton, secondaryButton } from "./ui";
 
@@ -28,7 +27,7 @@ export function RequestTaskForm() {
       });
       router.push("/task-submitted");
     } catch (cause) {
-      setError(isAxiosError(cause) ? cause.response?.data?.message ?? "Backend tidak dapat dihubungi." : "Task gagal dikirim.");
+      setError(cause instanceof Error ? cause.message : "Task gagal dikirim.");
       setLoading(false);
     }
   };

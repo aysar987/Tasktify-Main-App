@@ -1,48 +1,43 @@
-# Tasktify Backend
+# Tasktify Supabase Backend
 
-Backend Go ini terhubung langsung ke Supabase PostgreSQL menggunakan `pgxpool`.
+Backend Tasktify sepenuhnya menggunakan Supabase:
 
-## Supabase setup
+- PostgreSQL + migration di `supabase/migrations`
+- Row Level Security untuk Data API
+- Edge Function TypeScript di `supabase/functions`
+- Supabase Auth siap diaktifkan kembali saat UI auth dibuka
 
-1. Buka Supabase Dashboard, pilih project, lalu klik **Connect**.
-2. Salin connection string:
-   - Persistent host dengan IPv6: **Direct connection**.
-   - Persistent host IPv4-only: **Session pooler** port `5432`.
-   - Serverless/transient host: **Transaction pooler** port `6543`.
-3. Salin `.env.example` menjadi `.env`.
-4. Isi `DATABASE_URL` dan pastikan password sudah URL-encoded.
-5. Untuk instalasi pertama, set `DB_AUTO_MIGRATE=true`, jalankan backend sekali,
-   lalu ubah kembali ke `false`.
+Tidak ada server Go atau server backend terpisah yang perlu dijalankan.
 
-Contoh:
+## Dashboard setup
 
-```env
-DATABASE_URL=postgresql://postgres.PROJECT_REF:PASSWORD@aws-0-REGION.pooler.supabase.com:5432/postgres?sslmode=require
-DB_MAX_CONNS=10
-DB_AUTO_MIGRATE=true
-```
-
-Alternatifnya, jalankan
-`supabase/migrations/20260728000000_init_tasktify.sql` melalui Supabase SQL
-Editor dan biarkan `DB_AUTO_MIGRATE=false`.
-
-## GitHub integration
-
-Repository ini menggunakan struktur Supabase CLI di `backend/supabase`.
-Pada Supabase Dashboard → Integrations → GitHub, isi **Working directory**
-dengan:
+Di Supabase Dashboard → Integrations → GitHub:
 
 ```text
-backend
+Working directory: backend
 ```
 
-Jika **Deploy to production** diaktifkan, migration baru yang digabungkan ke
-production branch akan diterapkan ke database production.
+Aktifkan **Deploy to production** jika migration dan Edge Function harus
+diterapkan otomatis setelah merge ke branch production.
 
-## Run
+Untuk Edge Function `tasks`, tambahkan secret:
+
+```text
+ALLOWED_ORIGINS=https://tasktify.id,https://www.tasktify.id
+```
+
+`SUPABASE_URL` dan `SUPABASE_SERVICE_ROLE_KEY` tersedia otomatis pada hosted
+Edge Functions. Jangan menaruh service role key di frontend atau Git.
+
+## Local development
+
+Pasang Supabase CLI, lalu dari folder `backend`:
 
 ```bash
-go run ./cmd/api
+supabase start
+supabase db reset
+supabase functions serve tasks --env-file supabase/.env.local
 ```
 
-API tersedia di `http://localhost:4000/api/v1`.
+File `supabase/.env.local` hanya diperlukan untuk custom secret lokal dan
+tidak boleh di-commit.

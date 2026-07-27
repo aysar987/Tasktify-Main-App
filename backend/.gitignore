@@ -1,7 +1,7 @@
 .env
-bin/
-tmp/
-.air/
-*.exe
+.env.local
+supabase/.env.local
+supabase/.branches/
+supabase/.temp/
 *.log
 .DS_Store
