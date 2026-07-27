@@ -162,6 +162,7 @@ export function TaskActions({
           Ulasan
           <textarea
             name="review"
+            placeholder="Ceritakan pengalaman Anda dengan penyedia..."
             className="mt-2 w-full rounded-lg border border-slate-300 p-3"
             rows={3}
           />

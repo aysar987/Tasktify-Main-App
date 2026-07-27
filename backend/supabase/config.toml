@@ -1,7 +1,7 @@
 project_id = "tasktify-main-app"
 
 [functions.tasks]
-verify_jwt = true
+verify_jwt = false
 
 [auth]
 site_url = "https://www.tasktify.id"

@@ -162,12 +162,14 @@ export default function ProfilePage() {
                   icon={UserRound}
                   label="Nama lengkap"
                   name="fullName"
+                  placeholder="Contoh: Boy Steven"
                   defaultValue={profile.fullName}
                 />
                 <Field
                   icon={UserRound}
                   label="Username"
                   name="username"
+                  placeholder="Contoh: boysteven"
                   defaultValue={profile.username}
                 />
                 <Field
@@ -175,6 +177,7 @@ export default function ProfilePage() {
                   label="Nomor telepon"
                   name="phone"
                   type="tel"
+                  placeholder="Contoh: +62 812 3456 7890"
                   defaultValue={profile.phone}
                 />
                 <Field
@@ -182,12 +185,14 @@ export default function ProfilePage() {
                   label="Email"
                   name="email"
                   type="email"
+                  placeholder="nama@email.com"
                   defaultValue={profile.email}
                 />
                 <Field
                   icon={MapPin}
                   label="Alamat"
                   name="address"
+                  placeholder="Contoh: Jakarta Selatan"
                   defaultValue={profile.address}
                 />
               </div>
@@ -222,15 +227,17 @@ export default function ProfilePage() {
                 icon={BriefcaseBusiness}
                 label="Nama layanan"
                 name="title"
+                placeholder="Contoh: Teknisi listrik rumah"
                 defaultValue={profile?.provider?.title || ""}
               />
               <label className="block text-sm font-bold text-slate-700">
                 Kategori
                 <select
                   name="category"
-                  defaultValue={profile?.provider?.category || "Listrik"}
+                  defaultValue={profile?.provider?.category || ""}
                   className={inputClass}
                 >
+                  <option value="" disabled>Pilih kategori layanan</option>
                   <option>Listrik</option>
                   <option>Plumbing</option>
                   <option>AC</option>
@@ -242,6 +249,7 @@ export default function ProfilePage() {
                 icon={MapPin}
                 label="Lokasi layanan"
                 name="location"
+                placeholder="Contoh: Jakarta Selatan"
                 defaultValue={profile?.provider?.location || ""}
               />
               <Field
@@ -249,12 +257,13 @@ export default function ProfilePage() {
                 label="Harga mulai"
                 name="priceFrom"
                 type="number"
-                defaultValue={String(profile?.provider?.priceFrom || 0)}
+                placeholder="Contoh: 150000"
+                defaultValue={profile?.provider ? String(profile.provider.priceFrom) : ""}
               />
             </div>
             <label className="mt-5 block text-sm font-bold text-slate-700">
               Tentang layanan
-              <textarea name="bio" rows={4} defaultValue={profile?.provider?.bio || ""} className={`${inputClass} py-3`} />
+              <textarea name="bio" rows={4} defaultValue={profile?.provider?.bio || ""} placeholder="Jelaskan keahlian, pengalaman, cakupan layanan, dan waktu operasional Anda..." className={`${inputClass} py-3`} />
             </label>
             <div className="mt-7 flex justify-end border-t border-slate-200 pt-6">
               <button disabled={saving || !profile} className={primaryButton}>
@@ -289,12 +298,14 @@ function Field({
   name,
   type = "text",
   defaultValue,
+  placeholder,
 }: {
   icon: typeof UserRound;
   label: string;
   name: string;
   type?: string;
   defaultValue: string;
+  placeholder: string;
 }) {
   return (
     <label className="block text-sm font-bold text-slate-700">
@@ -305,6 +316,7 @@ function Field({
           name={name}
           type={type}
           defaultValue={defaultValue}
+          placeholder={placeholder}
           required={name === "username" || name === "fullName"}
           className={`${inputClass} pl-12`}
         />

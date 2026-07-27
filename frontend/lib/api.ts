@@ -17,6 +17,8 @@ type ProviderRow = {
 
 type TaskRow = {
   id: string;
+  user_id?: string;
+  provider_id?: string | null;
   title: string;
   category: string;
   location: string;
@@ -64,13 +66,45 @@ function mapTask(row: TaskRow): Task {
 }
 
 async function invokeTasks<T>(body: Record<string, unknown>) {
-  const { data, error } = await getSupabase().functions.invoke<{
+  const supabase = getSupabase();
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
+
+  if (sessionError || !session) {
+    throw new Error("Sesi Anda berakhir. Silakan masuk kembali.");
+  }
+
+  const { data, error } = await supabase.functions.invoke<{
     success: boolean;
     data?: T;
     message?: string;
-  }>("tasks", { body });
+  }>("tasks", {
+    body,
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+    },
+  });
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    const context =
+      "context" in error ? (error.context as Response | undefined) : undefined;
+    if (context instanceof Response) {
+      const response = context.clone();
+      let responseMessage = "";
+      try {
+        const payload = (await response.json()) as { message?: string };
+        responseMessage = payload.message ?? "";
+      } catch {}
+      if (responseMessage) throw new Error(responseMessage);
+    }
+    throw new Error(
+      error.message === "Failed to send a request to the Edge Function"
+        ? "Layanan task belum dapat dihubungi. Muat ulang halaman atau coba beberapa saat lagi."
+        : error.message,
+    );
+  }
   if (!data?.success || data.data === undefined) {
     throw new Error(data?.message ?? "Operasi task gagal.");
   }
@@ -91,8 +125,34 @@ export async function createTask(payload: {
 }
 
 export async function getTasks() {
-  const rows = await invokeTasks<TaskRow[]>({ action: "list" });
-  return rows.map(mapTask);
+  const supabase = getSupabase();
+  const { data: auth, error: authError } = await supabase.auth.getUser();
+  if (authError || !auth.user) {
+    throw new Error("Sesi Anda berakhir. Silakan masuk kembali.");
+  }
+
+  const { data: provider, error: providerError } = await supabase
+    .from("providers")
+    .select("id")
+    .eq("user_id", auth.user.id)
+    .maybeSingle();
+  if (providerError) throw new Error(providerError.message);
+
+  const { data, error } = await supabase
+    .from("tasks")
+    .select("*, provider:providers(*)")
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+
+  return (data as TaskRow[]).map((row) =>
+    mapTask({
+      ...row,
+      perspective:
+        provider?.id && row.provider_id === provider.id
+          ? "provider"
+          : "client",
+    }),
+  );
 }
 
 export async function getTask(id: string) {
@@ -133,19 +193,25 @@ export async function getProfile(): Promise<Profile> {
   if (!auth.user) throw new Error("Silakan masuk terlebih dahulu.");
   const { data, error } = await getSupabase()
     .from("profiles")
-    .select("*,providers(*)")
+    .select("*")
     .eq("id", auth.user.id)
     .single();
   if (error) throw new Error(error.message);
+  const { data: provider, error: providerError } = await getSupabase()
+    .from("providers")
+    .select("*")
+    .eq("user_id", auth.user.id)
+    .maybeSingle();
+  if (providerError) throw new Error(providerError.message);
   return {
     id: data.id,
-    username: data.username,
-    fullName: data.full_name,
+    username: data.username || auth.user.user_metadata.username || auth.user.email?.split("@")[0] || "pengguna",
+    fullName: data.full_name || auth.user.user_metadata.full_name || data.username || auth.user.email?.split("@")[0] || "Pengguna",
     phone: data.phone ?? "",
     email: data.email ?? auth.user.email ?? "",
     address: data.address ?? "",
     avatarUrl: data.avatar_url ?? undefined,
-    provider: data.providers ? mapProvider(data.providers as ProviderRow) : undefined,
+    provider: provider ? mapProvider(provider as ProviderRow) : undefined,
   };
 }
 
