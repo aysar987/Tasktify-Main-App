@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:16
+    container_name: tasktify-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: mirai14
+      POSTGRES_DB: tasktify
+    ports:
+      - "5433:5432"
+    volumes:
+      - tasktify_data:/var/lib/postgresql/data
+
+volumes:
+  tasktify_data:
