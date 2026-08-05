@@ -78,7 +78,7 @@ export function TaskMarketBrowser({ initialQuery = "" }: { initialQuery?: string
       {error && <p role="alert" className="mb-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">{error}</p>}
       {activeTask && (
         <p className="mb-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-800">
-          Anda masih mengerjakan task marketplace <Link href={`/tasks/${activeTask.id}`} className="underline">{activeTask.title}</Link>. Selesaikan atau batalkan task itu dulu untuk bisa mengambil task lain dari sini.
+          Anda masih mengerjakan task <Link href={`/tasks/${activeTask.id}`} className="underline">{activeTask.title}</Link>. Selesaikan atau batalkan task itu dulu untuk bisa mengambil task lain dari sini.
         </p>
       )}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{filtered.map((task) => <TaskMarketCard key={task.id} task={task} locked={Boolean(activeTask)} onClaimed={(id) => setTasks((prev) => prev.filter((item) => item.id !== id))} onError={setError} />)}</div>

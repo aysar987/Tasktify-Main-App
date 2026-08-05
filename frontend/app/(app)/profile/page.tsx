@@ -12,17 +12,20 @@ import {
   UserRound,
 } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
+import { ProviderReviews } from "@/components/provider-reviews";
 import { PageHeader, inputClass, primaryButton } from "@/components/ui";
 import {
   getProfile,
+  getProviderRatings,
   saveProviderProfile,
   updateProfile,
   uploadAvatar,
 } from "@/lib/api";
-import type { Profile } from "@/types";
+import type { Profile, Rating } from "@/types";
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<Profile>();
+  const [ratings, setRatings] = useState<Rating[]>([]);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -35,6 +38,11 @@ export default function ProfilePage() {
         ),
       );
   }, []);
+  useEffect(() => {
+    const providerId = profile?.provider?.id;
+    if (!providerId) return;
+    getProviderRatings(providerId).then(setRatings).catch(() => undefined);
+  }, [profile?.provider?.id]);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSaving(true);
@@ -271,6 +279,14 @@ export default function ProfilePage() {
               </button>
             </div>
           </form>
+          {profile?.provider && (
+            <div>
+              <h2 className="mb-4 font-[var(--font-manrope)] text-xl font-extrabold">
+                Ulasan yang Anda terima ({ratings.length})
+              </h2>
+              <ProviderReviews ratings={ratings} />
+            </div>
+          )}
           {error && (
             <p
               role="alert"

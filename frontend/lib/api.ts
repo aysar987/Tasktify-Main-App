@@ -1,5 +1,5 @@
 import { getSupabase } from "@/lib/supabase";
-import type { Conversation, Message, Notification, Profile, Provider, Task, TaskLocation, TaskStatus } from "@/types";
+import type { Conversation, Message, Notification, Profile, Provider, Rating, Task, TaskLocation, TaskStatus } from "@/types";
 
 type ProviderRow = {
   id: string;
@@ -30,6 +30,24 @@ type TaskRow = {
   provider?: ProviderRow | null;
   perspective?: "client" | "provider";
 };
+
+type RatingRow = {
+  id: string;
+  score: number;
+  review: string;
+  client_name: string;
+  created_at: string;
+};
+
+function mapRating(row: RatingRow): Rating {
+  return {
+    id: row.id,
+    score: row.score,
+    review: row.review,
+    clientName: row.client_name,
+    createdAt: row.created_at,
+  };
+}
 
 function mapProvider(row: ProviderRow): Provider {
   return {
@@ -335,10 +353,38 @@ export async function uploadAvatar(file: File) {
 export async function rateTask(taskId: string, providerId: string, score: number, review: string) {
   const { data: auth } = await getSupabase().auth.getUser();
   if (!auth.user) throw new Error("Silakan masuk terlebih dahulu.");
+  const profile = await getProfile();
   const { error } = await getSupabase().from("ratings").insert({
-    task_id: taskId, provider_id: providerId, user_id: auth.user.id, score, review,
+    task_id: taskId,
+    provider_id: providerId,
+    user_id: auth.user.id,
+    score,
+    review,
+    client_name: profile.fullName || profile.username,
   });
   if (error) throw new Error(error.message);
+}
+
+export async function getTaskRating(taskId: string): Promise<Rating | undefined> {
+  const { data, error } = await getSupabase().from("ratings").select("*").eq("task_id", taskId).maybeSingle();
+  if (error) throw new Error(error.message);
+  return data ? mapRating(data as RatingRow) : undefined;
+}
+
+export async function getProviderRatings(providerId: string): Promise<Rating[]> {
+  const { data, error } = await getSupabase()
+    .from("ratings")
+    .select("*")
+    .eq("provider_id", providerId)
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data as RatingRow[]).map(mapRating);
+}
+
+export async function getProvider(id: string): Promise<Provider> {
+  const { data, error } = await getSupabase().from("providers").select("*").eq("id", id).single();
+  if (error) throw new Error(error.message);
+  return mapProvider(data as ProviderRow);
 }
 
 export async function getNotifications(): Promise<Notification[]> {

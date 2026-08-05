@@ -69,3 +69,11 @@ export type TaskLocation = {
   longitude: number;
   updatedAt: string;
 };
+
+export type Rating = {
+  id: string;
+  score: number;
+  review: string;
+  clientName: string;
+  createdAt: string;
+};

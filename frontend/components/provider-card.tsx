@@ -6,13 +6,13 @@ import type { Provider } from "@/types";
 export function ProviderCard({ provider }: { provider: Provider }) {
   return (
     <article className="group flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-5 transition hover:border-orange-300">
-      <div className="flex items-start gap-4">
+      <Link href={`/penyedia/${provider.id}`} className="flex items-start gap-4 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-orange-200 rounded-xl">
         <div className="grid size-14 shrink-0 place-items-center rounded-2xl bg-slate-900 font-bold text-white">{provider.initials}</div>
         <div className="min-w-0">
-          <div className="flex items-center gap-1.5"><h3 className="truncate font-[var(--font-manrope)] font-extrabold">{provider.name}</h3>{provider.verified && <ShieldCheck className="size-4 shrink-0 text-blue-600" aria-label="Terverifikasi" />}</div>
+          <div className="flex items-center gap-1.5"><h3 className="truncate font-[var(--font-manrope)] font-extrabold group-hover:text-orange-700">{provider.name}</h3>{provider.verified && <ShieldCheck className="size-4 shrink-0 text-blue-600" aria-label="Terverifikasi" />}</div>
           <p className="mt-1 truncate text-sm text-slate-500">{provider.title}</p>
         </div>
-      </div>
+      </Link>
       <div className="mt-5 flex items-center gap-4 border-y border-slate-100 py-3 text-sm">
         <span className="flex items-center gap-1 font-bold text-slate-800"><Star className="size-4 fill-amber-400 text-amber-400" />{provider.rating}</span>
         <span className="text-slate-500">{provider.jobs} pekerjaan</span>

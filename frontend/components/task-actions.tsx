@@ -2,8 +2,8 @@
 
 import { Ban, Check, MessageSquareText, Play, Star, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { cancelTask, getTask, rateTask, transitionTask } from "@/lib/api";
-import type { TaskStatus } from "@/types";
+import { cancelTask, getTask, getTaskRating, rateTask, transitionTask } from "@/lib/api";
+import type { Rating, TaskStatus } from "@/types";
 import { primaryButton, secondaryButton } from "./ui";
 
 export function TaskActions({
@@ -35,12 +35,16 @@ export function TaskActions({
     initialPerspective ?? "client",
   );
   const [providerId, setProviderId] = useState(initialProviderId);
+  const [existingRating, setExistingRating] = useState<Rating>();
   useEffect(() => {
     getTask(taskId)
       .then((task) => {
         setStatus(task.status);
         setPerspective(task.perspective ?? "client");
         setProviderId(task.provider?.id);
+        if (task.status === "history" && task.provider) {
+          getTaskRating(taskId).then(setExistingRating).catch(() => undefined);
+        }
       })
       .catch(() => undefined);
   }, [taskId]);
@@ -92,6 +96,7 @@ export function TaskActions({
         Number(form.get("score")),
         String(form.get("review")),
       );
+      setExistingRating(await getTaskRating(taskId));
       setRating(false);
     } finally {
       setLoading(false);
@@ -149,7 +154,17 @@ export function TaskActions({
     return null;
   }
   if (status === "history" && providerId)
-    return rating ? (
+    return existingRating ? (
+      <div className="rounded-xl border border-slate-200 bg-white p-4">
+        <p className="text-sm font-bold text-slate-700">Rating Anda</p>
+        <div className="mt-2 flex items-center gap-1" aria-label={`Rating ${existingRating.score} dari 5`}>
+          {Array.from({ length: 5 }, (_, index) => (
+            <Star key={index} className={`size-4 ${index < existingRating.score ? "fill-amber-400 text-amber-400" : "text-slate-300"}`} />
+          ))}
+        </div>
+        {existingRating.review && <p className="mt-2 text-sm leading-6 text-slate-600">{existingRating.review}</p>}
+      </div>
+    ) : rating ? (
       <form
         onSubmit={submitRating}
         className="space-y-3 rounded-xl border border-slate-200 bg-white p-4"
