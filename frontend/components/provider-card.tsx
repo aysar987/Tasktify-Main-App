@@ -1,6 +1,6 @@
 import { MapPin, ShieldCheck, Star } from "lucide-react";
 import Link from "next/link";
-import { rupiah } from "@/lib/format";
+import { rating, rupiah } from "@/lib/format";
 import type { Provider } from "@/types";
 
 export function ProviderCard({ provider }: { provider: Provider }) {
@@ -14,7 +14,7 @@ export function ProviderCard({ provider }: { provider: Provider }) {
         </div>
       </Link>
       <div className="mt-5 flex items-center gap-4 border-y border-slate-100 py-3 text-sm">
-        <span className="flex items-center gap-1 font-bold text-slate-800"><Star className="size-4 fill-amber-400 text-amber-400" />{provider.rating}</span>
+        <span className="flex items-center gap-1 font-bold text-slate-800"><Star className="size-4 fill-amber-400 text-amber-400" />{rating(provider.rating)}</span>
         <span className="text-slate-500">{provider.jobs} pekerjaan</span>
       </div>
       <p className="mt-4 flex items-center gap-2 text-sm text-slate-600"><MapPin className="size-4 text-slate-400" />{provider.location}</p>

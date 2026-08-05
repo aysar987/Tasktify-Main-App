@@ -221,6 +221,31 @@ Deno.serve(async (request) => {
       return json(request, { success: true, data });
     }
 
+    if (action === "openTask") {
+      const taskId = String(payload.taskId ?? "");
+      const { data: provider } = await supabase
+        .from("providers")
+        .select("id")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (!provider) {
+        return json(request, { success: false, message: "Lengkapi profil penyedia terlebih dahulu." }, 403);
+      }
+
+      const { data, error } = await supabase
+        .from("tasks")
+        .select("*")
+        .eq("id", taskId)
+        .eq("status", "waiting")
+        .is("provider_id", null)
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) {
+        return json(request, { success: false, message: "Task tidak ditemukan atau sudah diambil penyedia lain." }, 404);
+      }
+      return json(request, { success: true, data });
+    }
+
     if (action === "claim") {
       const taskId = String(payload.taskId ?? "");
       const { data: provider } = await supabase

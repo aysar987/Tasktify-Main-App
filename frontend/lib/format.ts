@@ -5,3 +5,7 @@ export function rupiah(value: number) {
     maximumFractionDigits: 0,
   }).format(value);
 }
+
+export function rating(value: number) {
+  return value.toFixed(1);
+}

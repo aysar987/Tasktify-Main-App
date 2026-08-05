@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { ProviderReviews } from "@/components/provider-reviews";
 import { PageHeader, primaryButton } from "@/components/ui";
 import { getProvider, getProviderRatings } from "@/lib/api";
-import { rupiah } from "@/lib/format";
+import { rating, rupiah } from "@/lib/format";
 import type { Provider, Rating } from "@/types";
 
 export default function ProviderDetailPage() {
@@ -52,7 +52,7 @@ export default function ProviderDetailPage() {
             <div className="mt-6 flex flex-wrap items-center gap-5 border-y border-slate-100 py-4 text-sm">
               <span className="flex items-center gap-1 font-bold text-slate-800">
                 <Star className="size-4 fill-amber-400 text-amber-400" />
-                {provider.rating.toFixed(1)}
+                {rating(provider.rating)}
               </span>
               <span className="text-slate-500">{provider.jobs} pekerjaan selesai</span>
               <span className="flex items-center gap-1.5 text-slate-500">

@@ -14,7 +14,7 @@ import { TaskActions } from "@/components/task-actions";
 import { LiveLocation } from "@/components/live-location";
 import { PageHeader, StatusBadge } from "@/components/ui";
 import { getTask } from "@/lib/api";
-import { rupiah } from "@/lib/format";
+import { rating, rupiah } from "@/lib/format";
 import type { Task } from "@/types";
 
 export default function TaskDetailPage() {
@@ -108,7 +108,7 @@ export default function TaskDetailPage() {
                   </p>
                   <span className="mt-2 flex items-center gap-1 text-sm font-bold">
                     <Star className="size-4 fill-amber-400 text-amber-400" />
-                    {task.provider.rating}
+                    {rating(task.provider.rating)}
                   </span>
                 </div>
               </div>

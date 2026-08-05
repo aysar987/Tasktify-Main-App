@@ -20,6 +20,7 @@ export type Task = {
   category: string;
   location: string;
   budget: number;
+  minBudget?: number;
   date: string;
   status: TaskStatus;
   provider?: Provider;
@@ -75,5 +76,6 @@ export type Rating = {
   score: number;
   review: string;
   clientName: string;
+  taskTitle: string;
   createdAt: string;
 };

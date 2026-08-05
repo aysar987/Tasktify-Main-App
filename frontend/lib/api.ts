@@ -36,6 +36,7 @@ type RatingRow = {
   score: number;
   review: string;
   client_name: string;
+  task_title: string;
   created_at: string;
 };
 
@@ -45,6 +46,7 @@ function mapRating(row: RatingRow): Rating {
     score: row.score,
     review: row.review,
     clientName: row.client_name,
+    taskTitle: row.task_title,
     createdAt: row.created_at,
   };
 }
@@ -72,6 +74,7 @@ function mapTask(row: TaskRow): Task {
     category: row.category,
     location: row.location,
     budget: row.max_budget,
+    minBudget: row.min_budget,
     date: new Intl.DateTimeFormat("id-ID", {
       dateStyle: "medium",
       timeStyle: "short",
@@ -182,6 +185,10 @@ export async function getTask(id: string) {
 export async function getOpenTasks() {
   const rows = await invokeTasks<TaskRow[]>({ action: "open" });
   return rows.map((row) => mapTask({ ...row, perspective: "provider" }));
+}
+
+export async function getOpenTask(id: string) {
+  return mapTask(await invokeTasks<TaskRow>({ action: "openTask", taskId: id }));
 }
 
 export async function claimTask(id: string) {
@@ -353,7 +360,7 @@ export async function uploadAvatar(file: File) {
 export async function rateTask(taskId: string, providerId: string, score: number, review: string) {
   const { data: auth } = await getSupabase().auth.getUser();
   if (!auth.user) throw new Error("Silakan masuk terlebih dahulu.");
-  const profile = await getProfile();
+  const [profile, task] = await Promise.all([getProfile(), getTask(taskId)]);
   const { error } = await getSupabase().from("ratings").insert({
     task_id: taskId,
     provider_id: providerId,
@@ -361,6 +368,7 @@ export async function rateTask(taskId: string, providerId: string, score: number
     score,
     review,
     client_name: profile.fullName || profile.username,
+    task_title: task.title,
   });
   if (error) throw new Error(error.message);
 }
