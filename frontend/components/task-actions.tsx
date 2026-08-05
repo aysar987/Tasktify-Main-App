@@ -119,13 +119,22 @@ export function TaskActions({
       );
     if (status === "scheduled")
       return (
-        <button
-          disabled={loading}
-          onClick={() => transition("start", "ongoing")}
-          className={`${primaryButton} w-full`}
-        >
-          <Play className="size-5" /> Mulai pekerjaan
-        </button>
+        <div className="grid gap-3">
+          <button
+            disabled={loading}
+            onClick={() => transition("start", "ongoing")}
+            className={`${primaryButton} w-full`}
+          >
+            <Play className="size-5" /> Mulai pekerjaan
+          </button>
+          <button
+            disabled={loading}
+            onClick={cancel}
+            className={`${secondaryButton} w-full border-red-200 text-red-700`}
+          >
+            <Ban className="size-5" /> Batalkan task
+          </button>
+        </div>
       );
     if (status === "ongoing")
       return (

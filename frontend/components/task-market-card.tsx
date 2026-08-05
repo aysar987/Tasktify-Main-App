@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, Check, LoaderCircle, MapPin } from "lucide-react";
+import { CalendarDays, Check, LoaderCircle, Lock, MapPin } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { claimTask } from "@/lib/api";
@@ -10,10 +10,12 @@ import { primaryButton } from "./ui";
 
 export function TaskMarketCard({
   task,
+  locked,
   onClaimed,
   onError,
 }: {
   task: Task;
+  locked?: boolean;
   onClaimed: (id: string) => void;
   onError: (message: string) => void;
 }) {
@@ -43,8 +45,8 @@ export function TaskMarketCard({
       <p className="mt-3 line-clamp-2 text-sm text-slate-600">{task.note}</p>
       <div className="mt-auto flex items-center justify-between gap-3 border-t border-slate-100 pt-4">
         <div><span className="block text-xs text-slate-500">Harga tetap</span><strong className="text-slate-950">{rupiah(task.budget)}</strong></div>
-        <button type="button" disabled={loading} onClick={claim} className={primaryButton}>
-          {loading ? <LoaderCircle className="size-5 animate-spin" /> : <Check className="size-5" />} Ambil task
+        <button type="button" disabled={loading || locked} onClick={claim} className={primaryButton}>
+          {loading ? <LoaderCircle className="size-5 animate-spin" /> : locked ? <Lock className="size-5" /> : <Check className="size-5" />} {locked ? "Terkunci" : "Ambil task"}
         </button>
       </div>
     </article>

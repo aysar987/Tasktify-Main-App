@@ -170,6 +170,26 @@ export async function claimTask(id: string) {
   return mapTask(await invokeTasks<TaskRow>({ action: "claim", taskId: id }));
 }
 
+export async function getActiveMarketplaceTask(): Promise<Task | undefined> {
+  const { data: auth } = await getSupabase().auth.getUser();
+  if (!auth.user) return undefined;
+  const { data: provider } = await getSupabase()
+    .from("providers")
+    .select("id")
+    .eq("user_id", auth.user.id)
+    .maybeSingle();
+  if (!provider) return undefined;
+  const { data, error } = await getSupabase()
+    .from("tasks")
+    .select("*")
+    .eq("provider_id", provider.id)
+    .eq("origin", "marketplace")
+    .in("status", ["scheduled", "ongoing"])
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return data ? mapTask({ ...(data as TaskRow), perspective: "provider" }) : undefined;
+}
+
 export async function cancelTask(id: string) {
   return mapTask(await invokeTasks<TaskRow>({ action: "cancel", taskId: id }));
 }

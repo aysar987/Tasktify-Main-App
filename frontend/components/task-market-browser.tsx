@@ -3,7 +3,7 @@
 import { Briefcase, Search } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { getOpenTasks, getProfile } from "@/lib/api";
+import { getActiveMarketplaceTask, getOpenTasks, getProfile } from "@/lib/api";
 import type { Task } from "@/types";
 import { TaskMarketCard } from "./task-market-card";
 import { primaryButton } from "./ui";
@@ -14,6 +14,7 @@ export function TaskMarketBrowser({ initialQuery = "" }: { initialQuery?: string
   const [query, setQuery] = useState(initialQuery);
   const [category, setCategory] = useState("Semua");
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [activeTask, setActiveTask] = useState<Task>();
   const [isProvider, setIsProvider] = useState<boolean>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -27,7 +28,12 @@ export function TaskMarketBrowser({ initialQuery = "" }: { initialQuery?: string
         const profile = await getProfile();
         if (cancelled) return;
         setIsProvider(Boolean(profile.provider));
-        if (profile.provider) setTasks(await getOpenTasks());
+        if (profile.provider) {
+          const [openTasks, active] = await Promise.all([getOpenTasks(), getActiveMarketplaceTask()]);
+          if (cancelled) return;
+          setTasks(openTasks);
+          setActiveTask(active);
+        }
       } catch (cause) {
         if (!cancelled) setError(cause instanceof Error ? cause.message : "Marketplace gagal dimuat.");
       } finally {
@@ -70,7 +76,12 @@ export function TaskMarketBrowser({ initialQuery = "" }: { initialQuery?: string
       </div>
       <div className="mb-5 mt-7 flex items-center justify-between"><p className="font-bold text-slate-700">{`${filtered.length} task tersedia`}</p></div>
       {error && <p role="alert" className="mb-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">{error}</p>}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{filtered.map((task) => <TaskMarketCard key={task.id} task={task} onClaimed={(id) => setTasks((prev) => prev.filter((item) => item.id !== id))} onError={setError} />)}</div>
+      {activeTask && (
+        <p className="mb-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-800">
+          Anda masih mengerjakan task marketplace <Link href={`/tasks/${activeTask.id}`} className="underline">{activeTask.title}</Link>. Selesaikan atau batalkan task itu dulu untuk bisa mengambil task lain dari sini.
+        </p>
+      )}
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{filtered.map((task) => <TaskMarketCard key={task.id} task={task} locked={Boolean(activeTask)} onClaimed={(id) => setTasks((prev) => prev.filter((item) => item.id !== id))} onError={setError} />)}</div>
       {!error && filtered.length === 0 && <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center"><Briefcase className="mx-auto size-9 text-slate-400" /><h2 className="mt-4 font-[var(--font-manrope)] text-xl font-extrabold">Belum ada task yang cocok</h2><p className="mt-2 text-slate-500">Ubah kata pencarian, pilih kategori lain, atau cek lagi nanti.</p></div>}
     </>
   );

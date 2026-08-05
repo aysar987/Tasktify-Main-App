@@ -105,6 +105,7 @@ Deno.serve(async (request) => {
           note: task.note?.trim(),
           provider_id: task.providerId || null,
           status: "waiting",
+          origin: task.providerId ? "direct" : "marketplace",
         })
         .select("*, provider:providers(*)")
         .single();
@@ -231,6 +232,24 @@ Deno.serve(async (request) => {
         return json(request, { success: false, message: "Lengkapi profil penyedia terlebih dahulu." }, 403);
       }
 
+      const { data: activeMarketplaceTask } = await supabase
+        .from("tasks")
+        .select("id")
+        .eq("provider_id", provider.id)
+        .eq("origin", "marketplace")
+        .in("status", ["scheduled", "ongoing"])
+        .maybeSingle();
+      if (activeMarketplaceTask) {
+        return json(
+          request,
+          {
+            success: false,
+            message: "Anda masih punya task marketplace yang aktif. Selesaikan atau batalkan task itu dulu sebelum mengambil task baru.",
+          },
+          409,
+        );
+      }
+
       const { data, error } = await supabase
         .from("tasks")
         .update({ provider_id: provider.id, status: "scheduled" })
@@ -267,16 +286,49 @@ Deno.serve(async (request) => {
     }
 
     if (action === "cancel") {
-      const { data, error } = await supabase
+      const taskId = String(payload.taskId ?? "");
+
+      const { data: asClient, error: clientCancelError } = await supabase
         .from("tasks")
         .update({ status: "cancelled" })
-        .eq("id", String(payload.taskId ?? ""))
+        .eq("id", taskId)
         .eq("user_id", userId)
         .in("status", ["waiting", "scheduled"])
         .select("*, provider:providers(*)")
-        .single();
-      if (error) throw error;
-      if (data.provider_id) {
+        .maybeSingle();
+      if (clientCancelError) throw clientCancelError;
+
+      let data = asClient;
+      let cancelledBy: "client" | "provider" = "client";
+
+      if (!data) {
+        const { data: provider } = await supabase
+          .from("providers")
+          .select("id")
+          .eq("user_id", userId)
+          .maybeSingle();
+        if (!provider) {
+          return json(request, { success: false, message: "Task tidak ditemukan." }, 404);
+        }
+        const { data: asProvider, error: providerCancelError } = await supabase
+          .from("tasks")
+          .update({ status: "cancelled" })
+          .eq("id", taskId)
+          .eq("provider_id", provider.id)
+          .eq("status", "scheduled")
+          .select("*, provider:providers(*)")
+          .single();
+        if (providerCancelError) {
+          if (providerCancelError.code === "PGRST116") {
+            return json(request, { success: false, message: "Task tidak ditemukan atau tidak bisa dibatalkan." }, 404);
+          }
+          throw providerCancelError;
+        }
+        data = asProvider;
+        cancelledBy = "provider";
+      }
+
+      if (cancelledBy === "client" && data.provider_id) {
         const { data: assignedProvider } = await supabase
           .from("providers")
           .select("user_id")
@@ -290,6 +342,14 @@ Deno.serve(async (request) => {
             href: `/tasks/${data.id}`,
           });
         }
+      }
+      if (cancelledBy === "provider") {
+        await supabase.from("notifications").insert({
+          user_id: data.user_id,
+          title: `Task ${data.id} dibatalkan penyedia`,
+          body: `${data.title} dibatalkan oleh penyedia sebelum dikerjakan. Silakan buat permintaan baru jika masih membutuhkan bantuan.`,
+          href: `/tasks/${data.id}`,
+        });
       }
       return json(request, { success: true, data });
     }
