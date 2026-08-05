@@ -161,6 +161,15 @@ export async function getTask(id: string) {
   return task;
 }
 
+export async function getOpenTasks() {
+  const rows = await invokeTasks<TaskRow[]>({ action: "open" });
+  return rows.map((row) => mapTask({ ...row, perspective: "provider" }));
+}
+
+export async function claimTask(id: string) {
+  return mapTask(await invokeTasks<TaskRow>({ action: "claim", taskId: id }));
+}
+
 export async function cancelTask(id: string) {
   return mapTask(await invokeTasks<TaskRow>({ action: "cancel", taskId: id }));
 }

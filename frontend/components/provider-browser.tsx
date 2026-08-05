@@ -8,7 +8,7 @@ import { ProviderCard } from "./provider-card";
 
 const categories = ["Semua", "Listrik", "Plumbing", "AC", "Pertukangan", "Kebersihan"];
 
-export function MarketplaceBrowser({ initialQuery = "" }: { initialQuery?: string }) {
+export function ProviderBrowser({ initialQuery = "" }: { initialQuery?: string }) {
   const [query, setQuery] = useState(initialQuery);
   const [category, setCategory] = useState("Semua");
   const [providers, setProviders] = useState<Provider[]>([]);
@@ -22,7 +22,7 @@ export function MarketplaceBrowser({ initialQuery = "" }: { initialQuery?: strin
       try {
         setProviders(await getProviders(query, category));
       } catch (cause) {
-        setError(cause instanceof Error ? cause.message : "Marketplace gagal dimuat.");
+        setError(cause instanceof Error ? cause.message : "Direktori penyedia gagal dimuat.");
       } finally {
         setLoading(false);
       }

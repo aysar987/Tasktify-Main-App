@@ -200,6 +200,72 @@ Deno.serve(async (request) => {
       return json(request, { success: true, data });
     }
 
+    if (action === "open") {
+      const { data: provider } = await supabase
+        .from("providers")
+        .select("id")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (!provider) {
+        return json(request, { success: false, message: "Lengkapi profil penyedia terlebih dahulu." }, 403);
+      }
+
+      const { data, error } = await supabase
+        .from("tasks")
+        .select("*")
+        .eq("status", "waiting")
+        .is("provider_id", null)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return json(request, { success: true, data });
+    }
+
+    if (action === "claim") {
+      const taskId = String(payload.taskId ?? "");
+      const { data: provider } = await supabase
+        .from("providers")
+        .select("id")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (!provider) {
+        return json(request, { success: false, message: "Lengkapi profil penyedia terlebih dahulu." }, 403);
+      }
+
+      const { data, error } = await supabase
+        .from("tasks")
+        .update({ provider_id: provider.id, status: "scheduled" })
+        .eq("id", taskId)
+        .is("provider_id", null)
+        .eq("status", "waiting")
+        .select("*, provider:providers(*)")
+        .single();
+      if (error) {
+        if (error.code === "PGRST116") {
+          return json(request, { success: false, message: "Task sudah diambil penyedia lain." }, 409);
+        }
+        throw error;
+      }
+
+      await supabase.from("conversations").upsert(
+        {
+          user_id: data.user_id,
+          provider_id: provider.id,
+          last_message: `Task ${data.id} diambil oleh penyedia.`,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id,provider_id" },
+      );
+
+      await supabase.from("notifications").insert({
+        user_id: data.user_id,
+        title: "Task Anda diambil penyedia",
+        body: `${data.title} telah diambil dan dijadwalkan oleh penyedia.`,
+        href: `/tasks/${data.id}`,
+      });
+
+      return json(request, { success: true, data });
+    }
+
     if (action === "cancel") {
       const { data, error } = await supabase
         .from("tasks")

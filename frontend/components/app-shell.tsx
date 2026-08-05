@@ -1,6 +1,6 @@
 "use client";
 
-import { CircleUserRound, ClipboardList, LayoutDashboard, LogOut, Menu, MessageSquareText, Plus, Search, Store, X } from "lucide-react";
+import { Briefcase, CircleUserRound, ClipboardList, LayoutDashboard, LogOut, Menu, MessageSquareText, Plus, Search, Store, X } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -14,7 +14,8 @@ import { primaryButton } from "./ui";
 
 const navigation = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/marketplace", label: "Marketplace", icon: Store },
+  { href: "/marketplace", label: "Marketplace", icon: Briefcase },
+  { href: "/penyedia", label: "Cari Penyedia", icon: Store },
   { href: "/activity", label: "Aktivitas", icon: ClipboardList },
   { href: "/chat", label: "Pesan", icon: MessageSquareText },
   { href: "/profile", label: "Profil", icon: CircleUserRound },
@@ -33,7 +34,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   function search(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const query = String(new FormData(event.currentTarget).get("query") ?? "").trim();
-    if (query) window.location.assign(`/marketplace?q=${encodeURIComponent(query)}`);
+    if (query) window.location.assign(`/penyedia?q=${encodeURIComponent(query)}`);
   }
 
   return (

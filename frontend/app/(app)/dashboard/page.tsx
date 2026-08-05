@@ -56,7 +56,7 @@ export default function DashboardPage() {
               <Plus className="size-5" /> Buat task baru
             </Link>
             <Link
-              href="/marketplace"
+              href="/penyedia"
               className="inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-600 bg-slate-900 px-5 font-bold text-white transition hover:border-slate-400 hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/30"
             >
               <Search className="size-5" /> Cari penyedia
@@ -134,10 +134,10 @@ export default function DashboardPage() {
             </h2>
           </div>
           <Link
-            href="/marketplace"
+            href="/penyedia"
             className="flex min-h-11 items-center gap-1 font-bold text-orange-700"
           >
-            Jelajahi marketplace <ArrowUpRight className="size-4" />
+            Jelajahi penyedia <ArrowUpRight className="size-4" />
           </Link>
         </div>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
