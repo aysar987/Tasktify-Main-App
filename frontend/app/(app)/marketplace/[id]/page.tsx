@@ -52,11 +52,7 @@ export default function MarketplaceTaskDetailPage() {
             {[
               { icon: MapPin, label: "Lokasi", value: task.location },
               { icon: CalendarDays, label: "Jadwal", value: task.date },
-              {
-                icon: CircleDollarSign,
-                label: "Anggaran",
-                value: task.minBudget && task.minBudget < task.budget ? `${rupiah(task.minBudget)} - ${rupiah(task.budget)}` : rupiah(task.budget),
-              },
+              { icon: CircleDollarSign, label: "Anggaran", value: rupiah(task.budget) },
               { icon: Navigation, label: "Kategori", value: task.category },
             ].map(({ icon: Icon, label, value }) => (
               <div key={label} className="flex gap-3">

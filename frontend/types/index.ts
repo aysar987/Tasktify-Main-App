@@ -20,7 +20,6 @@ export type Task = {
   category: string;
   location: string;
   budget: number;
-  minBudget?: number;
   date: string;
   status: TaskStatus;
   provider?: Provider;

@@ -9,8 +9,7 @@ type TaskInput = {
   title?: string;
   category?: string;
   location?: string;
-  minBudget?: number;
-  maxBudget?: number;
+  budget?: number;
   schedule?: string;
   note?: string;
   providerId?: string;
@@ -44,10 +43,8 @@ function validTask(task: TaskInput) {
     task.category.trim().length > 0 &&
     typeof task.location === "string" &&
     task.location.trim().length > 0 &&
-    Number.isFinite(task.minBudget) &&
-    Number.isFinite(task.maxBudget) &&
-    Number(task.minBudget) >= 0 &&
-    Number(task.maxBudget) >= Number(task.minBudget) &&
+    Number.isFinite(task.budget) &&
+    Number(task.budget) >= 0 &&
     typeof task.schedule === "string" &&
     !Number.isNaN(Date.parse(task.schedule)) &&
     typeof task.note === "string" &&
@@ -99,8 +96,7 @@ Deno.serve(async (request) => {
           title: task.title?.trim(),
           category: task.category?.trim(),
           location: task.location?.trim(),
-          min_budget: task.minBudget,
-          max_budget: task.maxBudget,
+          budget: task.budget,
           schedule: task.schedule,
           note: task.note?.trim(),
           provider_id: task.providerId || null,

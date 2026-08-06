@@ -22,8 +22,7 @@ type TaskRow = {
   title: string;
   category: string;
   location: string;
-  min_budget: number;
-  max_budget: number;
+  budget: number;
   schedule: string;
   note: string;
   status: TaskStatus;
@@ -73,8 +72,7 @@ function mapTask(row: TaskRow): Task {
     title: row.title,
     category: row.category,
     location: row.location,
-    budget: row.max_budget,
-    minBudget: row.min_budget,
+    budget: row.budget,
     date: new Intl.DateTimeFormat("id-ID", {
       dateStyle: "medium",
       timeStyle: "short",
@@ -136,8 +134,7 @@ export async function createTask(payload: {
   title: string;
   category: string;
   location: string;
-  minBudget: number;
-  maxBudget: number;
+  budget: number;
   schedule: string;
   note: string;
   providerId?: string;
