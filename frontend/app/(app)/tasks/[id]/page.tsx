@@ -12,6 +12,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { TaskActions } from "@/components/task-actions";
 import { LiveLocation } from "@/components/live-location";
+import { PaymentPanel } from "@/components/payment-panel";
 import { PageHeader, StatusBadge } from "@/components/ui";
 import { getTask } from "@/lib/api";
 import { rating, rupiah } from "@/lib/format";
@@ -121,6 +122,10 @@ export default function TaskDetailPage() {
               </p>
             </section>
           )}
+          {task.perspective === "client" &&
+            task.provider &&
+            task.status !== "cancelled" &&
+            task.status !== "rejected" && <PaymentPanel taskId={task.id} amount={task.budget} />}
           <TaskActions
             taskId={task.id}
             status={task.status}

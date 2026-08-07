@@ -78,3 +78,17 @@ export type Rating = {
   taskTitle: string;
   createdAt: string;
 };
+
+export type PaymentStatus = "pending" | "settlement" | "capture" | "deny" | "cancel" | "expire" | "failure";
+
+export type Payment = {
+  id: string;
+  taskId: string;
+  orderId: string;
+  amount: number;
+  status: PaymentStatus;
+  snapToken?: string;
+  paymentType?: string;
+  paidAt?: string;
+  createdAt: string;
+};

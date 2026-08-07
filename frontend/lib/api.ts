@@ -1,5 +1,5 @@
 import { getSupabase } from "@/lib/supabase";
-import type { Conversation, Message, Notification, Profile, Provider, Rating, Task, TaskLocation, TaskStatus } from "@/types";
+import type { Conversation, Message, Notification, Payment, PaymentStatus, Profile, Provider, Rating, Task, TaskLocation, TaskStatus } from "@/types";
 
 type ProviderRow = {
   id: string;
@@ -38,6 +38,32 @@ type RatingRow = {
   task_title: string;
   created_at: string;
 };
+
+type PaymentRow = {
+  id: string;
+  task_id: string;
+  order_id: string;
+  amount: number;
+  status: PaymentStatus;
+  snap_token?: string | null;
+  payment_type?: string | null;
+  paid_at?: string | null;
+  created_at: string;
+};
+
+function mapPayment(row: PaymentRow): Payment {
+  return {
+    id: row.id,
+    taskId: row.task_id,
+    orderId: row.order_id,
+    amount: row.amount,
+    status: row.status,
+    snapToken: row.snap_token ?? undefined,
+    paymentType: row.payment_type ?? undefined,
+    paidAt: row.paid_at ?? undefined,
+    createdAt: row.created_at,
+  };
+}
 
 function mapRating(row: RatingRow): Rating {
   return {
@@ -84,7 +110,7 @@ function mapTask(row: TaskRow): Task {
   };
 }
 
-async function invokeTasks<T>(body: Record<string, unknown>) {
+async function invokeFunction<T>(functionName: string, body: Record<string, unknown>, fallbackMessage: string) {
   const supabase = getSupabase();
   const {
     data: { session },
@@ -99,7 +125,7 @@ async function invokeTasks<T>(body: Record<string, unknown>) {
     success: boolean;
     data?: T;
     message?: string;
-  }>("tasks", {
+  }>(functionName, {
     body,
     headers: {
       Authorization: `Bearer ${session.access_token}`,
@@ -120,14 +146,18 @@ async function invokeTasks<T>(body: Record<string, unknown>) {
     }
     throw new Error(
       error.message === "Failed to send a request to the Edge Function"
-        ? "Layanan task belum dapat dihubungi. Muat ulang halaman atau coba beberapa saat lagi."
+        ? "Layanan belum dapat dihubungi. Muat ulang halaman atau coba beberapa saat lagi."
         : error.message,
     );
   }
   if (!data?.success || data.data === undefined) {
-    throw new Error(data?.message ?? "Operasi task gagal.");
+    throw new Error(data?.message ?? fallbackMessage);
   }
   return data.data;
+}
+
+async function invokeTasks<T>(body: Record<string, unknown>) {
+  return invokeFunction<T>("tasks", body, "Operasi task gagal.");
 }
 
 export async function createTask(payload: {
@@ -390,6 +420,41 @@ export async function getProvider(id: string): Promise<Provider> {
   const { data, error } = await getSupabase().from("providers").select("*").eq("id", id).single();
   if (error) throw new Error(error.message);
   return mapProvider(data as ProviderRow);
+}
+
+export async function createPayment(taskId: string): Promise<Payment & { redirectUrl?: string }> {
+  const data = await invokeFunction<PaymentRow & { redirect_url?: string }>(
+    "payments",
+    { action: "create", taskId },
+    "Pembayaran gagal dibuat.",
+  );
+  return { ...mapPayment(data), redirectUrl: data.redirect_url };
+}
+
+export async function getPayment(taskId: string): Promise<Payment | undefined> {
+  const { data, error } = await getSupabase()
+    .from("payments")
+    .select("*")
+    .eq("task_id", taskId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return data ? mapPayment(data as PaymentRow) : undefined;
+}
+
+export function subscribePayment(taskId: string, onChange: (payment: Payment) => void) {
+  const channel = getSupabase()
+    .channel(`payment-${taskId}`)
+    .on(
+      "postgres_changes",
+      { event: "UPDATE", schema: "public", table: "payments", filter: `task_id=eq.${taskId}` },
+      (payload) => onChange(mapPayment(payload.new as PaymentRow)),
+    )
+    .subscribe();
+  return () => {
+    getSupabase().removeChannel(channel);
+  };
 }
 
 export async function getNotifications(): Promise<Notification[]> {
