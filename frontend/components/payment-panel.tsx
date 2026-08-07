@@ -1,12 +1,12 @@
 "use client";
 
-import { CreditCard, LoaderCircle, ShieldCheck } from "lucide-react";
+import { Banknote, Check, CreditCard, LoaderCircle, ShieldCheck } from "lucide-react";
 import Script from "next/script";
 import { useEffect, useState } from "react";
-import { createPayment, getPayment, subscribePayment } from "@/lib/api";
+import { confirmCashPayment, createPayment, getPayment, subscribePayment } from "@/lib/api";
 import { rupiah } from "@/lib/format";
-import type { Payment, PaymentStatus } from "@/types";
-import { primaryButton } from "./ui";
+import type { Payment, PaymentMethod, PaymentStatus } from "@/types";
+import { primaryButton, secondaryButton } from "./ui";
 
 declare global {
   interface Window {
@@ -40,7 +40,15 @@ const STATUS_LABEL: Record<PaymentStatus, string> = {
   failure: "Pembayaran gagal",
 };
 
-export function PaymentPanel({ taskId, amount }: { taskId: string; amount: number }) {
+export function PaymentPanel({
+  taskId,
+  amount,
+  perspective,
+}: {
+  taskId: string;
+  amount: number;
+  perspective: "client" | "provider";
+}) {
   const [payment, setPayment] = useState<Payment>();
   const [scriptReady, setScriptReady] = useState(() => typeof window !== "undefined" && Boolean(window.snap));
   const [loading, setLoading] = useState(false);
@@ -52,33 +60,50 @@ export function PaymentPanel({ taskId, amount }: { taskId: string; amount: numbe
   }, [taskId]);
 
   const paid = payment?.status === "settlement" || payment?.status === "capture";
+  const cashPendingLock = payment?.method === "cash" && payment.status === "pending";
 
-  async function pay() {
-    if (!clientKey) {
-      setError("Midtrans belum dikonfigurasi. Hubungi admin.");
-      return;
-    }
-    if (!window.snap) {
-      setError("Modul pembayaran belum siap, coba lagi sebentar.");
-      return;
+  async function pay(method: PaymentMethod) {
+    if (method === "online") {
+      if (!clientKey) {
+        setError("Midtrans belum dikonfigurasi. Hubungi admin.");
+        return;
+      }
+      if (!window.snap) {
+        setError("Modul pembayaran belum siap, coba lagi sebentar.");
+        return;
+      }
     }
     setLoading(true);
     setError("");
     try {
-      const created = await createPayment(taskId);
+      const created = await createPayment(taskId, method);
       setPayment(created);
-      if (!created.snapToken) {
-        setError("Token pembayaran tidak tersedia.");
-        return;
+      if (method === "online") {
+        if (!created.snapToken) {
+          setError("Token pembayaran tidak tersedia.");
+          return;
+        }
+        window.snap!.pay(created.snapToken, {
+          onSuccess: () => getPayment(taskId).then(setPayment),
+          onPending: () => getPayment(taskId).then(setPayment),
+          onError: () => setError("Pembayaran gagal diproses."),
+          onClose: () => getPayment(taskId).then(setPayment),
+        });
       }
-      window.snap.pay(created.snapToken, {
-        onSuccess: () => getPayment(taskId).then(setPayment),
-        onPending: () => getPayment(taskId).then(setPayment),
-        onError: () => setError("Pembayaran gagal diproses."),
-        onClose: () => getPayment(taskId).then(setPayment),
-      });
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Pembayaran gagal dibuat.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function confirmCash() {
+    setLoading(true);
+    setError("");
+    try {
+      setPayment(await confirmCashPayment(taskId));
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Konfirmasi gagal.");
     } finally {
       setLoading(false);
     }
@@ -99,7 +124,7 @@ export function PaymentPanel({ taskId, amount }: { taskId: string; amount: numbe
           className={`mt-3 rounded-xl border p-3 text-sm font-semibold ${paid ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-amber-200 bg-amber-50 text-amber-800"}`}
         >
           {paid && <ShieldCheck className="mr-1.5 inline size-4" />}
-          {STATUS_LABEL[payment.status]}
+          {STATUS_LABEL[payment.status]} ({payment.method === "cash" ? "Tunai" : "Online"})
         </p>
       )}
       {error && (
@@ -107,13 +132,34 @@ export function PaymentPanel({ taskId, amount }: { taskId: string; amount: numbe
           {error}
         </p>
       )}
-      {!paid && (
-        <button type="button" disabled={loading || !scriptReady} onClick={pay} className={`${primaryButton} mt-4 w-full`}>
-          {loading ? <LoaderCircle className="size-5 animate-spin" /> : <CreditCard className="size-5" />} Bayar sekarang
+
+      {perspective === "client" && !paid && !cashPendingLock && (
+        <div className="mt-4 grid gap-3">
+          <button type="button" disabled={loading || !scriptReady} onClick={() => pay("online")} className={`${primaryButton} w-full`}>
+            {loading ? <LoaderCircle className="size-5 animate-spin" /> : <CreditCard className="size-5" />} Bayar Online
+          </button>
+          <button type="button" disabled={loading} onClick={() => pay("cash")} className={`${secondaryButton} w-full`}>
+            <Banknote className="size-5" /> Bayar Tunai
+          </button>
+        </div>
+      )}
+      {perspective === "client" && cashPendingLock && (
+        <p className="mt-3 text-xs text-slate-500">Menunggu konfirmasi dari penyedia bahwa pembayaran tunai sudah diterima.</p>
+      )}
+      {perspective === "client" && payment?.method === "online" && payment.status === "pending" && (
+        <p className="mt-3 text-xs text-slate-500">Selesaikan pembayaran di jendela yang terbuka, atau pilih metode lain di atas.</p>
+      )}
+
+      {perspective === "provider" && !payment && (
+        <p className="mt-3 text-xs text-slate-500">Menunggu client melakukan pembayaran.</p>
+      )}
+      {perspective === "provider" && cashPendingLock && (
+        <button type="button" disabled={loading} onClick={confirmCash} className={`${primaryButton} mt-4 w-full`}>
+          {loading ? <LoaderCircle className="size-5 animate-spin" /> : <Check className="size-5" />} Tandai tunai sudah diterima
         </button>
       )}
-      {payment?.status === "pending" && (
-        <p className="mt-3 text-xs text-slate-500">Selesaikan pembayaran di jendela yang terbuka. Status akan otomatis diperbarui.</p>
+      {perspective === "provider" && payment?.method === "online" && payment.status === "pending" && (
+        <p className="mt-3 text-xs text-slate-500">Menunggu client menyelesaikan pembayaran online.</p>
       )}
     </section>
   );

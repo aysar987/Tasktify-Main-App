@@ -63,6 +63,7 @@ Deno.serve(async (request) => {
 
     if (action === "create") {
       const taskId = String(payload.taskId ?? "");
+      const method = payload.method === "cash" ? "cash" : "online";
 
       const { data: task, error: taskError } = await supabase
         .from("tasks")
@@ -76,6 +77,45 @@ Deno.serve(async (request) => {
       }
       if (task.status === "cancelled" || task.status === "rejected") {
         return json(request, { success: false, message: "Task ini sudah tidak aktif." }, 400);
+      }
+
+      const { data: existingPaid } = await supabase
+        .from("payments")
+        .select("id")
+        .eq("task_id", taskId)
+        .in("status", ["settlement", "capture"])
+        .maybeSingle();
+      if (existingPaid) {
+        return json(request, { success: false, message: "Task ini sudah lunas." }, 400);
+      }
+
+      if (method === "cash") {
+        const { data: existingCash } = await supabase
+          .from("payments")
+          .select("*")
+          .eq("task_id", taskId)
+          .eq("method", "cash")
+          .eq("status", "pending")
+          .maybeSingle();
+        if (existingCash) {
+          return json(request, { success: true, data: existingCash });
+        }
+
+        const { data: payment, error: insertError } = await supabase
+          .from("payments")
+          .insert({
+            task_id: task.id,
+            user_id: userId,
+            order_id: `CASH-${task.id}-${Date.now()}`,
+            amount: task.budget,
+            status: "pending",
+            method: "cash",
+          })
+          .select("*")
+          .single();
+        if (insertError) throw insertError;
+
+        return json(request, { success: true, data: payment });
       }
 
       const { data: profile } = await supabase
@@ -134,6 +174,7 @@ Deno.serve(async (request) => {
           order_id: orderId,
           amount: task.budget,
           status: "pending",
+          method: "online",
           snap_token: snapData.token,
         })
         .select("*")
@@ -144,6 +185,51 @@ Deno.serve(async (request) => {
         success: true,
         data: { ...payment, redirect_url: snapData.redirect_url },
       });
+    }
+
+    if (action === "confirmCash") {
+      const taskId = String(payload.taskId ?? "");
+
+      const { data: provider } = await supabase
+        .from("providers")
+        .select("id")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (!provider) {
+        return json(request, { success: false, message: "Akun provider diperlukan." }, 403);
+      }
+
+      const { data: task } = await supabase
+        .from("tasks")
+        .select("id, title, provider_id")
+        .eq("id", taskId)
+        .eq("provider_id", provider.id)
+        .maybeSingle();
+      if (!task) {
+        return json(request, { success: false, message: "Task tidak ditemukan." }, 404);
+      }
+
+      const { data: payment, error } = await supabase
+        .from("payments")
+        .update({ status: "settlement", paid_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+        .eq("task_id", taskId)
+        .eq("method", "cash")
+        .eq("status", "pending")
+        .select("*")
+        .maybeSingle();
+      if (error) throw error;
+      if (!payment) {
+        return json(request, { success: false, message: "Tidak ada pembayaran tunai yang menunggu konfirmasi." }, 404);
+      }
+
+      await supabase.from("notifications").insert({
+        user_id: payment.user_id,
+        title: "Pembayaran tunai dikonfirmasi",
+        body: `Penyedia telah mengonfirmasi menerima pembayaran tunai untuk task "${task.title}".`,
+        href: `/tasks/${taskId}`,
+      });
+
+      return json(request, { success: true, data: payment });
     }
 
     return json(request, { success: false, message: "Action tidak dikenal." }, 400);

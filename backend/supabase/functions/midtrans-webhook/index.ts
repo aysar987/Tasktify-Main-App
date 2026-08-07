@@ -81,6 +81,27 @@ Deno.serve(async (request) => {
         body: "Pembayaran task Anda telah diterima.",
         href: `/tasks/${data.task_id}`,
       });
+
+      const { data: task } = await supabase
+        .from("tasks")
+        .select("title, provider_id")
+        .eq("id", data.task_id)
+        .maybeSingle();
+      if (task?.provider_id) {
+        const { data: provider } = await supabase
+          .from("providers")
+          .select("user_id")
+          .eq("id", task.provider_id)
+          .maybeSingle();
+        if (provider?.user_id) {
+          await supabase.from("notifications").insert({
+            user_id: provider.user_id,
+            title: "Pembayaran task diterima",
+            body: `Client telah membayar task "${task.title}". Anda bisa mulai bekerja.`,
+            href: `/tasks/${data.task_id}`,
+          });
+        }
+      }
     }
 
     return json({ success: true });

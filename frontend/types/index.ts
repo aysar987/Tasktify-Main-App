@@ -80,6 +80,7 @@ export type Rating = {
 };
 
 export type PaymentStatus = "pending" | "settlement" | "capture" | "deny" | "cancel" | "expire" | "failure";
+export type PaymentMethod = "online" | "cash";
 
 export type Payment = {
   id: string;
@@ -87,6 +88,7 @@ export type Payment = {
   orderId: string;
   amount: number;
   status: PaymentStatus;
+  method: PaymentMethod;
   snapToken?: string;
   paymentType?: string;
   paidAt?: string;

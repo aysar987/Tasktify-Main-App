@@ -122,10 +122,11 @@ export default function TaskDetailPage() {
               </p>
             </section>
           )}
-          {task.perspective === "client" &&
-            task.provider &&
+          {task.provider &&
             task.status !== "cancelled" &&
-            task.status !== "rejected" && <PaymentPanel taskId={task.id} amount={task.budget} />}
+            task.status !== "rejected" && (
+              <PaymentPanel taskId={task.id} amount={task.budget} perspective={task.perspective ?? "client"} />
+            )}
           <TaskActions
             taskId={task.id}
             status={task.status}

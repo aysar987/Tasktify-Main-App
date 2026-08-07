@@ -1,5 +1,5 @@
 import { getSupabase } from "@/lib/supabase";
-import type { Conversation, Message, Notification, Payment, PaymentStatus, Profile, Provider, Rating, Task, TaskLocation, TaskStatus } from "@/types";
+import type { Conversation, Message, Notification, Payment, PaymentMethod, PaymentStatus, Profile, Provider, Rating, Task, TaskLocation, TaskStatus } from "@/types";
 
 type ProviderRow = {
   id: string;
@@ -45,6 +45,7 @@ type PaymentRow = {
   order_id: string;
   amount: number;
   status: PaymentStatus;
+  method: PaymentMethod;
   snap_token?: string | null;
   payment_type?: string | null;
   paid_at?: string | null;
@@ -58,6 +59,7 @@ function mapPayment(row: PaymentRow): Payment {
     orderId: row.order_id,
     amount: row.amount,
     status: row.status,
+    method: row.method,
     snapToken: row.snap_token ?? undefined,
     paymentType: row.payment_type ?? undefined,
     paidAt: row.paid_at ?? undefined,
@@ -422,13 +424,22 @@ export async function getProvider(id: string): Promise<Provider> {
   return mapProvider(data as ProviderRow);
 }
 
-export async function createPayment(taskId: string): Promise<Payment & { redirectUrl?: string }> {
+export async function createPayment(
+  taskId: string,
+  method: PaymentMethod = "online",
+): Promise<Payment & { redirectUrl?: string }> {
   const data = await invokeFunction<PaymentRow & { redirect_url?: string }>(
     "payments",
-    { action: "create", taskId },
+    { action: "create", taskId, method },
     "Pembayaran gagal dibuat.",
   );
   return { ...mapPayment(data), redirectUrl: data.redirect_url };
+}
+
+export async function confirmCashPayment(taskId: string): Promise<Payment> {
+  return mapPayment(
+    await invokeFunction<PaymentRow>("payments", { action: "confirmCash", taskId }, "Konfirmasi pembayaran gagal."),
+  );
 }
 
 export async function getPayment(taskId: string): Promise<Payment | undefined> {
