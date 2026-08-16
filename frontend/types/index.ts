@@ -13,6 +13,7 @@ export type Provider = {
   verified: boolean;
   verificationStatus: ProviderVerificationStatus;
   verificationNote?: string;
+  hasKtp: boolean;
   priceFrom: number;
   initials: string;
   bio?: string;

@@ -4,17 +4,21 @@
 import {
   BriefcaseBusiness,
   Camera,
+  IdCard,
   LoaderCircle,
   Mail,
   MapPin,
   Phone,
+  ShieldAlert,
   ShieldCheck,
+  ShieldQuestion,
   UserRound,
 } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 import { ProviderReviews } from "@/components/provider-reviews";
 import { PageHeader, inputClass, primaryButton } from "@/components/ui";
 import {
+  getOwnProviderKtpUrl,
   getProfile,
   getProviderRatings,
   saveProviderProfile,
@@ -23,12 +27,19 @@ import {
 } from "@/lib/api";
 import type { Profile, Rating } from "@/types";
 
+const VERIFICATION_META = {
+  pending: { icon: ShieldQuestion, label: "Menunggu review admin", className: "bg-amber-50 text-amber-800" },
+  verified: { icon: ShieldCheck, label: "Terverifikasi", className: "bg-emerald-50 text-emerald-700" },
+  rejected: { icon: ShieldAlert, label: "Ditolak", className: "bg-red-50 text-red-700" },
+};
+
 export default function ProfilePage() {
   const [profile, setProfile] = useState<Profile>();
   const [ratings, setRatings] = useState<Rating[]>([]);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [ktpPreview, setKtpPreview] = useState<string>();
   useEffect(() => {
     getProfile()
       .then(setProfile)
@@ -43,6 +54,19 @@ export default function ProfilePage() {
     if (!providerId) return;
     getProviderRatings(providerId).then(setRatings).catch(() => undefined);
   }, [profile?.provider?.id]);
+  useEffect(() => {
+    if (!profile?.provider?.hasKtp) return;
+    let objectUrl: string | undefined;
+    getOwnProviderKtpUrl()
+      .then((url) => {
+        objectUrl = url;
+        setKtpPreview(url);
+      })
+      .catch(() => undefined);
+    return () => {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [profile?.provider?.hasKtp]);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSaving(true);
@@ -84,20 +108,20 @@ export default function ProfilePage() {
   }
   async function providerSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const ktpFile = form.get("ktp");
+    if (!(ktpFile instanceof File) || ktpFile.size === 0) {
+      setError("Unggah foto KTP terlebih dahulu.");
+      return;
+    }
     setSaving(true);
     setError("");
     setMessage("");
-    const form = new FormData(event.currentTarget);
     try {
-      await saveProviderProfile({
-        title: String(form.get("title")),
-        category: String(form.get("category")),
-        location: String(form.get("location")),
-        priceFrom: Number(form.get("priceFrom")),
-        bio: String(form.get("bio")),
-      });
+      await saveProviderProfile(ktpFile);
       setProfile(await getProfile());
-      setMessage("Profil provider berhasil disimpan.");
+      setMessage("Pendaftaran penyedia terkirim, menunggu verifikasi admin.");
+      event.currentTarget.reset();
     } catch (cause) {
       setError(
         cause instanceof Error
@@ -108,6 +132,7 @@ export default function ProfilePage() {
       setSaving(false);
     }
   }
+  const identityComplete = Boolean(profile?.phone) && Boolean(profile?.email);
   const initials = (profile?.fullName || profile?.username || "U")
     .split(/\s+/)
     .slice(0, 2)
@@ -223,59 +248,69 @@ export default function ProfilePage() {
               <BriefcaseBusiness className="size-6 text-orange-600" />
               <div>
                 <h2 className="font-[var(--font-manrope)] text-xl font-extrabold">
-                  Profil provider
+                  Daftar sebagai penyedia
                 </h2>
                 <p className="text-sm text-slate-500">
-                  Aktifkan akun Anda untuk menerima pekerjaan.
+                  Verifikasi identitas untuk mulai menerima task.
                 </p>
               </div>
             </div>
+            {profile?.provider && (() => {
+              const meta = VERIFICATION_META[profile.provider.verificationStatus];
+              const StatusIcon = meta.icon;
+              return (
+                <span className={`mt-5 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-bold ${meta.className}`}>
+                  <StatusIcon className="size-4" />
+                  {meta.label}
+                </span>
+              );
+            })()}
+            {profile?.provider?.verificationNote && (
+              <p className="mt-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                <strong>Alasan ditolak:</strong> {profile.provider.verificationNote}
+              </p>
+            )}
             <div className="mt-6 grid gap-5 md:grid-cols-2">
-              <Field
-                icon={BriefcaseBusiness}
-                label="Nama layanan"
-                name="title"
-                placeholder="Contoh: Teknisi listrik rumah"
-                defaultValue={profile?.provider?.title || ""}
-              />
-              <label className="block text-sm font-bold text-slate-700">
-                Kategori
-                <select
-                  name="category"
-                  defaultValue={profile?.provider?.category || ""}
-                  className={inputClass}
-                >
-                  <option value="" disabled>Pilih kategori layanan</option>
-                  <option>Listrik</option>
-                  <option>Plumbing</option>
-                  <option>AC</option>
-                  <option>Pertukangan</option>
-                  <option>Kebersihan</option>
-                </select>
-              </label>
-              <Field
-                icon={MapPin}
-                label="Lokasi layanan"
-                name="location"
-                placeholder="Contoh: Jakarta Selatan"
-                defaultValue={profile?.provider?.location || ""}
-              />
-              <Field
-                icon={BriefcaseBusiness}
-                label="Harga mulai"
-                name="priceFrom"
-                type="number"
-                placeholder="Contoh: 150000"
-                defaultValue={profile?.provider ? String(profile.provider.priceFrom) : ""}
-              />
+              <div>
+                <span className="block text-sm font-bold text-slate-700">Nama lengkap</span>
+                <p className="mt-2 flex min-h-12 items-center rounded-xl border border-slate-200 bg-slate-50 px-4 text-slate-700">{profile?.fullName || "-"}</p>
+              </div>
+              <div>
+                <span className="block text-sm font-bold text-slate-700">Username</span>
+                <p className="mt-2 flex min-h-12 items-center rounded-xl border border-slate-200 bg-slate-50 px-4 text-slate-700">@{profile?.username || "-"}</p>
+              </div>
+              <div>
+                <span className="block text-sm font-bold text-slate-700">Nomor HP</span>
+                <p className="mt-2 flex min-h-12 items-center rounded-xl border border-slate-200 bg-slate-50 px-4 text-slate-700">{profile?.phone || "Belum diisi"}</p>
+              </div>
+              <div>
+                <span className="block text-sm font-bold text-slate-700">Email</span>
+                <p className="mt-2 flex min-h-12 items-center rounded-xl border border-slate-200 bg-slate-50 px-4 text-slate-700">{profile?.email || "Belum diisi"}</p>
+              </div>
             </div>
+            {!identityComplete && (
+              <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-800">
+                Lengkapi nomor HP dan email di bagian &quot;Informasi pribadi&quot; di atas sebelum mendaftar sebagai penyedia.
+              </p>
+            )}
             <label className="mt-5 block text-sm font-bold text-slate-700">
-              Tentang layanan
-              <textarea name="bio" rows={4} defaultValue={profile?.provider?.bio || ""} placeholder="Jelaskan keahlian, pengalaman, cakupan layanan, dan waktu operasional Anda..." className={`${inputClass} py-3`} />
+              Foto KTP <span className="text-red-600">*</span>
+              <span className="mt-2 flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-3">
+                <IdCard className="size-5 shrink-0 text-slate-400" />
+                <input type="file" name="ktp" accept="image/png,image/jpeg,image/webp" required disabled={!identityComplete} className="w-full text-sm" />
+              </span>
+              <span className="mt-2 block text-xs font-normal text-slate-500">JPG, PNG, atau WebP, maksimal 5 MB. Dipakai admin untuk verifikasi identitas, tidak ditampilkan ke publik.</span>
             </label>
+            {ktpPreview && (
+              <div className="mt-4">
+                <span className="block text-sm font-bold text-slate-700">KTP tersimpan saat ini</span>
+                <img src={ktpPreview} alt="Foto KTP" className="mt-2 max-h-48 rounded-xl border border-slate-200 object-contain" />
+              </div>
+            )}
             <div className="mt-7 flex justify-end border-t border-slate-200 pt-6">
-              <button disabled={saving || !profile} className={primaryButton}>
-                Simpan profil provider
+              <button disabled={saving || !profile || !identityComplete} className={`${primaryButton} disabled:opacity-50`}>
+                {saving && <LoaderCircle className="size-5 animate-spin" />}
+                {profile?.provider ? "Kirim ulang untuk verifikasi" : "Daftar sebagai penyedia"}
               </button>
             </div>
           </form>

@@ -210,17 +210,44 @@ export async function getMessages(conversationId: string): Promise<Message[]> {
   );
 }
 
-export async function saveProviderProfile(input: {
-  title: string;
-  category: string;
-  location: string;
-  priceFrom: number;
-  bio: string;
-}) {
+export async function saveProviderProfile(ktpFile: File) {
+  const form = new FormData();
+  form.set("ktp", ktpFile);
   return apiRequest<Provider>("/me/provider", {
     method: "PUT",
-    body: JSON.stringify(input),
+    body: form,
   });
+}
+
+async function apiRequestBlobUrl(path: string): Promise<string> {
+  const {
+    data: { session },
+    error,
+  } = await getSupabase().auth.getSession();
+  if (error || !session) {
+    throw new Error("Sesi Anda berakhir. Silakan masuk kembali.");
+  }
+  let response: Response;
+  try {
+    response = await fetch(`${apiBaseUrl}${path}`, {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+      cache: "no-store",
+    });
+  } catch {
+    throw new Error("Layanan belum dapat dihubungi. Coba beberapa saat lagi.");
+  }
+  if (!response.ok) {
+    throw new Error("Gagal memuat gambar.");
+  }
+  return URL.createObjectURL(await response.blob());
+}
+
+export function getOwnProviderKtpUrl(): Promise<string> {
+  return apiRequestBlobUrl("/me/provider/ktp");
+}
+
+export function getProviderKtpUrl(providerId: string): Promise<string> {
+  return apiRequestBlobUrl(`/admin/providers/${encodeURIComponent(providerId)}/ktp`);
 }
 
 export async function uploadAvatar(file: File) {

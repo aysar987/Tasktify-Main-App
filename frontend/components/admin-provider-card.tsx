@@ -1,8 +1,9 @@
 "use client";
 
-import { Check, MapPin, ShieldAlert, ShieldCheck, ShieldQuestion, X } from "lucide-react";
+/* eslint-disable @next/next/no-img-element */
+import { Check, IdCard, LoaderCircle, MapPin, ShieldAlert, ShieldCheck, ShieldQuestion, X } from "lucide-react";
 import { FormEvent, useState } from "react";
-import { rejectProvider, verifyProvider } from "@/lib/api";
+import { getProviderKtpUrl, rejectProvider, verifyProvider } from "@/lib/api";
 import type { Provider } from "@/types";
 import { primaryButton, secondaryButton } from "./ui";
 
@@ -22,6 +23,25 @@ export function AdminProviderCard({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [rejecting, setRejecting] = useState(false);
+  const [ktpUrl, setKtpUrl] = useState<string>();
+  const [ktpLoading, setKtpLoading] = useState(false);
+
+  async function toggleKtp() {
+    if (ktpUrl) {
+      URL.revokeObjectURL(ktpUrl);
+      setKtpUrl(undefined);
+      return;
+    }
+    setKtpLoading(true);
+    setError("");
+    try {
+      setKtpUrl(await getProviderKtpUrl(provider.id));
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Foto KTP gagal dimuat.");
+    } finally {
+      setKtpLoading(false);
+    }
+  }
 
   async function approve() {
     setLoading(true);
@@ -68,15 +88,31 @@ export function AdminProviderCard({
           {statusMeta.label}
         </span>
       </div>
-      <p className="mt-3 flex items-center gap-2 text-sm text-slate-600">
-        <MapPin className="size-4 text-slate-400" />
-        {provider.location}
-      </p>
+      {provider.location && (
+        <p className="mt-3 flex items-center gap-2 text-sm text-slate-600">
+          <MapPin className="size-4 text-slate-400" />
+          {provider.location}
+        </p>
+      )}
       {provider.bio && <p className="mt-3 text-sm leading-6 text-slate-600">{provider.bio}</p>}
       {provider.verificationNote && (
         <p className="mt-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
           <strong>Alasan ditolak:</strong> {provider.verificationNote}
         </p>
+      )}
+      {provider.hasKtp && (
+        <div className="mt-4">
+          <button
+            type="button"
+            disabled={ktpLoading}
+            onClick={toggleKtp}
+            className={`${secondaryButton} min-h-10 w-full text-sm`}
+          >
+            {ktpLoading ? <LoaderCircle className="size-4 animate-spin" /> : <IdCard className="size-4" />}
+            {ktpUrl ? "Sembunyikan KTP" : "Lihat KTP"}
+          </button>
+          {ktpUrl && <img src={ktpUrl} alt={`KTP ${provider.name}`} className="mt-3 max-h-64 w-full rounded-xl border border-slate-200 object-contain" />}
+        </div>
       )}
       {error && (
         <p role="alert" className="mt-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-700">
