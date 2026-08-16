@@ -1,12 +1,13 @@
 # Tasktify Frontend
 
-Frontend-only Tasktify berbasis Next.js 16, React 19, dan TypeScript. Repository ini tidak menyimpan migration, database query, Edge Function, atau kode backend.
+Frontend-only Tasktify berbasis Next.js 16, React 19, dan TypeScript. Aplikasi berada di `frontend/` agar tetap kompatibel dengan Root Directory Vercel yang sudah aktif. Repository ini tidak menyimpan migration, database query, Edge Function, atau kode backend.
 
 Supabase SDK hanya dipakai untuk sign-up, sign-in, reset password, dan session. Seluruh data aplikasi diakses melalui REST API Go dari repository `aysar987/TasktifyBE`.
 
 ## Menjalankan lokal
 
 ```bash
+cd frontend
 cp .env.example .env.local
 npm ci
 npm run dev

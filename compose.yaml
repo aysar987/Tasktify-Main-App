@@ -3,7 +3,7 @@ services:
     container_name: tasktify-frontend
     image: tasktify-frontend:${FRONTEND_IMAGE_TAG:-latest}
     build:
-      context: .
+      context: ./frontend
       dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:?NEXT_PUBLIC_SUPABASE_URL is required}
