@@ -56,19 +56,21 @@ jobs:
       - name: Configure SSH
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
-          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          SSHPASS: ${{ secrets.VPS_PASSWORD }}
         run: |
+          sudo apt-get update
+          sudo apt-get install -y sshpass
           install -m 700 -d ~/.ssh
-          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/tasktify
-          chmod 600 ~/.ssh/tasktify
           ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
 
       - name: Update source and provision VPS
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
+          SSHPASS: ${{ secrets.VPS_PASSWORD }}
         run: |
-          ssh -i ~/.ssh/tasktify "$VPS_USER@$VPS_HOST" 'bash -se' <<'REMOTE'
+          sshpass -e ssh -o PreferredAuthentications=password -o PubkeyAuthentication=no \
+            "$VPS_USER@$VPS_HOST" 'bash -se' <<'REMOTE'
           set -Eeuo pipefail
           export DEBIAN_FRONTEND=noninteractive
           apt-get update
@@ -86,6 +88,7 @@ jobs:
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
+          SSHPASS: ${{ secrets.VPS_PASSWORD }}
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
           NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
@@ -100,14 +103,17 @@ jobs:
             printf 'NEXT_PUBLIC_MIDTRANS_CLIENT_KEY=%s\n' "$NEXT_PUBLIC_MIDTRANS_CLIENT_KEY"
             printf 'NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION=%s\n' "${NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION:-false}"
           } > /tmp/tasktify.env
-          scp -i ~/.ssh/tasktify /tmp/tasktify.env "$VPS_USER@$VPS_HOST:/srv/tasktify/source/frontend/.env.production"
+          sshpass -e scp -o PreferredAuthentications=password -o PubkeyAuthentication=no \
+            /tmp/tasktify.env "$VPS_USER@$VPS_HOST:/srv/tasktify/source/frontend/.env.production"
 
       - name: Deploy and verify
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
+          SSHPASS: ${{ secrets.VPS_PASSWORD }}
         run: |
-          ssh -i ~/.ssh/tasktify "$VPS_USER@$VPS_HOST" \
+          sshpass -e ssh -o PreferredAuthentications=password -o PubkeyAuthentication=no \
+            "$VPS_USER@$VPS_HOST" \
             "bash /srv/tasktify/source/scripts/deploy-frontend.sh '$GITHUB_SHA'"
 
       - name: Verify public endpoint
