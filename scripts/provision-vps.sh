@@ -9,7 +9,7 @@ fi
 export DEBIAN_FRONTEND=noninteractive
 
 apt-get update
-apt-get install -y ca-certificates curl git nginx ufw
+apt-get install -y ca-certificates certbot curl git nginx python3-certbot-nginx ufw
 
 if ! command -v docker >/dev/null 2>&1; then
   install -m 0755 -d /etc/apt/keyrings
@@ -44,7 +44,7 @@ server {
     listen 80 default_server;
     listen [::]:80 default_server;
 
-    server_name _;
+    server_name tasktify.id;
 
     location = /healthz {
         access_log off;
@@ -104,4 +104,13 @@ rm -f /etc/nginx/sites-enabled/default
 ln -sfn /etc/nginx/sites-available/tasktify /etc/nginx/sites-enabled/tasktify
 nginx -t
 systemctl reload nginx
+
+certbot --nginx \
+  --non-interactive \
+  --agree-tos \
+  --register-unsafely-without-email \
+  --redirect \
+  --keep-until-expiring \
+  -d tasktify.id \
+  -d api.tasktify.id
 

@@ -84,8 +84,8 @@ Jika frontend langsung dari VPS, arahkan `tasktify.id` ke IP VPS. Nginx akan mel
 Jika frontend tetap di Vercel:
 
 1. Arahkan DNS `api.tasktify.id` ke IP VPS.
-2. Aktifkan HTTPS untuk `api.tasktify.id` di Nginx/Certbot.
-3. Set environment Vercel:
+2. Workflow frontend otomatis meminta dan memperbarui sertifikat HTTPS untuk `tasktify.id` dan `api.tasktify.id` melalui Certbot.
+3. Secara default build Vercel menggunakan `https://api.tasktify.id`. Jika ingin memakai rewrite server-side, set environment Vercel:
 
 ```text
 NEXT_PUBLIC_API_URL=/api
