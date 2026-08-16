@@ -1,9 +1,9 @@
-FROM oven/bun:1.2.22-alpine AS dependencies
+FROM node:22.22.0-alpine AS dependencies
 
 WORKDIR /app
 
-COPY package.json bun.lock ./
-RUN bun install --frozen-lockfile
+COPY package.json package-lock.json ./
+RUN npm ci
 
 FROM dependencies AS builder
 
@@ -21,7 +21,7 @@ ENV NEXT_TELEMETRY_DISABLED=1 \
     NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION=${NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION}
 
 COPY . .
-RUN bun run build
+RUN npm run build
 
 FROM node:22.22.0-alpine AS runner
 

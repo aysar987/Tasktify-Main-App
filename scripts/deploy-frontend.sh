@@ -23,7 +23,9 @@ chmod 600 "${ENV_FILE}"
 export FRONTEND_IMAGE_TAG="$1"
 previous_image="$(docker inspect tasktify-frontend --format '{{.Config.Image}}' 2>/dev/null || true)"
 
-docker compose --env-file "${ENV_FILE}" -p tasktify build frontend
+if ! docker image inspect "tasktify-frontend:${FRONTEND_IMAGE_TAG}" >/dev/null 2>&1; then
+  docker compose --env-file "${ENV_FILE}" -p tasktify build frontend
+fi
 docker compose --env-file "${ENV_FILE}" -p tasktify up -d --no-build frontend
 
 healthy=false
