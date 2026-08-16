@@ -1,6 +1,7 @@
 "use client";
 
 import { Search, Store } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getProviders } from "@/lib/api";
 import type { Provider } from "@/types";
@@ -31,6 +32,9 @@ export function ProviderBrowser({ initialQuery = "" }: { initialQuery?: string }
   }, [category, query]);
   return (
     <>
+      <div className="mb-5 flex justify-end">
+        <Link href="/AddMarket" className="inline-flex min-h-11 items-center justify-center rounded-xl bg-orange-600 px-4 text-sm font-bold text-white transition hover:bg-orange-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-orange-200">Ajukan lapakmu di marketplace</Link>
+      </div>
       <div className="rounded-2xl border border-slate-200 bg-white p-4 md:p-5">
         <div className="flex flex-col gap-3 md:flex-row">
           <label className="relative flex-1"><span className="sr-only">Cari penyedia</span><Search className="absolute left-4 top-1/2 size-5 -translate-y-1/2 text-slate-400" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Cari nama, layanan, atau kota..." className="min-h-12 w-full rounded-xl border border-slate-300 pl-12 pr-4 outline-none focus:border-orange-600 focus:ring-4 focus:ring-orange-100" /></label>

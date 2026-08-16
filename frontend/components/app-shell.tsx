@@ -15,7 +15,7 @@ import { primaryButton } from "./ui";
 const baseNavigation = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/marketplace", label: "Tasks", icon: Briefcase },
-  { href: "/penyedia", label: "Cari Penyedia", icon: Store },
+  { href: "/penyedia", label: "Marketplace", icon: Store },
   { href: "/activity", label: "Aktivitas", icon: ClipboardList },
   { href: "/chat", label: "Pesan", icon: MessageSquareText },
   { href: "/profile", label: "Profil", icon: CircleUserRound },
