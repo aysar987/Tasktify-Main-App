@@ -7,6 +7,7 @@ import type {
   PaymentMethod,
   Profile,
   Provider,
+  ProviderVerificationStatus,
   Rating,
   Task,
   TaskLocation,
@@ -186,7 +187,7 @@ export async function getProfile(): Promise<Profile> {
 }
 
 export async function updateProfile(
-  profile: Omit<Profile, "id" | "avatarUrl" | "provider">,
+  profile: Omit<Profile, "id" | "avatarUrl" | "provider" | "role">,
 ) {
   const { data } = await getSupabase().auth.getUser();
   if (data.user?.email && profile.email !== data.user.email) {
@@ -338,4 +339,22 @@ export async function sendMessage(conversationId: string, body: string) {
     `/conversations/${encodeURIComponent(conversationId)}/messages`,
     { method: "POST", body: JSON.stringify({ body: body.trim() }) },
   );
+}
+
+export async function getAdminProviders(status?: ProviderVerificationStatus): Promise<Provider[]> {
+  const suffix = status ? `?status=${encodeURIComponent(status)}` : "";
+  return apiRequest<Provider[]>(`/admin/providers${suffix}`);
+}
+
+export async function verifyProvider(id: string): Promise<Provider> {
+  return apiRequest<Provider>(`/admin/providers/${encodeURIComponent(id)}/verify`, {
+    method: "POST",
+  });
+}
+
+export async function rejectProvider(id: string, note = ""): Promise<Provider> {
+  return apiRequest<Provider>(`/admin/providers/${encodeURIComponent(id)}/reject`, {
+    method: "POST",
+    body: JSON.stringify({ note }),
+  });
 }

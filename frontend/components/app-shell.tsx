@@ -1,6 +1,6 @@
 "use client";
 
-import { Briefcase, CircleUserRound, ClipboardList, LayoutDashboard, LogOut, Menu, MessageSquareText, Plus, Search, Store, X } from "lucide-react";
+import { Briefcase, CircleUserRound, ClipboardList, LayoutDashboard, LogOut, Menu, MessageSquareText, Plus, Search, ShieldCheck, Store, X } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -12,7 +12,7 @@ import { Brand } from "./brand";
 import { NotificationMenu } from "./notification-menu";
 import { primaryButton } from "./ui";
 
-const navigation = [
+const baseNavigation = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/marketplace", label: "Tasks", icon: Briefcase },
   { href: "/penyedia", label: "Cari Penyedia", icon: Store },
@@ -26,6 +26,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const [profile, setProfile] = useState<Profile>();
   useEffect(() => { getProfile().then(setProfile).catch(() => undefined); }, []);
+  const navigation =
+    profile?.role === "admin"
+      ? [...baseNavigation, { href: "/admin", label: "Admin", icon: ShieldCheck }]
+      : baseNavigation;
   const initials = (profile?.fullName || profile?.username || "U").split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
   async function logout() {
     await getSupabase().auth.signOut();
