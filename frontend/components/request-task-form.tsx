@@ -18,7 +18,7 @@ export function RequestTaskForm({ providerId }: { providerId?: string }) {
     try {
       await createTask({
         title: String(form.get("title")),
-        category: String(form.get("category")),
+        category: "Umum",
         location: String(form.get("location")),
         budget: Number(form.get("budget")),
         schedule: new Date(String(form.get("schedule"))).toISOString(),
@@ -38,8 +38,8 @@ export function RequestTaskForm({ providerId }: { providerId?: string }) {
           {providerId && <p className="rounded-xl border border-blue-200 bg-blue-50 p-3 text-sm font-semibold text-blue-700">Task ini akan dikirim langsung ke penyedia yang Anda pilih dari halaman Cari Penyedia.</p>}
           {!providerId && <p className="rounded-xl border border-orange-200 bg-orange-50 p-3 text-sm font-semibold text-orange-700">Task ini akan dipublikasikan ke marketplace agar bisa langsung diambil penyedia mana pun sesuai harga yang Anda tetapkan.</p>}
           <label className="block text-sm font-bold text-slate-700">Nama task <span className="text-red-600">*</span><input name="title" className={inputClass} required placeholder="Contoh: Perbaiki pipa wastafel bocor" /></label>
-          <div className="grid gap-5 md:grid-cols-2"><label className="block text-sm font-bold text-slate-700">Kategori <span className="text-red-600">*</span><select name="category" className={inputClass} required defaultValue=""><option value="" disabled>Pilih kategori</option><option>Listrik</option><option>Plumbing</option><option>AC</option><option>Pertukangan</option><option>Kebersihan</option><option>Lainnya</option></select></label><label className="block text-sm font-bold text-slate-700">Lokasi <span className="text-red-600">*</span><input name="location" className={inputClass} required placeholder="Alamat pengerjaan" /></label></div>
-          <label className="block text-sm font-bold text-slate-700">Anggaran <span className="text-red-600">*</span><input name="budget" type="number" min="0" className={inputClass} required placeholder="Rp 500000" /><span className="mt-2 block text-xs font-normal text-slate-500"></span></label>
+          <label className="block text-sm font-bold text-slate-700">Lokasi <span className="text-red-600">*</span><input name="location" className={inputClass} required placeholder="Alamat pengerjaan" /></label>
+          <label className="block text-sm font-bold text-slate-700">Biaya (min Rp 20.000) <span className="text-red-600">*</span><input name="budget" type="number" min="20000" className={inputClass} required placeholder="Rp 500000" /><span className="mt-2 block text-xs font-normal text-slate-500"></span></label>
           <label className="block text-sm font-bold text-slate-700">Jadwal yang diinginkan <span className="text-red-600">*</span><input name="schedule" type="datetime-local" className={inputClass} required /></label>
           <label className="block text-sm font-bold text-slate-700">Catatan pekerjaan <span className="text-red-600">*</span><textarea name="note" rows={6} className={`${inputClass} py-3`} required placeholder="Jelaskan masalah, kondisi lokasi, dan hasil yang Anda harapkan..." /><span className="mt-2 block text-xs font-normal text-slate-500">Semakin detail catatan Anda, semakin cepat penyedia yang tepat mengambil task ini.</span></label>
         </fieldset>
