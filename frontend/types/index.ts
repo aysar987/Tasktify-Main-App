@@ -1,5 +1,7 @@
 export type TaskStatus = "ongoing" | "scheduled" | "history" | "waiting" | "cancelled" | "rejected";
 
+export type ProviderVerificationStatus = "pending" | "verified" | "rejected";
+
 export type Provider = {
   id: string;
   name: string;
@@ -9,6 +11,8 @@ export type Provider = {
   rating: number;
   jobs: number;
   verified: boolean;
+  verificationStatus: ProviderVerificationStatus;
+  verificationNote?: string;
   priceFrom: number;
   initials: string;
   bio?: string;
@@ -35,6 +39,7 @@ export type Profile = {
   email: string;
   address: string;
   avatarUrl?: string;
+  role: "client" | "admin";
   provider?: Provider;
 };
 
