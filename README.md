@@ -36,4 +36,4 @@ Docker image memakai Next.js standalone output. GitHub Actions melakukan lint, t
 
 Di VPS, browser menggunakan `NEXT_PUBLIC_API_URL=/api`. Nginx meneruskan `/api/*` ke backend di `127.0.0.1:8102` dan frontend tetap berada di `127.0.0.1:8101`.
 
-Jika frontend dijalankan di Vercel, set `API_PROXY_URL` pada environment Vercel agar rewrite `/api/*` diteruskan ke URL backend publik.
+Build Vercel tanpa `NEXT_PUBLIC_API_URL` otomatis memakai `https://api.tasktify.id`. `API_PROXY_URL` tetap dapat dipakai jika deployment ingin meneruskan `/api/*` melalui rewrite server-side Vercel.

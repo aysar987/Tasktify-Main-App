@@ -15,7 +15,9 @@ import type {
 
 const apiBaseUrl = (
   process.env.NEXT_PUBLIC_API_URL ??
-  (process.env.NODE_ENV === "production" ? "/api" : "http://localhost:8080")
+  (process.env.NODE_ENV === "production"
+    ? "https://api.tasktify.id"
+    : "http://localhost:8080")
 ).replace(/\/$/, "");
 
 type ApiEnvelope<T> = {
