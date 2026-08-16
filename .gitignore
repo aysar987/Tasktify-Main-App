@@ -1,11 +1,6 @@
 .env
 .env.*
-!.env.example
 node_modules/
 .next/
-/frontend/
-dist/
-coverage/
-*.log
 *.tsbuildinfo
 .DS_Store

@@ -1,5 +1,6 @@
 .next
 node_modules
+frontend
 .env
 .env.*
 !.env.example

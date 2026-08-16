@@ -3,7 +3,6 @@
 import { LoaderCircle, LocateFixed, MapPin } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getTaskLocation, publishTaskLocation } from "@/lib/api";
-import { getSupabase } from "@/lib/supabase";
 import type { TaskLocation } from "@/types";
 import { primaryButton } from "./ui";
 
@@ -12,9 +11,10 @@ export function LiveLocation({ taskId, perspective, active }: { taskId: string; 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   useEffect(() => {
-    getTaskLocation(taskId).then(setLocation).catch(() => undefined);
-    const channel = getSupabase().channel(`location:${taskId}`).on("postgres_changes", { event: "*", schema: "public", table: "task_locations", filter: `task_id=eq.${taskId}` }, () => { getTaskLocation(taskId).then(setLocation).catch(() => undefined); }).subscribe();
-    return () => { void getSupabase().removeChannel(channel); };
+    const refresh = () => getTaskLocation(taskId).then(setLocation).catch(() => undefined);
+    void refresh();
+    const timer = window.setInterval(refresh, 5000);
+    return () => window.clearInterval(timer);
   }, [taskId]);
   function share() {
     if (!navigator.geolocation) { setError("Browser tidak mendukung lokasi."); return; }

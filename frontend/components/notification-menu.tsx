@@ -2,9 +2,8 @@
 
 import { Bell, CheckCheck, X } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getNotifications, markNotificationRead } from "@/lib/api";
-import { getSupabase } from "@/lib/supabase";
 import type { Notification } from "@/types";
 
 type Toast = { id: string; title: string; body: string; href?: string };
@@ -13,21 +12,27 @@ export function NotificationMenu() {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<Notification[]>([]);
   const [toasts, setToasts] = useState<Toast[]>([]);
-  async function refresh() { setItems(await getNotifications()); }
-  function dismissToast(id: string) { setToasts((prev) => prev.filter((toast) => toast.id !== id)); }
-  useEffect(() => {
-    getNotifications().then(setItems).catch(() => undefined);
-    const channel = getSupabase()
-      .channel("notifications")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications" }, (payload) => {
-        refresh().catch(() => undefined);
-        const row = payload.new as { id: string; title: string; body: string; href?: string };
-        setToasts((prev) => [...prev, { id: row.id, title: row.title, body: row.body, href: row.href }]);
-        window.setTimeout(() => dismissToast(row.id), 6000);
-      })
-      .subscribe();
-    return () => { void getSupabase().removeChannel(channel); };
+  const seen = useRef(new Set<string>());
+  const dismissToast = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((toast) => toast.id !== id));
   }, []);
+  const refresh = useCallback(async (showToasts = false) => {
+    const next = await getNotifications();
+    if (showToasts) {
+      const fresh = next.filter((item) => !seen.current.has(item.id));
+      for (const item of fresh) {
+        setToasts((prev) => [...prev, { id: item.id, title: item.title, body: item.body, href: item.href }]);
+        window.setTimeout(() => dismissToast(item.id), 6000);
+      }
+    }
+    seen.current = new Set(next.map((item) => item.id));
+    setItems(next);
+  }, [dismissToast]);
+  useEffect(() => {
+    void refresh();
+    const timer = window.setInterval(() => void refresh(true), 5000);
+    return () => window.clearInterval(timer);
+  }, [refresh]);
   const unread = items.filter((item) => !item.readAt).length;
   async function read(item: Notification) { if (!item.readAt) { await markNotificationRead(item.id); await refresh(); } setOpen(false); }
   return (

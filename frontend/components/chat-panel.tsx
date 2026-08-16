@@ -32,29 +32,13 @@ export function ChatPanel() {
   }, []);
   useEffect(() => {
     if (!active) return;
-    getMessages(active.id)
-      .then(setMessages)
-      .catch(() => setError("Isi percakapan gagal dimuat."));
-    const channel = getSupabase()
-      .channel(`messages:${active.id}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "messages",
-          filter: `conversation_id=eq.${active.id}`,
-        },
-        () => {
-          getMessages(active.id)
-            .then(setMessages)
-            .catch(() => undefined);
-        },
-      )
-      .subscribe();
-    return () => {
-      void getSupabase().removeChannel(channel);
-    };
+    const refresh = () =>
+      getMessages(active.id)
+        .then(setMessages)
+        .catch(() => setError("Isi percakapan gagal dimuat."));
+    void refresh();
+    const timer = window.setInterval(refresh, 3000);
+    return () => window.clearInterval(timer);
   }, [active]);
   async function submit(event: FormEvent) {
     event.preventDefault();
