@@ -106,6 +106,11 @@ async function apiRequest<T>(
   return payload.data as T;
 }
 
+type CreateTaskResponse = {
+  task: TaskResponse;
+  payment?: Payment & { redirectUrl?: string };
+};
+
 export async function createTask(payload: {
   title: string;
   category: string;
@@ -114,13 +119,13 @@ export async function createTask(payload: {
   schedule: string;
   note: string;
   providerId?: string;
+  method: PaymentMethod;
 }) {
-  return mapTask(
-    await apiRequest<TaskResponse>("/tasks", {
-      method: "POST",
-      body: JSON.stringify(payload),
-    }),
-  );
+  const result = await apiRequest<CreateTaskResponse>("/tasks", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+  return { task: mapTask(result.task), payment: result.payment };
 }
 
 export async function getTasks() {

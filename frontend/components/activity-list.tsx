@@ -6,6 +6,7 @@ import type { Task, TaskStatus } from "@/types";
 import { TaskCard } from "./task-card";
 
 const tabs: { value: TaskStatus; label: string }[] = [
+  { value: "awaiting_payment", label: "Menunggu pembayaran" },
   { value: "ongoing", label: "Berjalan" },
   { value: "scheduled", label: "Terjadwal" },
   { value: "history", label: "Riwayat" },

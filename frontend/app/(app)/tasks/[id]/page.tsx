@@ -114,6 +114,13 @@ export default function TaskDetailPage() {
                 </div>
               </div>
             </section>
+          ) : task.status === "awaiting_payment" ? (
+            <section className="rounded-2xl border border-amber-200 bg-amber-50 p-6">
+              <h2 className="font-extrabold">Menunggu pembayaran</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                Task akan dipublikasikan ke penyedia setelah pembayaran Anda selesai.
+              </p>
+            </section>
           ) : (
             <section className="rounded-2xl border border-amber-200 bg-amber-50 p-6">
               <h2 className="font-extrabold">Menunggu penyedia</h2>
@@ -122,7 +129,7 @@ export default function TaskDetailPage() {
               </p>
             </section>
           )}
-          {task.provider &&
+          {(task.provider || task.status === "awaiting_payment") &&
             task.status !== "cancelled" &&
             task.status !== "rejected" && (
               <PaymentPanel taskId={task.id} amount={task.budget} perspective={task.perspective ?? "client"} />

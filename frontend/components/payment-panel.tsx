@@ -1,34 +1,13 @@
 "use client";
 
-import { Banknote, Check, CreditCard, LoaderCircle, ShieldCheck } from "lucide-react";
+import { Check, CreditCard, LoaderCircle, ShieldCheck } from "lucide-react";
 import Script from "next/script";
 import { useEffect, useState } from "react";
 import { confirmCashPayment, createPayment, getPayment, subscribePayment } from "@/lib/api";
 import { rupiah } from "@/lib/format";
-import type { Payment, PaymentMethod, PaymentStatus } from "@/types";
-import { primaryButton, secondaryButton } from "./ui";
-
-declare global {
-  interface Window {
-    snap?: {
-      pay: (
-        token: string,
-        callbacks?: {
-          onSuccess?: (result: unknown) => void;
-          onPending?: (result: unknown) => void;
-          onError?: (result: unknown) => void;
-          onClose?: () => void;
-        },
-      ) => void;
-    };
-  }
-}
-
-const clientKey = process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY;
-const isProduction = process.env.NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION === "true";
-const snapScriptUrl = isProduction
-  ? "https://app.midtrans.com/snap/snap.js"
-  : "https://app.sandbox.midtrans.com/snap/snap.js";
+import { midtransClientKey as clientKey, midtransSnapScriptUrl as snapScriptUrl } from "@/lib/midtrans";
+import type { Payment, PaymentStatus } from "@/types";
+import { primaryButton } from "./ui";
 
 const STATUS_LABEL: Record<PaymentStatus, string> = {
   pending: "Menunggu pembayaran",
@@ -38,6 +17,8 @@ const STATUS_LABEL: Record<PaymentStatus, string> = {
   cancel: "Pembayaran dibatalkan",
   expire: "Pembayaran kedaluwarsa",
   failure: "Pembayaran gagal",
+  released: "Dana sudah dicairkan ke penyedia",
+  refunded: "Dana sudah dikembalikan",
 };
 
 export function PaymentPanel({
@@ -59,37 +40,39 @@ export function PaymentPanel({
     return subscribePayment(taskId, setPayment);
   }, [taskId]);
 
-  const paid = payment?.status === "settlement" || payment?.status === "capture";
+  const paid = payment?.status === "settlement" || payment?.status === "capture" || payment?.status === "released";
+  const refunded = payment?.status === "refunded";
   const cashPendingLock = payment?.method === "cash" && payment.status === "pending";
+  const onlineRetryable =
+    payment?.method === "online" &&
+    !paid &&
+    !refunded &&
+    ["pending", "deny", "cancel", "expire", "failure"].includes(payment.status);
 
-  async function pay(method: PaymentMethod) {
-    if (method === "online") {
-      if (!clientKey) {
-        setError("Midtrans belum dikonfigurasi. Hubungi admin.");
-        return;
-      }
-      if (!window.snap) {
-        setError("Modul pembayaran belum siap, coba lagi sebentar.");
-        return;
-      }
+  async function payOnline() {
+    if (!clientKey) {
+      setError("Midtrans belum dikonfigurasi. Hubungi admin.");
+      return;
+    }
+    if (!window.snap) {
+      setError("Modul pembayaran belum siap, coba lagi sebentar.");
+      return;
     }
     setLoading(true);
     setError("");
     try {
-      const created = await createPayment(taskId, method);
+      const created = await createPayment(taskId, "online");
       setPayment(created);
-      if (method === "online") {
-        if (!created.snapToken) {
-          setError("Token pembayaran tidak tersedia.");
-          return;
-        }
-        window.snap!.pay(created.snapToken, {
-          onSuccess: () => getPayment(taskId).then(setPayment),
-          onPending: () => getPayment(taskId).then(setPayment),
-          onError: () => setError("Pembayaran gagal diproses."),
-          onClose: () => getPayment(taskId).then(setPayment),
-        });
+      if (!created.snapToken) {
+        setError("Token pembayaran tidak tersedia.");
+        return;
       }
+      window.snap.pay(created.snapToken, {
+        onSuccess: () => getPayment(taskId).then(setPayment),
+        onPending: () => getPayment(taskId).then(setPayment),
+        onError: () => setError("Pembayaran gagal diproses."),
+        onClose: () => getPayment(taskId).then(setPayment),
+      });
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Pembayaran gagal dibuat.");
     } finally {
@@ -133,21 +116,14 @@ export function PaymentPanel({
         </p>
       )}
 
-      {perspective === "client" && !paid && !cashPendingLock && (
-        <div className="mt-4 grid gap-3">
-          <button type="button" disabled={loading || !scriptReady} onClick={() => pay("online")} className={`${primaryButton} w-full`}>
-            {loading ? <LoaderCircle className="size-5 animate-spin" /> : <CreditCard className="size-5" />} Bayar Online
-          </button>
-          <button type="button" disabled={loading} onClick={() => pay("cash")} className={`${secondaryButton} w-full`}>
-            <Banknote className="size-5" /> Bayar Tunai
-          </button>
-        </div>
+      {perspective === "client" && onlineRetryable && (
+        <button type="button" disabled={loading || !scriptReady} onClick={payOnline} className={`${primaryButton} mt-4 w-full`}>
+          {loading ? <LoaderCircle className="size-5 animate-spin" /> : <CreditCard className="size-5" />}
+          {payment?.status === "pending" ? "Selesaikan pembayaran" : "Coba bayar lagi"}
+        </button>
       )}
       {perspective === "client" && cashPendingLock && (
         <p className="mt-3 text-xs text-slate-500">Menunggu konfirmasi dari penyedia bahwa pembayaran tunai sudah diterima.</p>
-      )}
-      {perspective === "client" && payment?.method === "online" && payment.status === "pending" && (
-        <p className="mt-3 text-xs text-slate-500">Selesaikan pembayaran di jendela yang terbuka, atau pilih metode lain di atas.</p>
       )}
 
       {perspective === "provider" && !payment && (

@@ -211,7 +211,7 @@ export function TaskActions({
           <MessageSquareText className="size-5" /> Hubungi penyedia
         </a>
       )}
-      {(status === "waiting" || status === "scheduled") && (
+      {(status === "awaiting_payment" || status === "waiting" || status === "scheduled") && (
         <button
           disabled={loading}
           type="button"

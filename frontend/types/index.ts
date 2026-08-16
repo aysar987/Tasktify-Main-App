@@ -1,4 +1,4 @@
-export type TaskStatus = "ongoing" | "scheduled" | "history" | "waiting" | "cancelled" | "rejected";
+export type TaskStatus = "awaiting_payment" | "ongoing" | "scheduled" | "history" | "waiting" | "cancelled" | "rejected";
 
 export type ProviderVerificationStatus = "pending" | "verified" | "rejected";
 
@@ -85,7 +85,7 @@ export type Rating = {
   createdAt: string;
 };
 
-export type PaymentStatus = "pending" | "settlement" | "capture" | "deny" | "cancel" | "expire" | "failure";
+export type PaymentStatus = "pending" | "settlement" | "capture" | "deny" | "cancel" | "expire" | "failure" | "released" | "refunded";
 export type PaymentMethod = "online" | "cash";
 
 export type Payment = {
