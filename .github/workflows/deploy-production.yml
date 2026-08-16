@@ -1,0 +1,116 @@
+name: Deploy production
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: tasktify-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.2.22
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Lint
+        run: bun run lint
+
+      - name: Type-check
+        run: bun run typecheck
+
+      - name: Build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+          NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
+          NEXT_PUBLIC_MIDTRANS_CLIENT_KEY: ${{ secrets.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY }}
+          NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION: ${{ secrets.NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION }}
+        run: bun run build
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Configure SSH
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/tasktify
+          chmod 600 ~/.ssh/tasktify
+          ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
+
+      - name: Update source and provision VPS
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        run: |
+          ssh -i ~/.ssh/tasktify "$VPS_USER@$VPS_HOST" 'bash -se' <<'REMOTE'
+          set -Eeuo pipefail
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get update
+          apt-get install -y git
+          install -d -m 755 /srv/tasktify
+          if [[ ! -d /srv/tasktify/source/.git ]]; then
+            git clone --branch main --single-branch https://github.com/aysar987/Tasktify-Main-App.git /srv/tasktify/source
+          else
+            git -C /srv/tasktify/source pull --ff-only origin main
+          fi
+          bash /srv/tasktify/source/scripts/provision-vps.sh
+          REMOTE
+
+      - name: Upload production environment
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+          NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
+          NEXT_PUBLIC_MIDTRANS_CLIENT_KEY: ${{ secrets.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY }}
+          NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION: ${{ secrets.NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION }}
+        run: |
+          umask 077
+          {
+            printf 'NEXT_PUBLIC_SUPABASE_URL=%s\n' "$NEXT_PUBLIC_SUPABASE_URL"
+            printf 'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=%s\n' "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
+            printf 'NEXT_PUBLIC_SITE_URL=%s\n' "$NEXT_PUBLIC_SITE_URL"
+            printf 'NEXT_PUBLIC_MIDTRANS_CLIENT_KEY=%s\n' "$NEXT_PUBLIC_MIDTRANS_CLIENT_KEY"
+            printf 'NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION=%s\n' "${NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION:-false}"
+          } > /tmp/tasktify.env
+          scp -i ~/.ssh/tasktify /tmp/tasktify.env "$VPS_USER@$VPS_HOST:/srv/tasktify/source/frontend/.env.production"
+
+      - name: Deploy and verify
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        run: |
+          ssh -i ~/.ssh/tasktify "$VPS_USER@$VPS_HOST" \
+            "bash /srv/tasktify/source/scripts/deploy-frontend.sh '$GITHUB_SHA'"
+
+      - name: Verify public endpoint
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+        run: curl --fail --silent --show-error --max-time 20 "http://$VPS_HOST/healthz"
