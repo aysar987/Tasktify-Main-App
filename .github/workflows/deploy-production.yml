@@ -81,13 +81,10 @@ jobs:
 
       - name: Configure SSH
         env:
-          VPS_HOST: ${{ secrets.VPS_HOST }}
           SSHPASS: ${{ secrets.VPS_PASSWORD }}
         run: |
           sudo apt-get update
           sudo apt-get install -y sshpass
-          install -m 700 -d ~/.ssh
-          ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
 
       - name: Update source and provision VPS
         env:
@@ -96,6 +93,7 @@ jobs:
           SSHPASS: ${{ secrets.VPS_PASSWORD }}
         run: |
           sshpass -e ssh -o PreferredAuthentications=password -o PubkeyAuthentication=no \
+            -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
             "$VPS_USER@$VPS_HOST" 'bash -se' <<'REMOTE'
           set -Eeuo pipefail
           export DEBIAN_FRONTEND=noninteractive
@@ -132,8 +130,10 @@ jobs:
             printf 'NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION=%s\n' "${NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION:-false}"
           } > /tmp/tasktify.env
           sshpass -e scp -o PreferredAuthentications=password -o PubkeyAuthentication=no \
+            -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
             /tmp/tasktify.env "$VPS_USER@$VPS_HOST:/srv/tasktify/source/frontend/.env.production"
           sshpass -e scp -o PreferredAuthentications=password -o PubkeyAuthentication=no \
+            -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
             /tmp/tasktify-frontend.tar.gz "$VPS_USER@$VPS_HOST:/tmp/tasktify-frontend.tar.gz"
 
       - name: Deploy and verify
@@ -143,6 +143,7 @@ jobs:
           SSHPASS: ${{ secrets.VPS_PASSWORD }}
         run: |
           sshpass -e ssh -o PreferredAuthentications=password -o PubkeyAuthentication=no \
+            -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
             "$VPS_USER@$VPS_HOST" \
             "gzip -dc /tmp/tasktify-frontend.tar.gz | docker load && rm -f /tmp/tasktify-frontend.tar.gz && bash /srv/tasktify/source/scripts/deploy-frontend.sh '$GITHUB_SHA'"
 
