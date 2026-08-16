@@ -1,6 +1,6 @@
 "use client";
 
-import { MessageSquareText, Search, Send } from "lucide-react";
+import { ArrowLeft, MessageSquareText, Search, Send } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 import { getConversations, getMessages, sendMessage } from "@/lib/api";
 import { getSupabase } from "@/lib/supabase";
@@ -14,6 +14,7 @@ export function ChatPanel() {
   const [draft, setDraft] = useState("");
   const [query, setQuery] = useState("");
   const [error, setError] = useState("");
+  const [mobileView, setMobileView] = useState<"list" | "chat">("list");
 
   useEffect(() => {
     getSupabase()
@@ -68,9 +69,9 @@ export function ChatPanel() {
     chat.counterpartName.toLowerCase().includes(query.toLowerCase()),
   );
   return (
-    <div className="grid min-h-[650px] overflow-hidden rounded-2xl border border-slate-200 bg-white lg:grid-cols-[340px_1fr]">
-      <aside className="border-b border-slate-200 lg:border-b-0 lg:border-r">
-        <div className="p-4">
+    <div className="grid h-[70dvh] min-h-[420px] overflow-hidden rounded-2xl border border-slate-200 bg-white lg:h-[650px] lg:grid-cols-[340px_1fr]">
+      <aside className={`flex-col overflow-y-auto border-slate-200 lg:flex lg:border-b-0 lg:border-r ${mobileView === "chat" ? "hidden" : "flex"}`}>
+        <div className="shrink-0 p-4">
           <label className="relative block">
             <span className="sr-only">Cari percakapan</span>
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
@@ -86,8 +87,11 @@ export function ChatPanel() {
           <button
             key={chat.id}
             type="button"
-            onClick={() => setActive(chat)}
-            className={`flex min-h-20 w-full cursor-pointer items-center gap-3 border-t border-slate-100 px-4 text-left ${active?.id === chat.id ? "bg-orange-50" : "hover:bg-slate-50"}`}
+            onClick={() => {
+              setActive(chat);
+              setMobileView("chat");
+            }}
+            className={`flex min-h-20 w-full shrink-0 cursor-pointer items-center gap-3 border-t border-slate-100 px-4 text-left ${active?.id === chat.id ? "bg-orange-50" : "hover:bg-slate-50"}`}
           >
             <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-slate-900 text-sm font-bold text-white">
               {chat.counterpartInitials}
@@ -103,14 +107,22 @@ export function ChatPanel() {
           </button>
         ))}
       </aside>
-      <section className="flex min-h-[520px] flex-col">
-        <header className="flex min-h-18 items-center gap-3 border-b border-slate-200 px-5">
-          <span className="grid size-11 place-items-center rounded-xl bg-slate-900 text-sm font-bold text-white">
+      <section className={`min-h-0 flex-col lg:flex ${mobileView === "list" ? "hidden" : "flex"}`}>
+        <header className="flex min-h-18 shrink-0 items-center gap-3 border-b border-slate-200 px-4 sm:px-5">
+          <button
+            type="button"
+            onClick={() => setMobileView("list")}
+            aria-label="Kembali ke daftar percakapan"
+            className="grid size-9 shrink-0 cursor-pointer place-items-center rounded-lg hover:bg-slate-100 lg:hidden"
+          >
+            <ArrowLeft className="size-5" />
+          </button>
+          <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-slate-900 text-sm font-bold text-white">
             {active?.counterpartInitials}
           </span>
-          <strong>{active?.counterpartName}</strong>
+          <strong className="min-w-0 truncate">{active?.counterpartName}</strong>
         </header>
-        <div className="flex-1 space-y-4 bg-slate-50 p-5">
+        <div className="flex-1 space-y-4 overflow-y-auto bg-slate-50 p-4 sm:p-5">
           {messages.map((message) => (
             <div
               key={message.id}
@@ -126,7 +138,7 @@ export function ChatPanel() {
         </div>
         <form
           onSubmit={submit}
-          className="flex gap-3 border-t border-slate-200 p-4"
+          className="flex shrink-0 gap-3 border-t border-slate-200 p-4"
         >
           <input
             value={draft}
