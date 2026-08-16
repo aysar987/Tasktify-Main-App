@@ -17,9 +17,6 @@ permissions:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend
     steps:
       - name: Check out repository
         uses: actions/checkout@v5
@@ -29,7 +26,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: frontend/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
         run: npm ci
@@ -44,6 +41,7 @@ jobs:
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL || '/api' }}
           NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
           NEXT_PUBLIC_MIDTRANS_CLIENT_KEY: ${{ secrets.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY }}
           NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION: ${{ secrets.NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION }}
@@ -62,6 +60,7 @@ jobs:
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL || '/api' }}
           NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
           NEXT_PUBLIC_MIDTRANS_CLIENT_KEY: ${{ secrets.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY }}
           NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION: ${{ secrets.NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION }}
@@ -69,11 +68,12 @@ jobs:
           docker build \
             --build-arg NEXT_PUBLIC_SUPABASE_URL \
             --build-arg NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY \
+            --build-arg NEXT_PUBLIC_API_URL \
             --build-arg NEXT_PUBLIC_SITE_URL \
             --build-arg NEXT_PUBLIC_MIDTRANS_CLIENT_KEY \
             --build-arg NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION \
             --tag "tasktify-frontend:$GITHUB_SHA" \
-            frontend
+            .
           docker save "tasktify-frontend:$GITHUB_SHA" | gzip -1 > /tmp/tasktify-frontend.tar.gz
 
       - name: Configure SSH
@@ -114,6 +114,7 @@ jobs:
           SSHPASS: ${{ secrets.VPS_PASSWORD }}
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL || '/api' }}
           NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
           NEXT_PUBLIC_MIDTRANS_CLIENT_KEY: ${{ secrets.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY }}
           NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION: ${{ secrets.NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION }}
@@ -122,12 +123,13 @@ jobs:
           {
             printf 'NEXT_PUBLIC_SUPABASE_URL=%s\n' "$NEXT_PUBLIC_SUPABASE_URL"
             printf 'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=%s\n' "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
+            printf 'NEXT_PUBLIC_API_URL=%s\n' "$NEXT_PUBLIC_API_URL"
             printf 'NEXT_PUBLIC_SITE_URL=%s\n' "$NEXT_PUBLIC_SITE_URL"
             printf 'NEXT_PUBLIC_MIDTRANS_CLIENT_KEY=%s\n' "$NEXT_PUBLIC_MIDTRANS_CLIENT_KEY"
             printf 'NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION=%s\n' "${NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION:-false}"
           } > /tmp/tasktify.env
           sshpass -e scp -o PreferredAuthentications=password -o PubkeyAuthentication=no \
-            /tmp/tasktify.env "$VPS_USER@$VPS_HOST:/srv/tasktify/source/frontend/.env.production"
+            /tmp/tasktify.env "$VPS_USER@$VPS_HOST:/srv/tasktify/source/.env.production"
           sshpass -e scp -o PreferredAuthentications=password -o PubkeyAuthentication=no \
             /tmp/tasktify-frontend.tar.gz "$VPS_USER@$VPS_HOST:/tmp/tasktify-frontend.tar.gz"
 

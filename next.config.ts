@@ -10,6 +10,12 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: projectRoot,
   },
+  async rewrites() {
+    const proxy = process.env.API_PROXY_URL?.replace(/\/$/, "");
+    return proxy
+      ? [{ source: "/api/:path*", destination: `${proxy}/:path*` }]
+      : [];
+  },
 };
 
 export default nextConfig;

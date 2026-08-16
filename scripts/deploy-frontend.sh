@@ -13,7 +13,7 @@ fi
 
 cd /srv/tasktify/source
 
-ENV_FILE="frontend/.env.production"
+ENV_FILE=".env.production"
 if [[ ! -s "${ENV_FILE}" ]]; then
   echo "Missing ${ENV_FILE}" >&2
   exit 1
