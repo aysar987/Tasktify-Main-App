@@ -55,7 +55,7 @@ VPS_USER
 VPS_PASSWORD
 ```
 
-`POSTGRES_PASSWORD` tidak perlu dibuat di GitHub. Deployment backend pertama menghasilkan password acak di VPS dan menyimpannya pada `/srv/tasktify/backend-source/.env.production` dengan permission `600`.
+`POSTGRES_PASSWORD` tidak perlu dibuat di GitHub. Deployment backend pertama menghasilkan password acak di VPS dan menyimpannya pada `/srv/tasktify/backend-current/.env.production` dengan permission `600`.
 
 ## Urutan deployment pertama
 
@@ -68,7 +68,8 @@ Source dan data produksi berada di:
 
 ```text
 /srv/tasktify/source                 # frontend
-/srv/tasktify/backend-source         # backend
+/srv/tasktify/backend-current        # symlink release backend aktif
+/srv/tasktify/backend-releases/      # release backend per commit SHA
 /srv/tasktify/backups                # pg_dump harian, retensi 14 hari
 Docker volume postgres_data          # database
 Docker volume backend_uploads        # avatar
@@ -100,7 +101,7 @@ curl --fail http://127.0.0.1:8102/ready
 curl --fail http://127.0.0.1:8101/
 curl --fail http://127.0.0.1/api/health
 
-docker compose --env-file /srv/tasktify/backend-source/.env.production \
+docker compose --env-file /srv/tasktify/backend-current/.env.production \
   -p tasktify-backend ps
 
 docker compose --env-file /srv/tasktify/source/.env.production \
@@ -110,5 +111,5 @@ docker compose --env-file /srv/tasktify/source/.env.production \
 Kedua deploy script menyimpan nama image sebelumnya dan melakukan rollback otomatis bila readiness check gagal. Backup manual dapat dibuat dengan:
 
 ```bash
-sudo /srv/tasktify/backend-source/scripts/backup-postgres.sh
+sudo /srv/tasktify/backend-current/scripts/backup-postgres.sh
 ```
