@@ -147,6 +147,4 @@ jobs:
             "gzip -dc /tmp/tasktify-frontend.tar.gz | docker load && rm -f /tmp/tasktify-frontend.tar.gz && bash /srv/tasktify/source/scripts/deploy-frontend.sh '$GITHUB_SHA'"
 
       - name: Verify public endpoint
-        env:
-          VPS_HOST: ${{ secrets.VPS_HOST }}
-        run: curl --fail --silent --show-error --max-time 20 "http://$VPS_HOST/healthz"
+        run: curl --fail --silent --show-error --max-time 20 "https://tasktify.id/healthz"

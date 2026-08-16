@@ -53,6 +53,10 @@ nginx -t
 systemctl reload nginx
 docker image prune -f
 
-curl --fail --silent --show-error --max-time 10 http://127.0.0.1/healthz >/dev/null
-curl --fail --silent --show-error --max-time 10 http://127.0.0.1/ >/dev/null
+curl --fail --silent --show-error --max-time 10 \
+  --resolve tasktify.id:443:127.0.0.1 \
+  https://tasktify.id/healthz >/dev/null
+curl --fail --silent --show-error --max-time 10 \
+  --resolve tasktify.id:443:127.0.0.1 \
+  https://tasktify.id/ >/dev/null
 
