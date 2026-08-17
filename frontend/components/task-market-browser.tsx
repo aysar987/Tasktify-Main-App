@@ -60,7 +60,7 @@ export function TaskMarketBrowser({ initialQuery = "" }: { initialQuery?: string
     return (
       <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center">
         <Briefcase className="mx-auto size-9 text-slate-400" />
-        <h2 className="mt-4 font-[var(--font-manrope)] text-xl font-extrabold">Daftar sebagai penyedia dulu</h2>
+        <h2 className="mt-4 font-[var(--font-manrope)] text-xl font-extrabold">Verifikasi untuk dapat Task</h2>
         <p className="mt-2 text-slate-500">Lengkapi profil penyedia Anda di halaman Profil untuk mulai mengambil task dari marketplace.</p>
         <Link href="/profile" className={`${primaryButton} mt-5 inline-flex`}>Lengkapi profil penyedia</Link>
       </div>
