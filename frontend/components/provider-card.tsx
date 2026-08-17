@@ -9,7 +9,7 @@ export function ProviderCard({ provider }: { provider: Provider }) {
       <Link href={`/penyedia/${provider.id}`} className="flex items-start gap-4 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-orange-200 rounded-xl">
         <div className="grid size-14 shrink-0 place-items-center rounded-2xl bg-slate-900 font-bold text-white">{provider.initials}</div>
         <div className="min-w-0">
-          <div className="flex items-center gap-1.5"><h3 className="truncate font-[var(--font-manrope)] font-extrabold group-hover:text-orange-700">{provider.name}</h3>{provider.verified && <ShieldCheck className="size-4 shrink-0 text-blue-600" aria-label="Terverifikasi" />}</div>
+          <div className="flex items-center gap-1.5"><h3 className="truncate font-[var(--font-manrope)] font-extrabold group-hover:text-orange-700">{provider.name}</h3>{provider.verified && <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">Tasker terverifikasi</span>}</div>
           <p className="mt-1 truncate text-sm text-slate-500">{provider.title}</p>
         </div>
       </Link>

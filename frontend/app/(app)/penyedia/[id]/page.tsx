@@ -44,7 +44,7 @@ export default function ProviderDetailPage() {
               <div>
                 <div className="flex items-center gap-1.5">
                   <h2 className="font-[var(--font-manrope)] text-xl font-extrabold">{provider.name}</h2>
-                  {provider.verified && <ShieldCheck className="size-5 text-blue-600" aria-label="Terverifikasi" />}
+                  {provider.verified && <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700">Tasker terverifikasi</span>}
                 </div>
                 <p className="mt-1 text-slate-500">{provider.title}</p>
               </div>

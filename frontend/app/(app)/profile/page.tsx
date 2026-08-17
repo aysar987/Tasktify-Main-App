@@ -133,6 +133,7 @@ export default function ProfilePage() {
     }
   }
   const identityComplete = Boolean(profile?.phone) && Boolean(profile?.email);
+  const isVerifiedProvider = profile?.provider?.verificationStatus === "verified";
   const initials = (profile?.fullName || profile?.username || "U")
     .split(/\s+/)
     .slice(0, 2)
@@ -255,7 +256,7 @@ export default function ProfilePage() {
                 </p>
               </div>
             </div>
-            {profile?.provider && (() => {
+            {!isVerifiedProvider && profile?.provider && (() => {
               const meta = VERIFICATION_META[profile.provider.verificationStatus];
               const StatusIcon = meta.icon;
               return (
@@ -265,6 +266,12 @@ export default function ProfilePage() {
                 </span>
               );
             })()}
+            {isVerifiedProvider && (
+              <span className="mt-5 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700">
+                <ShieldCheck className="size-4" />
+                Tasker terverifikasi
+              </span>
+            )}
             {profile?.provider?.verificationNote && (
               <p className="mt-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
                 <strong>Alasan ditolak:</strong> {profile.provider.verificationNote}
@@ -288,31 +295,37 @@ export default function ProfilePage() {
                 <p className="mt-2 flex min-h-12 items-center rounded-xl border border-slate-200 bg-slate-50 px-4 text-slate-700">{profile?.email || "Belum diisi"}</p>
               </div>
             </div>
-            {!identityComplete && (
+            {!identityComplete && !isVerifiedProvider && (
               <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-800">
                 Lengkapi nomor HP dan email di bagian &quot;Informasi pribadi&quot; di atas sebelum mendaftar sebagai penyedia.
               </p>
             )}
-            <label className="mt-5 block text-sm font-bold text-slate-700">
-              Foto KTP <span className="text-red-600">*</span>
-              <span className="mt-2 flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-3">
-                <IdCard className="size-5 shrink-0 text-slate-400" />
-                <input type="file" name="ktp" accept="image/png,image/jpeg,image/webp" required disabled={!identityComplete} className="w-full text-sm" />
-              </span>
-              <span className="mt-2 block text-xs font-normal text-slate-500">JPG, PNG, atau WebP, maksimal 5 MB. Dipakai admin untuk verifikasi identitas, tidak ditampilkan ke publik.</span>
-            </label>
-            {ktpPreview && (
-              <div className="mt-4">
-                <span className="block text-sm font-bold text-slate-700">KTP tersimpan saat ini</span>
-                <img src={ktpPreview} alt="Foto KTP" className="mt-2 max-h-48 rounded-xl border border-slate-200 object-contain" />
+            {!isVerifiedProvider && (
+              <>
+                <label className="mt-5 block text-sm font-bold text-slate-700">
+                  Foto KTP <span className="text-red-600">*</span>
+                  <span className="mt-2 flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-3">
+                    <IdCard className="size-5 shrink-0 text-slate-400" />
+                    <input type="file" name="ktp" accept="image/png,image/jpeg,image/webp" required disabled={!identityComplete} className="w-full text-sm" />
+                  </span>
+                  <span className="mt-2 block text-xs font-normal text-slate-500">JPG, PNG, atau WebP, maksimal 5 MB. Dipakai admin untuk verifikasi identitas, tidak ditampilkan ke publik.</span>
+                </label>
+                {ktpPreview && (
+                  <div className="mt-4">
+                    <span className="block text-sm font-bold text-slate-700">KTP tersimpan saat ini</span>
+                    <img src={ktpPreview} alt="Foto KTP" className="mt-2 max-h-48 rounded-xl border border-slate-200 object-contain" />
+                  </div>
+                )}
+              </>
+            )}
+            {!isVerifiedProvider && (
+              <div className="mt-7 flex justify-end border-t border-slate-200 pt-6">
+                <button disabled={saving || !profile || !identityComplete} className={`${primaryButton} disabled:opacity-50`}>
+                  {saving && <LoaderCircle className="size-5 animate-spin" />}
+                  {profile?.provider ? "Kirim ulang untuk verifikasi" : "Daftar sebagai penyedia"}
+                </button>
               </div>
             )}
-            <div className="mt-7 flex justify-end border-t border-slate-200 pt-6">
-              <button disabled={saving || !profile || !identityComplete} className={`${primaryButton} disabled:opacity-50`}>
-                {saving && <LoaderCircle className="size-5 animate-spin" />}
-                {profile?.provider ? "Kirim ulang untuk verifikasi" : "Daftar sebagai penyedia"}
-              </button>
-            </div>
           </form>
           {profile?.provider && (
             <div>
