@@ -1,15 +1,14 @@
 "use client";
 
-import { Briefcase, CircleUserRound, ClipboardList, LayoutDashboard, LogOut, Menu, MessageSquareText, Plus, Search, ShieldCheck, Store, X } from "lucide-react";
+import { Briefcase, ChevronDown, CircleUserRound, ClipboardList, LayoutDashboard, LogOut, Menu, MessageSquareText, Plus, Search, ShieldCheck, Store, X } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getProfile } from "@/lib/api";
 import { getSupabase } from "@/lib/supabase";
 import type { Profile } from "@/types";
 import { Brand } from "./brand";
-import { NotificationMenu } from "./notification-menu";
 import { primaryButton } from "./ui";
 
 const baseNavigation = [
@@ -24,17 +23,33 @@ const baseNavigation = [
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [profile, setProfile] = useState<Profile>();
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
   useEffect(() => { getProfile().then(setProfile).catch(() => undefined); }, []);
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const navigation =
     profile?.role === "admin"
       ? [...baseNavigation, { href: "/admin", label: "Admin", icon: ShieldCheck }]
       : baseNavigation;
   const initials = (profile?.fullName || profile?.username || "U").split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
+
   async function logout() {
     await getSupabase().auth.signOut();
     window.location.assign("/login");
   }
+
   function search(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const query = String(new FormData(event.currentTarget).get("query") ?? "").trim();
@@ -51,16 +66,53 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="hidden shrink-0 sm:block"><Brand /></div>
           <form onSubmit={search} className="relative hidden max-w-md flex-1 md:block">
             <Search className="absolute left-4 top-1/2 size-5 -translate-y-1/2 text-slate-400" />
-            <input name="query" aria-label="Cari penyedia" placeholder="Cari penyedia..." className="min-h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-12 pr-4 outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-100" />
+            <input name="query" aria-label="Search" placeholder="Search..." className="min-h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-12 pr-4 outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-100" />
           </form>
-          <div className="ml-auto flex items-center gap-3 sm:gap-5">
-            <Link href="/request-task" className={`${primaryButton} hidden sm:inline-flex`}><Plus className="size-5" /> Buat task</Link>
-            <NotificationMenu />
-            <Link href="/profile" className="flex min-h-11 items-center gap-3 rounded-xl p-1.5 hover:bg-slate-50">
-              {profile?.avatarUrl ? <Image unoptimized src={profile.avatarUrl} alt="" width={36} height={36} className="size-9 rounded-lg object-cover" /> : <span className="grid size-9 place-items-center rounded-lg bg-slate-900 text-sm font-bold text-white">{initials}</span>}
-              <span className="hidden text-left xl:block"><strong className="block max-w-36 truncate text-sm">{profile?.fullName || profile?.username || "Pengguna"}</strong><span className="text-xs text-slate-500">{profile?.provider ? "Provider" : "Client"}</span></span>
-            </Link>
-            <button type="button" onClick={logout} aria-label="Keluar" className="grid size-11 shrink-0 cursor-pointer place-items-center rounded-xl border border-slate-200 text-slate-600 hover:bg-red-50 hover:text-red-700"><LogOut className="size-5" /></button>
+          <div className="ml-auto flex items-center gap-3 sm:gap-4">
+            <Link href="/request-task" className={`${primaryButton} hidden sm:inline-flex`}><Plus className="size-5" /> Add Task</Link>
+            <div ref={menuRef} className="relative">
+              <button
+                type="button"
+                aria-label="Account menu"
+                aria-expanded={menuOpen}
+                aria-haspopup="menu"
+                onClick={() => setMenuOpen((current) => !current)}
+                className="flex size-11 items-center justify-center rounded-full border border-slate-200 bg-slate-50 p-0.5 transition hover:border-orange-300 hover:bg-orange-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-orange-200"
+              >
+                {profile?.avatarUrl ? (
+                  <Image unoptimized src={profile.avatarUrl} alt="Profile" width={40} height={40} className="size-10 rounded-full object-cover" />
+                ) : (
+                  <span className="grid size-10 place-items-center rounded-full bg-slate-900 text-xs font-bold text-white">{initials}</span>
+                )}
+              </button>
+
+              {menuOpen && (
+                <div className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
+                  <div className="border-b border-slate-200 px-3 py-2">
+                    <p className="text-xs font-semibold uppercase tracking-[.15em] text-slate-400">Account</p>
+                    <p className="mt-1 truncate text-sm font-semibold text-slate-900">{profile?.fullName || profile?.username || "Pengguna"}</p>
+                  </div>
+                  <div className="py-1.5">
+                    <Link href="/profile" onClick={() => setMenuOpen(false)} className="flex items-center justify-between px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-950">
+                      <span>Manage Account</span>
+                      <ChevronDown className="size-4 rotate-[-90deg]" />
+                    </Link>
+                    <Link href="/activity" onClick={() => setMenuOpen(false)} className="flex items-center justify-between px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-950">
+                      <span>Activities</span>
+                      <ChevronDown className="size-4 rotate-[-90deg]" />
+                    </Link>
+                    <button type="button" onClick={() => setMenuOpen(false)} className="flex w-full items-center justify-between px-3 py-2 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-950">
+                      <span>Settings</span>
+                      <ChevronDown className="size-4 rotate-[-90deg]" />
+                    </button>
+                    <button type="button" onClick={() => { setMenuOpen(false); void logout(); }} className="flex w-full items-center justify-between px-3 py-2 text-left text-sm font-medium text-red-600 transition hover:bg-red-50">
+                      <span>Logout</span>
+                      <LogOut className="size-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </header>
