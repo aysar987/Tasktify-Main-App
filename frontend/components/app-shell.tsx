@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, Briefcase, ChevronDown, CircleUserRound, ClipboardList, LayoutDashboard, LogOut, Menu, MessageSquareText, Plus, Search, ShieldCheck, Store, X } from "lucide-react";
+import { Briefcase, Bell, ChevronDown, CircleUserRound, LayoutDashboard, LogOut, Menu, MessageSquareText, Plus, Search, ShieldCheck, Store, X } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -14,6 +14,8 @@ import { primaryButton } from "./ui";
 
 const baseNavigation = [
   { href: "/dashboard", label: "Home", icon: LayoutDashboard },
+  { href: "/marketplace", label: "Tasks", icon: Briefcase },
+  { href: "/notifications", label: "Notification", icon: Bell },
   { href: "/chat", label: "Pesan", icon: MessageSquareText },
 ];
 
