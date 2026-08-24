@@ -1,6 +1,6 @@
 "use client";
 
-import { Briefcase, ChevronDown, CircleUserRound, ClipboardList, LayoutDashboard, LogOut, Menu, MessageSquareText, Plus, Search, ShieldCheck, Store, X } from "lucide-react";
+import { Bell, Briefcase, ChevronDown, CircleUserRound, ClipboardList, LayoutDashboard, LogOut, Menu, MessageSquareText, Plus, Search, ShieldCheck, Store, X } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -9,15 +9,12 @@ import { getProfile } from "@/lib/api";
 import { getSupabase } from "@/lib/supabase";
 import type { Profile } from "@/types";
 import { Brand } from "./brand";
+import { NotificationMenu } from "./notification-menu";
 import { primaryButton } from "./ui";
 
 const baseNavigation = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/marketplace", label: "Tasks", icon: Briefcase },
-  { href: "/penyedia", label: "Marketplace", icon: Store },
-  { href: "/activity", label: "Aktivitas", icon: ClipboardList },
+  { href: "/dashboard", label: "Home", icon: LayoutDashboard },
   { href: "/chat", label: "Pesan", icon: MessageSquareText },
-  { href: "/profile", label: "Profil", icon: CircleUserRound },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -70,6 +67,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </form>
           <div className="ml-auto flex items-center gap-3 sm:gap-4">
             <Link href="/request-task" className={`${primaryButton} hidden sm:inline-flex`}><Plus className="size-5" /> Add Task</Link>
+            <NotificationMenu />
             <div ref={menuRef} className="relative">
               <button
                 type="button"
