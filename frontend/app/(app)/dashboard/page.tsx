@@ -18,6 +18,8 @@ import { primaryButton } from "@/components/ui";
 import { getBanners, getProfile, getProviders, getTasks } from "@/lib/api";
 import type { Banner, Profile, Provider, Task } from "@/types";
 
+type Slide = { kind: "default" } | { kind: "photo"; banner: Banner };
+
 export default function DashboardPage() {
   const [profile, setProfile] = useState<Profile>();
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -36,44 +38,34 @@ export default function DashboardPage() {
     );
   }, []);
 
+  const slides: Slide[] = [
+    { kind: "default" },
+    ...banners.map((banner): Slide => ({ kind: "photo", banner })),
+  ];
+
   useEffect(() => {
-    if (banners.length < 2) return;
+    if (slides.length < 2) return;
     const interval = window.setInterval(() => {
-      setActiveSlide((current) => (current + 1) % banners.length);
+      setActiveSlide((current) => (current + 1) % slides.length);
     }, 4000);
     return () => window.clearInterval(interval);
-  }, [banners.length]);
+  }, [slides.length]);
 
-  const activeBanner = banners[activeSlide];
+  const activeSlideItem = slides[activeSlide] ?? slides[0];
 
   return (
     <div>
       <section className="relative min-h-[220px] overflow-hidden rounded-3xl border border-slate-200 sm:min-h-[300px]">
-        {activeBanner ? (
+        {activeSlideItem.kind === "photo" ? (
           <>
-            <Image unoptimized src={activeBanner.imageUrl} alt="" fill className="object-cover" />
-            <Link href={activeBanner.href} className="absolute inset-0" aria-label="Buka banner" />
-            {banners.length > 1 && (
-              <div className="pointer-events-none absolute inset-x-0 bottom-4 flex items-center justify-center gap-2">
-                {banners.map((banner, index) => (
-                  <button
-                    key={banner.id}
-                    type="button"
-                    aria-label={`Pilih banner ${index + 1}`}
-                    onClick={() => setActiveSlide(index)}
-                    className={`pointer-events-auto h-2.5 rounded-full shadow transition ${
-                      activeSlide === index ? "w-10 bg-white" : "w-2.5 bg-white/60 hover:bg-white/85"
-                    }`}
-                  />
-                ))}
-              </div>
-            )}
+            <Image unoptimized src={activeSlideItem.banner.imageUrl} alt="" fill className="object-cover" />
+            <Link href={activeSlideItem.banner.href} className="absolute inset-0" aria-label="Buka banner" />
           </>
         ) : (
           <>
             <div className="absolute inset-0 bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-600" />
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.28),transparent_30%)]" />
-            <div className="relative flex min-h-[220px] flex-col justify-between gap-6 px-6 py-8 text-white sm:min-h-[300px] md:px-8 md:py-10">
+            <div className="relative flex min-h-[220px] flex-col justify-between gap-6 px-6 pb-12 pt-8 text-white sm:min-h-[300px] md:px-8 md:pb-14 md:pt-10">
               <div className="max-w-2xl">
                 <p className="text-sm font-bold uppercase tracking-[.18em] text-orange-100/90">
                   {new Intl.DateTimeFormat("id-ID", { dateStyle: "full" }).format(new Date())}
@@ -101,6 +93,21 @@ export default function DashboardPage() {
               </div>
             </div>
           </>
+        )}
+        {slides.length > 1 && (
+          <div className="pointer-events-none absolute inset-x-0 bottom-4 flex items-center justify-center gap-2">
+            {slides.map((slide, index) => (
+              <button
+                key={slide.kind === "default" ? "default" : slide.banner.id}
+                type="button"
+                aria-label={`Pilih banner ${index + 1}`}
+                onClick={() => setActiveSlide(index)}
+                className={`pointer-events-auto h-2.5 rounded-full shadow transition ${
+                  activeSlide === index ? "w-10 bg-white" : "w-2.5 bg-white/60 hover:bg-white/85"
+                }`}
+              />
+            ))}
+          </div>
         )}
       </section>
 
