@@ -9,7 +9,6 @@ import { getProfile } from "@/lib/api";
 import { getSupabase } from "@/lib/supabase";
 import type { Profile } from "@/types";
 import { Brand } from "./brand";
-import { NotificationMenu } from "./notification-menu";
 import { primaryButton } from "./ui";
 
 const baseNavigation = [
@@ -69,7 +68,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </form>
           <div className="ml-auto flex items-center gap-3 sm:gap-4">
             <Link href="/request-task" className={`${primaryButton} hidden sm:inline-flex`}><Plus className="size-5" /> Add Task</Link>
-            <NotificationMenu />
             <div ref={menuRef} className="relative">
               <button
                 type="button"
@@ -132,6 +130,27 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </aside>
         <main id="main-content" className="min-w-0 flex-1 px-4 py-7 sm:px-6 lg:px-10 lg:py-10">{children}</main>
       </div>
+
+      {/* Mobile bottom navbar: show only icons for Home, Tasks, Notification, Pesan */}
+      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t bg-white lg:hidden">
+        <div className="mx-auto max-w-[1440px] px-4">
+          <div className="flex justify-around py-2">
+            {baseNavigation.slice(0, 4).map(({ href, icon: Icon, label }) => {
+              const active = pathname === href || pathname.startsWith(`${href}/`);
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  className={`inline-flex flex-col items-center gap-1 py-1 ${active ? "text-orange-600" : "text-slate-600"}`}
+                >
+                  <Icon className="size-6" />
+                  <span className="sr-only">{label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      </nav>
       {open && <div className="fixed inset-0 z-50 lg:hidden"><button type="button" aria-label="Tutup menu" onClick={() => setOpen(false)} className="absolute inset-0 bg-slate-950/50" /><aside className="relative h-full w-[min(86vw,320px)] bg-white p-5"><div className="flex items-center justify-between"><Brand /><button type="button" onClick={() => setOpen(false)} aria-label="Tutup menu" className="grid size-11 place-items-center rounded-xl border border-slate-200"><X className="size-5" /></button></div><nav className="mt-8 space-y-2">{navigation.map(({ href, label, icon: Icon }) => <Link key={href} href={href} onClick={() => setOpen(false)} className="flex min-h-12 items-center gap-3 rounded-xl px-4 font-semibold text-slate-700 hover:bg-slate-50"><Icon className="size-5" />{label}</Link>)}</nav></aside></div>}
     </div>
   );
