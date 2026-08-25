@@ -57,7 +57,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="min-h-dvh bg-slate-50">
       <a href="#main-content" className="fixed left-4 top-4 z-[100] -translate-y-24 rounded-lg bg-slate-950 px-4 py-3 font-bold text-white focus:translate-y-0">Lewati ke konten</a>
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex h-18 max-w-[1440px] items-center gap-3 px-4 sm:gap-5 sm:px-6 lg:px-8">
+        <div className="flex h-18 items-center gap-3 px-4 sm:gap-5 sm:px-6 lg:px-8">
           <div className="hidden lg:hidden" />
           <div className="shrink-0 sm:hidden"><Brand compact /></div>
           <div className="hidden shrink-0 sm:block"><Brand /></div>
@@ -119,7 +119,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </form>
         </div>
       </header>
-      <div className="mx-auto flex max-w-[1440px]">
+      <div className="flex">
         <aside className="sticky top-18 hidden h-[calc(100vh-4.5rem)] w-64 shrink-0 border-r border-slate-200 bg-white p-5 lg:block">
           <nav aria-label="Navigasi utama" className="space-y-1.5">
             {navigation.map(({ href, label, icon: Icon }) => {
