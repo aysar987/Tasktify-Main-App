@@ -111,16 +111,29 @@ export default function DashboardPage() {
         )}
       </section>
 
-      <section className="mt-6 grid gap-3 sm:grid-cols-3">
-        <Link href="/request-task" className={`${primaryButton} justify-center`}>
-          <Plus className="size-5" /> Buat Task
-        </Link>
-        <Link href="/marketplace" className="inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-5 font-bold text-slate-800 transition hover:border-orange-400 hover:text-orange-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-orange-200">
-          <BriefcaseBusiness className="size-5" /> Ambil Task
-        </Link>
-        <Link href="/penyedia" className="inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-5 font-bold text-slate-800 transition hover:border-orange-400 hover:text-orange-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-orange-200">
-          <ShoppingBag className="size-5" /> Marketplace
-        </Link>
+      <section className="mt-6">
+        <div className="grid grid-cols-3 gap-6">
+          <Link href="/request-task" className="flex flex-col items-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-white shadow-sm">
+              <Image src="/images/AddTask.svg" alt="Add Task" width={44} height={44} />
+            </div>
+            <span className="mt-2 text-sm font-semibold text-slate-700">Buat Task</span>
+          </Link>
+
+          <Link href="/marketplace" className="flex flex-col items-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-white shadow-sm">
+              <Image src="/images/DoTask.svg" alt="Do Task" width={44} height={44} />
+            </div>
+            <span className="mt-2 text-sm font-semibold text-slate-700">Ambil Task</span>
+          </Link>
+
+          <Link href="/penyedia" className="flex flex-col items-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-white shadow-sm">
+              <Image src="/images/MarketPlace.svg" alt="Marketplace" width={44} height={44} />
+            </div>
+            <span className="mt-2 text-sm font-semibold text-slate-700">Marketplace</span>
+          </Link>
+        </div>
       </section>
       <section className="mt-10">
         <div className="mb-5 flex items-end justify-between gap-4">
