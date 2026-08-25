@@ -52,7 +52,7 @@ export default function DashboardPage() {
 
   return (
     <div>
-      <section className="relative -mx-4 min-h-[220px] overflow-hidden sm:-mx-6 sm:min-h-[300px] lg:-mx-10">
+      <section className="relative left-1/2 -ml-[50vw] w-screen min-h-[220px] overflow-hidden sm:min-h-[300px]">
         {activeSlideItem.kind === "photo" ? (
           <>
             <Image unoptimized src={activeSlideItem.banner.imageUrl} alt="" fill className="object-cover" />
@@ -81,101 +81,105 @@ export default function DashboardPage() {
         )}
       </section>
 
-      <div className="relative z-10 mx-4 -mt-8 flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-lg">
-        {profile?.avatarUrl ? (
-          <Image unoptimized src={profile.avatarUrl} alt="" width={56} height={56} className="size-14 shrink-0 rounded-full object-cover" />
-        ) : (
-          <span className="grid size-14 shrink-0 place-items-center rounded-full bg-slate-900 text-lg font-bold text-white">
-            {initials}
-          </span>
-        )}
-        <div className="min-w-0">
-          <p className="text-xs font-bold uppercase tracking-[.14em] text-slate-400">
-            {new Intl.DateTimeFormat("id-ID", { dateStyle: "full" }).format(new Date())}
-          </p>
-          <h1 className="mt-1 truncate font-[var(--font-manrope)] text-xl font-extrabold text-slate-950 sm:text-2xl">
-            Selamat datang, {profile?.fullName || profile?.username || "Pengguna"}.
-          </h1>
+      <div className="relative left-1/2 -ml-[50vw] w-screen bg-orange-600 pb-10">
+        <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-10">
+          <div className="relative z-10 -mt-8 flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-lg">
+            {profile?.avatarUrl ? (
+              <Image unoptimized src={profile.avatarUrl} alt="" width={56} height={56} className="size-14 shrink-0 rounded-full object-cover" />
+            ) : (
+              <span className="grid size-14 shrink-0 place-items-center rounded-full bg-slate-900 text-lg font-bold text-white">
+                {initials}
+              </span>
+            )}
+            <div className="min-w-0">
+              <p className="text-xs font-bold uppercase tracking-[.14em] text-slate-400">
+                {new Intl.DateTimeFormat("id-ID", { dateStyle: "full" }).format(new Date())}
+              </p>
+              <h1 className="mt-1 truncate font-[var(--font-manrope)] text-xl font-extrabold text-slate-950 sm:text-2xl">
+                Selamat datang, {profile?.fullName || profile?.username || "Pengguna"}.
+              </h1>
+            </div>
+          </div>
+
+          <section className="mt-6">
+            <div className="grid grid-cols-3 gap-6">
+              <Link href="/request-task" className="flex flex-col items-center">
+                <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-white shadow-sm">
+                  <Image src="/images/AddTask.svg" alt="Add Task" width={44} height={44} />
+                </div>
+                <span className="mt-2 text-sm font-semibold text-white">Buat Task</span>
+              </Link>
+
+              <Link href="/marketplace" className="flex flex-col items-center">
+                <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-white shadow-sm">
+                  <Image src="/images/DoTask.svg" alt="Do Task" width={44} height={44} />
+                </div>
+                <span className="mt-2 text-sm font-semibold text-white">Ambil Task</span>
+              </Link>
+
+              <Link href="/penyedia" className="flex flex-col items-center">
+                <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-white shadow-sm">
+                  <Image src="/images/MarketPlace.svg" alt="Marketplace" width={44} height={44} />
+                </div>
+                <span className="mt-2 text-sm font-semibold text-white">Marketplace</span>
+              </Link>
+            </div>
+          </section>
+          <section className="mt-10">
+            <div className="mb-5 flex items-end justify-between gap-4">
+              <div>
+                <p className="text-sm font-bold uppercase tracking-wider text-white/70">
+                  Aktivitas terbaru
+                </p>
+                <h2 className="mt-1 font-[var(--font-manrope)] text-2xl font-extrabold text-white">
+                  Task Anda
+                </h2>
+              </div>
+              <Link
+                href="/activity"
+                className="flex min-h-11 items-center gap-1 font-bold text-white"
+              >
+                Lihat semua <ArrowUpRight className="size-4" />
+              </Link>
+            </div>
+            <div className="grid gap-4 xl:grid-cols-2">
+              {tasks.length ? (
+                tasks
+                  .slice(0, 2)
+                  .map((task) => <TaskCard key={task.id} task={task} />)
+              ) : (
+                <Empty
+                  icon={Store}
+                  text="Belum ada task. Buat task pertama Anda."
+                />
+              )}
+            </div>
+          </section>
+          <section className="mt-10">
+            <div className="mb-5 flex items-end justify-between gap-4">
+              <div>
+                <p className="text-sm font-bold uppercase tracking-wider text-white/70">
+                  Pilihan teratas
+                </p>
+                <h2 className="mt-1 font-[var(--font-manrope)] text-2xl font-extrabold text-white">
+                  Penyedia rekomendasi
+                </h2>
+              </div>
+              <Link
+                href="/penyedia"
+                className="flex min-h-11 items-center gap-1 font-bold text-white"
+              >
+                Jelajahi penyedia <ArrowUpRight className="size-4" />
+              </Link>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {providers.slice(0, 3).map((provider) => (
+                <ProviderCard key={provider.id} provider={provider} />
+              ))}
+            </div>
+          </section>
         </div>
       </div>
-
-      <section className="mt-6">
-        <div className="grid grid-cols-3 gap-6">
-          <Link href="/request-task" className="flex flex-col items-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-white shadow-sm">
-              <Image src="/images/AddTask.svg" alt="Add Task" width={44} height={44} />
-            </div>
-            <span className="mt-2 text-sm font-semibold text-slate-700">Buat Task</span>
-          </Link>
-
-          <Link href="/marketplace" className="flex flex-col items-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-white shadow-sm">
-              <Image src="/images/DoTask.svg" alt="Do Task" width={44} height={44} />
-            </div>
-            <span className="mt-2 text-sm font-semibold text-slate-700">Ambil Task</span>
-          </Link>
-
-          <Link href="/penyedia" className="flex flex-col items-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-white shadow-sm">
-              <Image src="/images/MarketPlace.svg" alt="Marketplace" width={44} height={44} />
-            </div>
-            <span className="mt-2 text-sm font-semibold text-slate-700">Marketplace</span>
-          </Link>
-        </div>
-      </section>
-      <section className="mt-10">
-        <div className="mb-5 flex items-end justify-between gap-4">
-          <div>
-            <p className="text-sm font-bold uppercase tracking-wider text-orange-700">
-              Aktivitas terbaru
-            </p>
-            <h2 className="mt-1 font-[var(--font-manrope)] text-2xl font-extrabold">
-              Task Anda
-            </h2>
-          </div>
-          <Link
-            href="/activity"
-            className="flex min-h-11 items-center gap-1 font-bold text-orange-700"
-          >
-            Lihat semua <ArrowUpRight className="size-4" />
-          </Link>
-        </div>
-        <div className="grid gap-4 xl:grid-cols-2">
-          {tasks.length ? (
-            tasks
-              .slice(0, 2)
-              .map((task) => <TaskCard key={task.id} task={task} />)
-          ) : (
-            <Empty
-              icon={Store}
-              text="Belum ada task. Buat task pertama Anda."
-            />
-          )}
-        </div>
-      </section>
-      <section className="mt-10">
-        <div className="mb-5 flex items-end justify-between gap-4">
-          <div>
-            <p className="text-sm font-bold uppercase tracking-wider text-orange-700">
-              Pilihan teratas
-            </p>
-            <h2 className="mt-1 font-[var(--font-manrope)] text-2xl font-extrabold">
-              Penyedia rekomendasi
-            </h2>
-          </div>
-          <Link
-            href="/penyedia"
-            className="flex min-h-11 items-center gap-1 font-bold text-orange-700"
-          >
-            Jelajahi penyedia <ArrowUpRight className="size-4" />
-          </Link>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {providers.slice(0, 3).map((provider) => (
-            <ProviderCard key={provider.id} provider={provider} />
-          ))}
-        </div>
-      </section>
     </div>
   );
 }
