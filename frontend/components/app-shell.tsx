@@ -112,6 +112,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
         </div>
+        <div className="border-t border-slate-100 px-4 pb-3 pt-2 sm:px-6 md:hidden">
+          <form onSubmit={search} className="relative">
+            <Search className="absolute left-4 top-1/2 size-5 -translate-y-1/2 text-slate-400" />
+            <input name="query" aria-label="Search" placeholder="Search..." className="min-h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-12 pr-4 outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-100" />
+          </form>
+        </div>
       </header>
       <div className="mx-auto flex max-w-[1440px]">
         <aside className="sticky top-18 hidden h-[calc(100vh-4.5rem)] w-64 shrink-0 border-r border-slate-200 bg-white p-5 lg:block">
