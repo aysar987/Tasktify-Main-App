@@ -400,17 +400,33 @@ export async function getAdminBanners(): Promise<Banner[]> {
   return apiRequest<Banner[]>("/admin/banners");
 }
 
-export async function createBanner(payload: Omit<Banner, "id">): Promise<Banner> {
+type BannerFormPayload = {
+  image?: File;
+  href: string;
+  sortOrder: number;
+  active: boolean;
+};
+
+function bannerFormData(payload: BannerFormPayload): FormData {
+  const form = new FormData();
+  if (payload.image) form.set("image", payload.image);
+  form.set("href", payload.href);
+  form.set("sortOrder", String(payload.sortOrder));
+  form.set("active", String(payload.active));
+  return form;
+}
+
+export async function createBanner(payload: BannerFormPayload & { image: File }): Promise<Banner> {
   return apiRequest<Banner>("/admin/banners", {
     method: "POST",
-    body: JSON.stringify(payload),
+    body: bannerFormData(payload),
   });
 }
 
-export async function updateBanner(id: string, payload: Omit<Banner, "id">): Promise<Banner> {
+export async function updateBanner(id: string, payload: BannerFormPayload): Promise<Banner> {
   return apiRequest<Banner>(`/admin/banners/${encodeURIComponent(id)}`, {
     method: "PUT",
-    body: JSON.stringify(payload),
+    body: bannerFormData(payload),
   });
 }
 

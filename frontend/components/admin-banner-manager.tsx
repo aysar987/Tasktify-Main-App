@@ -1,31 +1,19 @@
 "use client";
 
-import { GripVertical, LoaderCircle, Pencil, Plus, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { GripVertical, ImageOff, LoaderCircle, Pencil, Plus, Trash2, Upload } from "lucide-react";
+import Image from "next/image";
+import { useEffect, useMemo, useState } from "react";
 import { createBanner, deleteBanner, getAdminBanners, updateBanner } from "@/lib/api";
-import { bannerAccentOptions, bannerGradient } from "@/lib/banner-accent";
 import { inputClass, primaryButton, secondaryButton } from "@/components/ui";
-import type { Banner, BannerAccent } from "@/types";
+import type { Banner } from "@/types";
 
 type FormState = {
-  title: string;
-  description: string;
   href: string;
-  cta: string;
-  accent: BannerAccent;
   sortOrder: number;
   active: boolean;
 };
 
-const emptyForm: FormState = {
-  title: "",
-  description: "",
-  href: "/",
-  cta: "",
-  accent: "orange",
-  sortOrder: 0,
-  active: true,
-};
+const emptyForm: FormState = { href: "/", sortOrder: 0, active: true };
 
 export function AdminBannerManager() {
   const [banners, setBanners] = useState<Banner[]>([]);
@@ -33,7 +21,9 @@ export function AdminBannerManager() {
   const [error, setError] = useState("");
   const [editingId, setEditingId] = useState<string | "new" | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
+  const [image, setImage] = useState<File>();
   const [saving, setSaving] = useState(false);
+  const imagePreview = useMemo(() => (image ? URL.createObjectURL(image) : undefined), [image]);
 
   async function refresh() {
     setLoading(true);
@@ -66,41 +56,47 @@ export function AdminBannerManager() {
     };
   }, []);
 
+  useEffect(() => {
+    return () => {
+      if (imagePreview) URL.revokeObjectURL(imagePreview);
+    };
+  }, [imagePreview]);
+
   function startCreate() {
     setForm({ ...emptyForm, sortOrder: banners.length });
+    setImage(undefined);
     setEditingId("new");
   }
 
   function startEdit(banner: Banner) {
-    setForm({
-      title: banner.title,
-      description: banner.description,
-      href: banner.href,
-      cta: banner.cta,
-      accent: banner.accent,
-      sortOrder: banner.sortOrder,
-      active: banner.active,
-    });
+    setForm({ href: banner.href, sortOrder: banner.sortOrder, active: banner.active });
+    setImage(undefined);
     setEditingId(banner.id);
   }
 
   function cancelEdit() {
     setEditingId(null);
+    setImage(undefined);
     setError("");
   }
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!editingId) return;
+    if (editingId === "new" && !image) {
+      setError("Unggah foto untuk banner baru.");
+      return;
+    }
     setSaving(true);
     setError("");
     try {
-      if (editingId === "new") {
-        await createBanner(form);
+      if (editingId === "new" && image) {
+        await createBanner({ ...form, image });
       } else {
-        await updateBanner(editingId, form);
+        await updateBanner(editingId, { ...form, image });
       }
       setEditingId(null);
+      setImage(undefined);
       await refresh();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Banner gagal disimpan.");
@@ -110,7 +106,7 @@ export function AdminBannerManager() {
   }
 
   async function remove(banner: Banner) {
-    if (!window.confirm(`Hapus banner "${banner.title}"?`)) return;
+    if (!window.confirm("Hapus banner ini?")) return;
     setSaving(true);
     setError("");
     try {
@@ -123,11 +119,14 @@ export function AdminBannerManager() {
     }
   }
 
+  const editingBanner = editingId && editingId !== "new" ? banners.find((item) => item.id === editingId) : undefined;
+  const previewSrc = imagePreview ?? editingBanner?.imageUrl;
+
   return (
     <div>
       <div className="mb-5 flex items-center justify-between gap-4">
         <p className="text-sm leading-6 text-slate-600">
-          Banner ditampilkan bergantian di bagian atas dashboard pengguna, urut sesuai nomor urut.
+          Banner berupa foto yang tampil bergantian di bagian atas dashboard pengguna, urut sesuai nomor urut.
         </p>
         {editingId === null && (
           <button type="button" onClick={startCreate} className={`${primaryButton} shrink-0`}>
@@ -147,42 +146,29 @@ export function AdminBannerManager() {
           <h3 className="font-[var(--font-manrope)] text-lg font-extrabold">
             {editingId === "new" ? "Banner baru" : "Edit banner"}
           </h3>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="block text-sm font-bold text-slate-700">
-              Judul <span className="text-red-600">*</span>
-              <input
-                value={form.title}
-                onChange={(event) => setForm({ ...form, title: event.target.value })}
-                required
-                maxLength={120}
-                className={inputClass}
-                placeholder="Contoh: Ambil task yang sesuai"
-              />
-            </label>
-            <label className="block text-sm font-bold text-slate-700">
-              Teks tombol (CTA) <span className="text-red-600">*</span>
-              <input
-                value={form.cta}
-                onChange={(event) => setForm({ ...form, cta: event.target.value })}
-                required
-                maxLength={40}
-                className={inputClass}
-                placeholder="Contoh: Ambil Task"
-              />
-            </label>
-          </div>
+
           <label className="block text-sm font-bold text-slate-700">
-            Deskripsi
-            <textarea
-              value={form.description}
-              onChange={(event) => setForm({ ...form, description: event.target.value })}
-              maxLength={300}
-              rows={2}
-              className={`${inputClass} py-3`}
-              placeholder="Kalimat singkat pendukung judul"
+            Foto banner {editingId === "new" && <span className="text-red-600">*</span>}
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={(event) => setImage(event.target.files?.[0])}
+              className="mt-2 block w-full text-sm text-slate-600 file:mr-3 file:min-h-11 file:rounded-xl file:border-0 file:bg-orange-600 file:px-4 file:font-bold file:text-white hover:file:bg-orange-700"
             />
+            <span className="mt-1.5 block text-xs font-normal text-slate-500">JPG, PNG, atau WebP, maksimal 5 MB.</span>
           </label>
-          <div className="grid gap-4 sm:grid-cols-3">
+
+          {previewSrc ? (
+            <div className="relative h-40 w-full overflow-hidden rounded-xl border border-orange-200 bg-white sm:h-56">
+              <Image unoptimized src={previewSrc} alt="Pratinjau banner" fill className="object-cover" />
+            </div>
+          ) : (
+            <div className="flex h-40 w-full items-center justify-center gap-2 rounded-xl border border-dashed border-orange-300 bg-white text-sm text-slate-400 sm:h-56">
+              <ImageOff className="size-5" /> Belum ada foto
+            </div>
+          )}
+
+          <div className="grid gap-4 sm:grid-cols-2">
             <label className="block text-sm font-bold text-slate-700">
               Tautan tujuan <span className="text-red-600">*</span>
               <input
@@ -193,21 +179,7 @@ export function AdminBannerManager() {
                 className={inputClass}
                 placeholder="/marketplace"
               />
-              <span className="mt-1.5 block text-xs font-normal text-slate-500">Harus diawali dengan &quot;/&quot;</span>
-            </label>
-            <label className="block text-sm font-bold text-slate-700">
-              Warna
-              <select
-                value={form.accent}
-                onChange={(event) => setForm({ ...form, accent: event.target.value as BannerAccent })}
-                className={inputClass}
-              >
-                {bannerAccentOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+              <span className="mt-1.5 block text-xs font-normal text-slate-500">Halaman yang dibuka saat foto diklik, harus diawali &quot;/&quot;</span>
             </label>
             <label className="block text-sm font-bold text-slate-700">
               Urutan tampil
@@ -218,11 +190,6 @@ export function AdminBannerManager() {
                 className={inputClass}
               />
             </label>
-          </div>
-          <div className={`rounded-xl bg-gradient-to-r ${bannerGradient(form.accent)} p-4 text-white`}>
-            <p className="text-xs font-bold uppercase tracking-wider text-white/80">{form.cta || "CTA"}</p>
-            <p className="mt-1 font-[var(--font-manrope)] text-lg font-extrabold">{form.title || "Judul banner"}</p>
-            <p className="mt-1 text-sm text-white/90">{form.description || "Deskripsi banner"}</p>
           </div>
           <label className="flex items-center gap-2 text-sm font-bold text-slate-700">
             <input
@@ -238,7 +205,7 @@ export function AdminBannerManager() {
               Batal
             </button>
             <button type="submit" disabled={saving} className={primaryButton}>
-              {saving ? <LoaderCircle className="size-5 animate-spin" /> : null} Simpan
+              {saving ? <LoaderCircle className="size-5 animate-spin" /> : <Upload className="size-5" />} Simpan
             </button>
           </div>
         </form>
@@ -258,24 +225,24 @@ export function AdminBannerManager() {
               className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-4"
             >
               <GripVertical className="size-4 shrink-0 text-slate-300" />
-              <span className={`h-10 w-16 shrink-0 rounded-lg bg-gradient-to-r ${bannerGradient(banner.accent)}`} />
+              <div className="relative h-10 w-16 shrink-0 overflow-hidden rounded-lg bg-slate-100">
+                {banner.imageUrl && <Image unoptimized src={banner.imageUrl} alt="" fill className="object-cover" />}
+              </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <strong className="truncate text-sm">{banner.title}</strong>
+                  <strong className="truncate text-sm">{banner.href}</strong>
                   {!banner.active && (
                     <span className="shrink-0 rounded-full border border-slate-300 bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-500">
                       Nonaktif
                     </span>
                   )}
                 </div>
-                <p className="truncate text-xs text-slate-500">
-                  {banner.cta} &middot; {banner.href} &middot; urutan {banner.sortOrder}
-                </p>
+                <p className="truncate text-xs text-slate-500">urutan {banner.sortOrder}</p>
               </div>
               <button
                 type="button"
                 onClick={() => startEdit(banner)}
-                aria-label={`Edit banner ${banner.title}`}
+                aria-label="Edit banner"
                 className="grid size-10 shrink-0 place-items-center rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50"
               >
                 <Pencil className="size-4" />
@@ -283,7 +250,7 @@ export function AdminBannerManager() {
               <button
                 type="button"
                 onClick={() => remove(banner)}
-                aria-label={`Hapus banner ${banner.title}`}
+                aria-label="Hapus banner"
                 className="grid size-10 shrink-0 place-items-center rounded-xl border border-slate-200 text-red-600 hover:bg-red-50"
               >
                 <Trash2 className="size-4" />

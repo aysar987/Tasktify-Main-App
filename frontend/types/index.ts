@@ -88,15 +88,10 @@ export type Rating = {
 export type PaymentStatus = "pending" | "settlement" | "capture" | "deny" | "cancel" | "expire" | "failure" | "released" | "refunded";
 export type PaymentMethod = "online" | "cash";
 
-export type BannerAccent = "orange" | "blue" | "emerald" | "purple" | "rose" | "slate";
-
 export type Banner = {
   id: string;
-  title: string;
-  description: string;
   href: string;
-  cta: string;
-  accent: BannerAccent;
+  imageUrl: string;
   sortOrder: number;
   active: boolean;
 };

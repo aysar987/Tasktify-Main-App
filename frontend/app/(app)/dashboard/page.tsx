@@ -3,19 +3,18 @@
 import {
   ArrowUpRight,
   BriefcaseBusiness,
-  ChevronRight,
   Plus,
   Search,
   ShoppingBag,
   Store,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ProviderCard } from "@/components/provider-card";
 import { TaskCard } from "@/components/task-card";
 import { primaryButton } from "@/components/ui";
 import { getBanners, getProfile, getProviders, getTasks } from "@/lib/api";
-import { bannerGradient } from "@/lib/banner-accent";
 import type { Banner, Profile, Provider, Task } from "@/types";
 
 export default function DashboardPage() {
@@ -48,54 +47,41 @@ export default function DashboardPage() {
 
   return (
     <div>
-      <section className="relative overflow-hidden rounded-3xl border border-slate-200 bg-slate-950 px-6 py-8 text-white md:px-8 md:py-10">
-        <div
-          className={`absolute inset-0 bg-gradient-to-r ${
-            activeBanner ? bannerGradient(activeBanner.accent) : "from-slate-700 via-slate-800 to-slate-950"
-          } opacity-90`}
-        />
+      <section className="relative overflow-hidden rounded-3xl border border-slate-200 bg-gradient-to-r from-orange-500 via-orange-600 to-amber-500 px-6 py-8 text-white md:px-8 md:py-10">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.28),transparent_30%)]" />
-        <div className="relative flex min-h-[220px] flex-col justify-between gap-6">
-          <div className="max-w-2xl">
-            <p className="text-sm font-bold uppercase tracking-[.18em] text-orange-100/90">
-              {new Intl.DateTimeFormat("id-ID", { dateStyle: "full" }).format(new Date())}
-            </p>
-            <h1 className="mt-4 font-[var(--font-manrope)] text-3xl font-extrabold tracking-tight md:text-5xl">
-              Selamat datang, {profile?.fullName || profile?.username || "Pengguna"}.
-            </h1>
-          </div>
+        <div className="relative">
+          <p className="text-sm font-bold uppercase tracking-[.18em] text-orange-100/90">
+            {new Intl.DateTimeFormat("id-ID", { dateStyle: "full" }).format(new Date())}
+          </p>
+          <h1 className="mt-4 font-[var(--font-manrope)] text-3xl font-extrabold tracking-tight md:text-5xl">
+            Selamat datang, {profile?.fullName || profile?.username || "Pengguna"}.
+          </h1>
           {activeBanner && (
-            <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-              <div className="max-w-xl">
-                <p className="text-sm font-bold uppercase tracking-[.18em] text-white/80">
-                  {activeBanner.cta}
-                </p>
-                <h2 className="mt-2 font-[var(--font-manrope)] text-2xl font-extrabold md:text-3xl">
-                  {activeBanner.title}
-                </h2>
-                <p className="mt-2 max-w-lg text-sm leading-6 text-slate-100 md:text-base">
-                  {activeBanner.description}
-                </p>
-              </div>
-              <Link href={activeBanner.href} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-white px-5 font-bold text-slate-900 transition hover:bg-slate-100">
-                {activeBanner.cta} <ChevronRight className="size-4" />
+            <>
+              <Link
+                href={activeBanner.href}
+                className="mt-6 block h-40 w-full overflow-hidden rounded-2xl border border-white/20 sm:h-56"
+              >
+                <div className="relative size-full">
+                  <Image unoptimized src={activeBanner.imageUrl} alt="" fill className="object-cover" />
+                </div>
               </Link>
-            </div>
-          )}
-          {banners.length > 1 && (
-            <div className="flex items-center gap-2">
-              {banners.map((banner, index) => (
-                <button
-                  key={banner.id}
-                  type="button"
-                  aria-label={`Pilih banner ${banner.cta}`}
-                  onClick={() => setActiveSlide(index)}
-                  className={`h-2.5 rounded-full transition ${
-                    activeSlide === index ? "w-10 bg-white" : "w-2.5 bg-white/45 hover:bg-white/75"
-                  }`}
-                />
-              ))}
-            </div>
+              {banners.length > 1 && (
+                <div className="mt-4 flex items-center gap-2">
+                  {banners.map((banner, index) => (
+                    <button
+                      key={banner.id}
+                      type="button"
+                      aria-label={`Pilih banner ${index + 1}`}
+                      onClick={() => setActiveSlide(index)}
+                      className={`h-2.5 rounded-full transition ${
+                        activeSlide === index ? "w-10 bg-white" : "w-2.5 bg-white/45 hover:bg-white/75"
+                      }`}
+                    />
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </div>
       </section>
