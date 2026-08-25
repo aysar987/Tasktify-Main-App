@@ -1,6 +1,6 @@
 "use client";
 
-import { Briefcase, Bell, ChevronDown, CircleUserRound, LayoutDashboard, LogOut, Menu, MessageSquareText, Plus, Search, ShieldCheck, Store, X } from "lucide-react";
+import { Briefcase, Bell, ChevronDown, CircleUserRound, LayoutDashboard, LogOut, MessageSquareText, Plus, Search, ShieldCheck, Store } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -20,7 +20,6 @@ const baseNavigation = [
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const [open, setOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [profile, setProfile] = useState<Profile>();
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -59,7 +58,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <a href="#main-content" className="fixed left-4 top-4 z-[100] -translate-y-24 rounded-lg bg-slate-950 px-4 py-3 font-bold text-white focus:translate-y-0">Lewati ke konten</a>
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex h-18 max-w-[1440px] items-center gap-3 px-4 sm:gap-5 sm:px-6 lg:px-8">
-          <button type="button" onClick={() => setOpen(true)} aria-label="Buka menu" className="grid size-11 shrink-0 place-items-center rounded-xl border border-slate-200 lg:hidden"><Menu className="size-5" /></button>
+          <div className="hidden lg:hidden" />
           <div className="shrink-0 sm:hidden"><Brand compact /></div>
           <div className="hidden shrink-0 sm:block"><Brand /></div>
           <form onSubmit={search} className="relative hidden max-w-md flex-1 md:block">
@@ -151,7 +150,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </nav>
-      {open && <div className="fixed inset-0 z-50 lg:hidden"><button type="button" aria-label="Tutup menu" onClick={() => setOpen(false)} className="absolute inset-0 bg-slate-950/50" /><aside className="relative h-full w-[min(86vw,320px)] bg-white p-5"><div className="flex items-center justify-between"><Brand /><button type="button" onClick={() => setOpen(false)} aria-label="Tutup menu" className="grid size-11 place-items-center rounded-xl border border-slate-200"><X className="size-5" /></button></div><nav className="mt-8 space-y-2">{navigation.map(({ href, label, icon: Icon }) => <Link key={href} href={href} onClick={() => setOpen(false)} className="flex min-h-12 items-center gap-3 rounded-xl px-4 font-semibold text-slate-700 hover:bg-slate-50"><Icon className="size-5" />{label}</Link>)}</nav></aside></div>}
+      
     </div>
   );
 }
