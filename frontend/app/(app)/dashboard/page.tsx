@@ -1,20 +1,11 @@
 "use client";
 
-import {
-  ArrowUpRight,
-  BriefcaseBusiness,
-  ChevronRight,
-  Plus,
-  Search,
-  ShoppingBag,
-  Store,
-} from "lucide-react";
+import { ArrowUpRight, Store } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ProviderCard } from "@/components/provider-card";
 import { TaskCard } from "@/components/task-card";
-import { primaryButton } from "@/components/ui";
 import { getBanners, getProfile, getProviders, getTasks } from "@/lib/api";
 import type { Banner, Profile, Provider, Task } from "@/types";
 
@@ -52,6 +43,12 @@ export default function DashboardPage() {
   }, [slides.length]);
 
   const activeSlideItem = slides[activeSlide] ?? slides[0];
+  const initials = (profile?.fullName || profile?.username || "U")
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
 
   return (
     <div>
@@ -65,33 +62,6 @@ export default function DashboardPage() {
           <>
             <div className="absolute inset-0 bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-600" />
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.28),transparent_30%)]" />
-            <div className="relative flex min-h-[220px] flex-col justify-between gap-6 px-6 pb-12 pt-8 text-white sm:min-h-[300px] md:px-8 md:pb-14 md:pt-10">
-              <div className="max-w-2xl">
-                <p className="text-sm font-bold uppercase tracking-[.18em] text-orange-100/90">
-                  {new Intl.DateTimeFormat("id-ID", { dateStyle: "full" }).format(new Date())}
-                </p>
-                <h1 className="mt-4 font-[var(--font-manrope)] text-3xl font-extrabold tracking-tight md:text-5xl">
-                  Selamat datang, {profile?.fullName || profile?.username || "Pengguna"}.
-                </h1>
-              </div>
-              <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-                <div className="max-w-xl">
-                  <p className="text-sm font-bold uppercase tracking-[.18em] text-white/80">Ambil Task</p>
-                  <h2 className="mt-2 font-[var(--font-manrope)] text-2xl font-extrabold md:text-3xl">
-                    Ambil task yang sesuai
-                  </h2>
-                  <p className="mt-2 max-w-lg text-sm leading-6 text-slate-100 md:text-base">
-                    Jelajahi tugas yang tersedia dan mulai bekerja dengan cepat.
-                  </p>
-                </div>
-                <Link
-                  href="/marketplace"
-                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-white px-5 font-bold text-slate-900 transition hover:bg-slate-100"
-                >
-                  Ambil Task <ChevronRight className="size-4" />
-                </Link>
-              </div>
-            </div>
           </>
         )}
         {slides.length > 1 && (
@@ -110,6 +80,24 @@ export default function DashboardPage() {
           </div>
         )}
       </section>
+
+      <div className="relative z-10 -mt-8 flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-lg sm:mx-4">
+        {profile?.avatarUrl ? (
+          <Image unoptimized src={profile.avatarUrl} alt="" width={56} height={56} className="size-14 shrink-0 rounded-full object-cover" />
+        ) : (
+          <span className="grid size-14 shrink-0 place-items-center rounded-full bg-slate-900 text-lg font-bold text-white">
+            {initials}
+          </span>
+        )}
+        <div className="min-w-0">
+          <p className="text-xs font-bold uppercase tracking-[.14em] text-slate-400">
+            {new Intl.DateTimeFormat("id-ID", { dateStyle: "full" }).format(new Date())}
+          </p>
+          <h1 className="mt-1 truncate font-[var(--font-manrope)] text-xl font-extrabold text-slate-950 sm:text-2xl">
+            Selamat datang, {profile?.fullName || profile?.username || "Pengguna"}.
+          </h1>
+        </div>
+      </div>
 
       <section className="mt-6">
         <div className="grid grid-cols-3 gap-6">
