@@ -1,6 +1,6 @@
 "use client";
 
-import { Briefcase, Bell, ChevronDown, CircleUserRound, LayoutDashboard, LogOut, MessageSquareText, Plus, Search, ShieldCheck, Store } from "lucide-react";
+import { Briefcase, Bell, ChevronDown, CircleUserRound, Home, LogOut, MessageSquareText, Plus, Search, ShieldCheck, Store } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -12,10 +12,10 @@ import { Brand } from "./brand";
 import { primaryButton } from "./ui";
 
 const baseNavigation = [
-  { href: "/dashboard", label: "Home", icon: LayoutDashboard },
-  { href: "/marketplace", label: "Tasks", icon: Briefcase },
+  { href: "/dashboard", label: "Home", icon: Home },
+  { href: "/marketplace", label: "Market", icon: Briefcase },
   { href: "/notifications", label: "Notification", icon: Bell },
-  { href: "/chat", label: "Pesan", icon: MessageSquareText },
+  { href: "/chat", label: "Chat", icon: MessageSquareText },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -142,8 +142,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   href={href}
                   className={`inline-flex flex-col items-center gap-1 py-1 ${active ? "text-orange-600" : "text-slate-600"}`}
                 >
-                  <Icon className="size-6" />
-                  <span className="sr-only">{label}</span>
+                  <Icon className="size-5" />
+                  <span className="mt-0.5 text-[11px] leading-3">{label}</span>
                 </Link>
               );
             })}
