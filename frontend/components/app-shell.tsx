@@ -119,8 +119,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </form>
         </div>
       </header>
-      <div className="flex">
-        <aside className="sticky top-18 hidden h-[calc(100vh-4.5rem)] w-64 shrink-0 border-r border-slate-200 bg-white p-5 lg:block">
+      <div className="flex min-h-[calc(100dvh-4.5rem)]">
+        <aside className="sticky top-18 hidden w-64 shrink-0 self-stretch border-r border-slate-200 bg-white p-5 lg:block">
           <nav aria-label="Navigasi utama" className="space-y-1.5">
             {navigation.map(({ href, label, icon: Icon }) => {
               const active = pathname === href || pathname.startsWith(`${href}/`);
