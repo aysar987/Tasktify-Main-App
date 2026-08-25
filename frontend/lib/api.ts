@@ -1,5 +1,6 @@
 import { getSupabase } from "@/lib/supabase";
 import type {
+  Banner,
   Conversation,
   Message,
   Notification,
@@ -388,5 +389,33 @@ export async function rejectProvider(id: string, note = ""): Promise<Provider> {
   return apiRequest<Provider>(`/admin/providers/${encodeURIComponent(id)}/reject`, {
     method: "POST",
     body: JSON.stringify({ note }),
+  });
+}
+
+export async function getBanners(): Promise<Banner[]> {
+  return apiRequest<Banner[]>("/banners");
+}
+
+export async function getAdminBanners(): Promise<Banner[]> {
+  return apiRequest<Banner[]>("/admin/banners");
+}
+
+export async function createBanner(payload: Omit<Banner, "id">): Promise<Banner> {
+  return apiRequest<Banner>("/admin/banners", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateBanner(id: string, payload: Omit<Banner, "id">): Promise<Banner> {
+  return apiRequest<Banner>(`/admin/banners/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteBanner(id: string): Promise<void> {
+  await apiRequest<void>(`/admin/banners/${encodeURIComponent(id)}`, {
+    method: "DELETE",
   });
 }
