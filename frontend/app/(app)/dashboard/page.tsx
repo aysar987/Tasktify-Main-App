@@ -52,7 +52,7 @@ export default function DashboardPage() {
 
   return (
     <div>
-      <section className="relative left-1/2 -ml-[50vw] w-screen min-h-[220px] overflow-hidden sm:min-h-[300px]">
+      <section className="relative -mx-4 -mt-7 min-h-[220px] overflow-hidden sm:-mx-6 sm:min-h-[300px] lg:-mx-10 lg:-mt-10">
         {activeSlideItem.kind === "photo" ? (
           <>
             <Image unoptimized src={activeSlideItem.banner.imageUrl} alt="" fill className="object-cover" />
@@ -81,8 +81,8 @@ export default function DashboardPage() {
         )}
       </section>
 
-      <div className="relative left-1/2 -ml-[50vw] w-screen bg-orange-600 pb-10">
-        <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-10">
+      <div className="relative -mx-4 bg-orange-600 pb-10 sm:-mx-6 lg:-mx-10">
+        <div className="px-4 sm:px-6 lg:px-10">
           <div className="relative z-10 -mt-8 flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-lg">
             {profile?.avatarUrl ? (
               <Image unoptimized src={profile.avatarUrl} alt="" width={56} height={56} className="size-14 shrink-0 rounded-full object-cover" />
