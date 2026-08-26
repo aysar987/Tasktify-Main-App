@@ -35,6 +35,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const isHome = pathname === "/dashboard";
   const navigation =
     profile?.role === "admin"
       ? [...baseNavigation, { href: "/admin", label: "Admin", icon: ShieldCheck }]
@@ -57,14 +58,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <a href="#main-content" className="fixed left-4 top-4 z-[100] -translate-y-24 rounded-lg bg-slate-950 px-4 py-3 font-bold text-white focus:translate-y-0">Lewati ke konten</a>
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
         <div className="flex h-18 items-center gap-3 px-4 sm:gap-5 sm:px-6 lg:px-8">
-          <div className="hidden lg:hidden" />
-          <div className="shrink-0 sm:hidden"><Brand compact showLogo={false} /></div>
-          <div className="hidden shrink-0 sm:block"><Brand showLogo={false} /></div>
+          {isHome && (
+            <>
+              <div className="shrink-0 sm:hidden"><Brand compact showLogo={false} /></div>
+              <div className="hidden shrink-0 sm:block"><Brand showLogo={false} /></div>
+            </>
+          )}
           <div className="ml-auto flex min-w-0 flex-1 items-center justify-end gap-3 sm:gap-4">
-            <form onSubmit={search} className="relative min-w-0 flex-1 sm:max-w-56 lg:max-w-72">
-              <Search className="absolute left-4 top-1/2 size-5 -translate-y-1/2 text-slate-400" />
-              <input name="query" aria-label="Search" placeholder="Search..." className="min-h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-12 pr-4 outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-100" />
-            </form>
+            {isHome && (
+              <form onSubmit={search} className="relative min-w-0 flex-1 sm:max-w-56 lg:max-w-72">
+                <Search className="absolute left-4 top-1/2 size-5 -translate-y-1/2 text-slate-400" />
+                <input name="query" aria-label="Search" placeholder="Search..." className="min-h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-12 pr-4 outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-100" />
+              </form>
+            )}
             <div ref={menuRef} className="relative shrink-0">
               <button
                 type="button"
