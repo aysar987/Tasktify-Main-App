@@ -56,69 +56,65 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-dvh bg-slate-50">
       <a href="#main-content" className="fixed left-4 top-4 z-[100] -translate-y-24 rounded-lg bg-slate-950 px-4 py-3 font-bold text-white focus:translate-y-0">Lewati ke konten</a>
-      <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
-        <div className="flex h-18 items-center gap-3 px-4 sm:gap-5 sm:px-6 lg:px-8">
-          {isHome && (
-            <>
-              <div className="shrink-0 sm:hidden"><Brand compact showLogo={false} /></div>
-              <div className="hidden shrink-0 sm:block"><Brand showLogo={false} /></div>
-            </>
-          )}
-          <div className="ml-auto flex min-w-0 flex-1 items-center justify-end gap-3 sm:gap-4">
-            {isHome && (
+      {isHome && (
+        <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
+          <div className="flex h-18 items-center gap-3 px-4 sm:gap-5 sm:px-6 lg:px-8">
+            <div className="shrink-0 sm:hidden"><Brand compact showLogo={false} /></div>
+            <div className="hidden shrink-0 sm:block"><Brand showLogo={false} /></div>
+            <div className="ml-auto flex min-w-0 flex-1 items-center justify-end gap-3 sm:gap-4">
               <form onSubmit={search} className="relative min-w-0 flex-1 sm:max-w-56 lg:max-w-72">
                 <Search className="absolute left-4 top-1/2 size-5 -translate-y-1/2 text-slate-400" />
                 <input name="query" aria-label="Search" placeholder="Search..." className="min-h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-12 pr-4 outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-100" />
               </form>
-            )}
-            <div ref={menuRef} className="relative shrink-0">
-              <button
-                type="button"
-                aria-label="Account menu"
-                aria-expanded={menuOpen}
-                aria-haspopup="menu"
-                onClick={() => setMenuOpen((current) => !current)}
-                className="flex size-11 items-center justify-center rounded-full border border-slate-200 bg-slate-50 p-0.5 transition hover:border-orange-300 hover:bg-orange-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-orange-200"
-              >
-                {profile?.avatarUrl ? (
-                  <Image unoptimized src={profile.avatarUrl} alt="Profile" width={40} height={40} className="size-10 rounded-full object-cover" />
-                ) : (
-                  <span className="grid size-10 place-items-center rounded-full bg-slate-900 text-xs font-bold text-white">{initials}</span>
-                )}
-              </button>
+              <div ref={menuRef} className="relative shrink-0">
+                <button
+                  type="button"
+                  aria-label="Account menu"
+                  aria-expanded={menuOpen}
+                  aria-haspopup="menu"
+                  onClick={() => setMenuOpen((current) => !current)}
+                  className="flex size-11 items-center justify-center rounded-full border border-slate-200 bg-slate-50 p-0.5 transition hover:border-orange-300 hover:bg-orange-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-orange-200"
+                >
+                  {profile?.avatarUrl ? (
+                    <Image unoptimized src={profile.avatarUrl} alt="Profile" width={40} height={40} className="size-10 rounded-full object-cover" />
+                  ) : (
+                    <span className="grid size-10 place-items-center rounded-full bg-slate-900 text-xs font-bold text-white">{initials}</span>
+                  )}
+                </button>
 
-              {menuOpen && (
-                <div className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
-                  <div className="border-b border-slate-200 px-3 py-2">
-                    <p className="text-xs font-semibold uppercase tracking-[.15em] text-slate-400">Account</p>
-                    <p className="mt-1 truncate text-sm font-semibold text-slate-900">{profile?.fullName || profile?.username || "Pengguna"}</p>
+                {menuOpen && (
+                  <div className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
+                    <div className="border-b border-slate-200 px-3 py-2">
+                      <p className="text-xs font-semibold uppercase tracking-[.15em] text-slate-400">Account</p>
+                      <p className="mt-1 truncate text-sm font-semibold text-slate-900">{profile?.fullName || profile?.username || "Pengguna"}</p>
+                    </div>
+                    <div className="py-1.5">
+                      <Link href="/profile" onClick={() => setMenuOpen(false)} className="flex items-center justify-between px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-950">
+                        <span>Manage Account</span>
+                        <ChevronDown className="size-4 rotate-[-90deg]" />
+                      </Link>
+                      <Link href="/activity" onClick={() => setMenuOpen(false)} className="flex items-center justify-between px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-950">
+                        <span>Activities</span>
+                        <ChevronDown className="size-4 rotate-[-90deg]" />
+                      </Link>
+                      <button type="button" onClick={() => setMenuOpen(false)} className="flex w-full items-center justify-between px-3 py-2 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-950">
+                        <span>Settings</span>
+                        <ChevronDown className="size-4 rotate-[-90deg]" />
+                      </button>
+                      <button type="button" onClick={() => { setMenuOpen(false); void logout(); }} className="flex w-full items-center justify-between px-3 py-2 text-left text-sm font-medium text-red-600 transition hover:bg-red-50">
+                        <span>Logout</span>
+                        <LogOut className="size-4" />
+                      </button>
+                    </div>
                   </div>
-                  <div className="py-1.5">
-                    <Link href="/profile" onClick={() => setMenuOpen(false)} className="flex items-center justify-between px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-950">
-                      <span>Manage Account</span>
-                      <ChevronDown className="size-4 rotate-[-90deg]" />
-                    </Link>
-                    <Link href="/activity" onClick={() => setMenuOpen(false)} className="flex items-center justify-between px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-950">
-                      <span>Activities</span>
-                      <ChevronDown className="size-4 rotate-[-90deg]" />
-                    </Link>
-                    <button type="button" onClick={() => setMenuOpen(false)} className="flex w-full items-center justify-between px-3 py-2 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-950">
-                      <span>Settings</span>
-                      <ChevronDown className="size-4 rotate-[-90deg]" />
-                    </button>
-                    <button type="button" onClick={() => { setMenuOpen(false); void logout(); }} className="flex w-full items-center justify-between px-3 py-2 text-left text-sm font-medium text-red-600 transition hover:bg-red-50">
-                      <span>Logout</span>
-                      <LogOut className="size-4" />
-                    </button>
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      </header>
-      <div className="flex min-h-[calc(100dvh-4.5rem)]">
-        <aside className="sticky top-18 hidden w-64 shrink-0 self-stretch border-r border-slate-200 bg-white p-5 lg:block">
+        </header>
+      )}
+      <div className={`flex ${isHome ? "min-h-[calc(100dvh-4.5rem)]" : "min-h-dvh"}`}>
+        <aside className={`sticky hidden w-64 shrink-0 self-stretch border-r border-slate-200 bg-white p-5 lg:block ${isHome ? "top-18" : "top-0"}`}>
           <nav aria-label="Navigasi utama" className="space-y-1.5">
             {navigation.map(({ href, label, icon: Icon }) => {
               const active = pathname === href || pathname.startsWith(`${href}/`);
