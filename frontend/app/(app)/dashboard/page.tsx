@@ -92,7 +92,7 @@ export default function DashboardPage() {
               </span>
             )}
             <div className="min-w-0">
-              <h1 className="truncate font-[var(--font-manrope)] text-xl font-extrabold text-slate-950 sm:text-2xl">
+              <h1 className="truncate font-[var(--font-manrope)] text-xl font-bold text-slate-950 sm:text-xl">
                 {profile?.fullName || profile?.username || "Pengguna"}.
               </h1>
             </div>
@@ -102,21 +102,21 @@ export default function DashboardPage() {
             <div className="grid grid-cols-3 gap-6">
               <Link href="/request-task" className="flex flex-col items-center">
                 <div className="flex h-16 w-16 items-center justify-center">
-                  <Image src="/images/AddTask.svg" alt="Add Task" width={80} height={80} />
+                  <Image src="/images/AddTask.svg" alt="Add Task" width={100} height={100} />
                 </div>
                 <span className="mt-2 text-sm font-semibold text-white">Buat Task</span>
               </Link>
 
               <Link href="/marketplace" className="flex flex-col items-center">
                 <div className="flex h-16 w-16 items-center justify-center">
-                  <Image src="/images/DoTask.svg" alt="Do Task" width={80} height={80} />
+                  <Image src="/images/DoTask.svg" alt="Do Task" width={100} height={100} />
                 </div>
                 <span className="mt-2 text-sm font-semibold text-white">Ambil Task</span>
               </Link>
 
               <Link href="/penyedia" className="flex flex-col items-center">
                 <div className="flex h-16 w-16 items-center justify-center">
-                  <Image src="/images/MarketPlace.svg" alt="Marketplace" width={80} height={80} />
+                  <Image src="/images/MarketPlace.svg" alt="Marketplace" width={100} height={100} />
                 </div>
                 <span className="mt-2 text-sm font-semibold text-white">Marketplace</span>
               </Link>
