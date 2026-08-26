@@ -183,14 +183,9 @@ export default function DashboardPage() {
           </section>
           <section className="mt-10">
             <div className="mb-5 flex items-end justify-between gap-4">
-              <div>
-                <p className="text-sm font-bold uppercase tracking-wider text-white/70">
-                  Aktivitas terbaru
-                </p>
-                <h2 className="mt-1 font-[var(--font-manrope)] text-2xl font-extrabold text-white">
-                  Task Anda
-                </h2>
-              </div>
+              <p className="text-sm font-bold uppercase tracking-wider text-white/70">
+                Aktivitas terbaru
+              </p>
               <Link
                 href="/activity"
                 className="flex min-h-11 items-center gap-1 font-bold text-white"
