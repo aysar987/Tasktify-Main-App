@@ -116,7 +116,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <nav aria-label="Navigasi utama" className="space-y-1.5">
             {navigation.map(({ href, label, icon: Icon }) => {
               const active = pathname === href || pathname.startsWith(`${href}/`);
-              return <Link key={href} href={href} className={`flex min-h-12 items-center gap-3 rounded-xl px-4 font-semibold transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-orange-200 ${active ? "bg-orange-50 text-orange-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-950"}`}><Icon className="size-5" />{label}</Link>;
+              return <Link key={href} href={href} className={`flex min-h-12 items-center gap-3 rounded-xl px-4 font-semibold transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-orange-200 ${active ? "bg-orange-50 text-orange-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-950"}`}><Icon className="size-7" />{label}</Link>;
             })}
           </nav>
           <div className="mt-8 rounded-2xl border border-orange-200 bg-orange-50 p-4">
