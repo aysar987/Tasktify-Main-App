@@ -57,7 +57,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="min-h-dvh bg-slate-50">
       <a href="#main-content" className="fixed left-4 top-4 z-[100] -translate-y-24 rounded-lg bg-slate-950 px-4 py-3 font-bold text-white focus:translate-y-0">Lewati ke konten</a>
       {isHome && (
-        <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
+        <header className="sticky top-0 z-40 hidden border-b border-slate-200 bg-white/95 backdrop-blur sm:block">
           <div className="flex h-18 items-center gap-3 px-4 sm:gap-5 sm:px-6 lg:px-8">
             <div className="shrink-0 sm:hidden"><Brand compact showLogo={false} /></div>
             <div className="hidden shrink-0 sm:block"><Brand showLogo={false} /></div>
@@ -113,8 +113,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </header>
       )}
-      <div className={`flex ${isHome ? "min-h-[calc(100dvh-4.5rem)]" : "min-h-dvh"}`}>
-        <aside className={`sticky hidden w-64 shrink-0 self-stretch border-r border-slate-200 bg-white p-5 lg:block ${isHome ? "top-18" : "top-0"}`}>
+      <div className={`flex ${isHome ? "min-h-dvh sm:min-h-[calc(100dvh-4.5rem)]" : "min-h-dvh"}`}>
+        <aside className={`sticky hidden w-64 shrink-0 self-stretch border-r border-slate-200 bg-white p-5 lg:block ${isHome ? "top-0 sm:top-18" : "top-0"}`}>
           <nav aria-label="Navigasi utama" className="space-y-1.5">
             {navigation.map(({ href, label, icon: Icon }) => {
               const active = pathname === href || pathname.startsWith(`${href}/`);

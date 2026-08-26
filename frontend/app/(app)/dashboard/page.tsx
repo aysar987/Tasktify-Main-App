@@ -1,12 +1,13 @@
 "use client";
 
-import { ArrowUpRight, Store } from "lucide-react";
+import { ArrowUpRight, ChevronDown, LogOut, Search, Store } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ProviderCard } from "@/components/provider-card";
 import { TaskCard } from "@/components/task-card";
 import { getBanners, getProfile, getProviders, getTasks } from "@/lib/api";
+import { getSupabase } from "@/lib/supabase";
 import type { Banner, Profile, Provider, Task } from "@/types";
 
 type Slide = { kind: "default" } | { kind: "photo"; banner: Banner };
@@ -17,6 +18,8 @@ export default function DashboardPage() {
   const [providers, setProviders] = useState<Provider[]>([]);
   const [banners, setBanners] = useState<Banner[]>([]);
   const [activeSlide, setActiveSlide] = useState(0);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     Promise.all([getProfile(), getTasks(), getProviders(), getBanners()]).then(
@@ -27,6 +30,15 @@ export default function DashboardPage() {
         setBanners(nextBanners);
       },
     );
+  }, []);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) setMenuOpen(false);
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const slides: Slide[] = [
@@ -50,6 +62,17 @@ export default function DashboardPage() {
     .join("")
     .toUpperCase();
 
+  function search(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const query = String(new FormData(event.currentTarget).get("query") ?? "").trim();
+    if (query) window.location.assign(`/penyedia?q=${encodeURIComponent(query)}`);
+  }
+
+  async function logout() {
+    await getSupabase().auth.signOut();
+    window.location.assign("/login");
+  }
+
   return (
     <div>
       <section className="relative -mx-4 -mt-7 min-h-[220px] overflow-hidden sm:-mx-6 sm:min-h-[300px] lg:-mx-10 lg:-mt-10">
@@ -64,6 +87,42 @@ export default function DashboardPage() {
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.28),transparent_30%)]" />
           </>
         )}
+        <div className="absolute inset-x-4 top-4 z-20 flex items-center gap-3 sm:hidden">
+          <form onSubmit={search} className="relative min-w-0 flex-1">
+            <Search className="absolute left-4 top-1/2 size-5 -translate-y-1/2 text-slate-500" />
+            <input name="query" aria-label="Search" placeholder="Search..." className="min-h-11 w-full rounded-full border-0 bg-white/95 pl-12 pr-4 text-slate-900 shadow-sm outline-none focus:ring-4 focus:ring-white/50" />
+          </form>
+          <div ref={menuRef} className="relative shrink-0">
+            <button
+              type="button"
+              aria-label="Account menu"
+              aria-expanded={menuOpen}
+              aria-haspopup="menu"
+              onClick={() => setMenuOpen((current) => !current)}
+              className="flex size-11 items-center justify-center rounded-full border-2 border-white bg-white/95 p-0.5 shadow-sm focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/50"
+            >
+              {profile?.avatarUrl ? (
+                <Image unoptimized src={profile.avatarUrl} alt="Profile" width={40} height={40} className="size-9 rounded-full object-cover" />
+              ) : (
+                <span className="grid size-9 place-items-center rounded-full bg-slate-900 text-xs font-bold text-white">{initials}</span>
+              )}
+            </button>
+
+            {menuOpen && (
+              <div className="absolute right-0 top-full z-30 mt-2 w-56 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
+                <div className="border-b border-slate-200 px-3 py-2">
+                  <p className="text-xs font-semibold uppercase tracking-[.15em] text-slate-400">Account</p>
+                  <p className="mt-1 truncate text-sm font-semibold text-slate-900">{profile?.fullName || profile?.username || "Pengguna"}</p>
+                </div>
+                <div className="py-1.5">
+                  <Link href="/profile" onClick={() => setMenuOpen(false)} className="flex items-center justify-between px-3 py-2 text-sm font-medium text-slate-700"><span>Manage Account</span><ChevronDown className="size-4 -rotate-90" /></Link>
+                  <Link href="/activity" onClick={() => setMenuOpen(false)} className="flex items-center justify-between px-3 py-2 text-sm font-medium text-slate-700"><span>Activities</span><ChevronDown className="size-4 -rotate-90" /></Link>
+                  <button type="button" onClick={() => { setMenuOpen(false); void logout(); }} className="flex w-full items-center justify-between px-3 py-2 text-left text-sm font-medium text-red-600"><span>Logout</span><LogOut className="size-4" /></button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
         {slides.length > 1 && (
           <div className="pointer-events-none absolute inset-x-0 bottom-4 flex items-center justify-center gap-2">
             {slides.map((slide, index) => (
@@ -81,7 +140,7 @@ export default function DashboardPage() {
         )}
       </section>
 
-      <div className="relative -mx-4 -mb-7 rounded-3xl bg-orange-600 pb-10 pt-6 sm:-mx-6 lg:-mx-10 lg:-mb-10">
+      <div className="relative z-10 -mt-10 -mx-4 -mb-7 rounded-3xl bg-orange-600 pb-10 pt-6 sm:-mx-6 sm:-mt-12 lg:-mx-10 lg:-mt-14 lg:-mb-10">
         <div className="px-4 sm:px-6 lg:px-10">
           <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-lg">
             {profile?.avatarUrl ? (
