@@ -104,21 +104,21 @@ export default function DashboardPage() {
           <section className="mt-6">
             <div className="grid grid-cols-3 gap-6">
               <Link href="/request-task" className="flex flex-col items-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-white shadow-sm">
+                <div className="flex h-16 w-16 items-center justify-center">
                   <Image src="/images/AddTask.svg" alt="Add Task" width={44} height={44} />
                 </div>
                 <span className="mt-2 text-sm font-semibold text-white">Buat Task</span>
               </Link>
 
               <Link href="/marketplace" className="flex flex-col items-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-white shadow-sm">
+                <div className="flex h-16 w-16 items-center justify-center">
                   <Image src="/images/DoTask.svg" alt="Do Task" width={44} height={44} />
                 </div>
                 <span className="mt-2 text-sm font-semibold text-white">Ambil Task</span>
               </Link>
 
               <Link href="/penyedia" className="flex flex-col items-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-white shadow-sm">
+                <div className="flex h-16 w-16 items-center justify-center">
                   <Image src="/images/MarketPlace.svg" alt="Marketplace" width={44} height={44} />
                 </div>
                 <span className="mt-2 text-sm font-semibold text-white">Marketplace</span>

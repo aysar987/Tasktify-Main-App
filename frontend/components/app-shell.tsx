@@ -1,6 +1,6 @@
 "use client";
 
-import { Briefcase, Bell, ChevronDown, CircleUserRound, Home, LogOut, MessageSquareText, Plus, Search, ShieldCheck, Store } from "lucide-react";
+import { Briefcase, Bell, ChevronDown, CircleUserRound, Home, LogOut, MessageSquareText, Search, ShieldCheck, Store } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -9,7 +9,6 @@ import { getProfile } from "@/lib/api";
 import { getSupabase } from "@/lib/supabase";
 import type { Profile } from "@/types";
 import { Brand } from "./brand";
-import { primaryButton } from "./ui";
 
 const baseNavigation = [
   { href: "/dashboard", label: "Home", icon: Home },
@@ -59,14 +58,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
         <div className="flex h-18 items-center gap-3 px-4 sm:gap-5 sm:px-6 lg:px-8">
           <div className="hidden lg:hidden" />
-          <div className="shrink-0 sm:hidden"><Brand compact /></div>
-          <div className="hidden shrink-0 sm:block"><Brand /></div>
+          <div className="shrink-0 sm:hidden"><Brand compact showLogo={false} /></div>
+          <div className="hidden shrink-0 sm:block"><Brand showLogo={false} /></div>
           <form onSubmit={search} className="relative hidden max-w-md flex-1 md:block">
             <Search className="absolute left-4 top-1/2 size-5 -translate-y-1/2 text-slate-400" />
             <input name="query" aria-label="Search" placeholder="Search..." className="min-h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-12 pr-4 outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-100" />
           </form>
           <div className="ml-auto flex items-center gap-3 sm:gap-4">
-            <Link href="/request-task" className={`${primaryButton} hidden sm:inline-flex`}><Plus className="size-5" /> Add Task</Link>
             <div ref={menuRef} className="relative">
               <button
                 type="button"
