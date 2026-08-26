@@ -60,11 +60,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="hidden lg:hidden" />
           <div className="shrink-0 sm:hidden"><Brand compact showLogo={false} /></div>
           <div className="hidden shrink-0 sm:block"><Brand showLogo={false} /></div>
-          <form onSubmit={search} className="relative hidden max-w-md flex-1 md:block">
-            <Search className="absolute left-4 top-1/2 size-5 -translate-y-1/2 text-slate-400" />
-            <input name="query" aria-label="Search" placeholder="Search..." className="min-h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-12 pr-4 outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-100" />
-          </form>
           <div className="ml-auto flex items-center gap-3 sm:gap-4">
+            <form onSubmit={search} className="relative hidden w-56 md:block lg:w-72">
+              <Search className="absolute left-4 top-1/2 size-5 -translate-y-1/2 text-slate-400" />
+              <input name="query" aria-label="Search" placeholder="Search..." className="min-h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-12 pr-4 outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-100" />
+            </form>
             <div ref={menuRef} className="relative">
               <button
                 type="button"
