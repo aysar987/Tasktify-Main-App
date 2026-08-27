@@ -12,7 +12,7 @@ import { Brand } from "./brand";
 
 const baseNavigation = [
   { href: "/dashboard", label: "Home", icon: Home },
-  { href: "/marketplace", label: "Market", icon: Briefcase },
+  { href: "/penyedia", label: "Market", icon: Briefcase },
   { href: "/notifications", label: "Notification", icon: Bell },
   { href: "/chat", label: "Chat", icon: MessageSquareText },
 ];
