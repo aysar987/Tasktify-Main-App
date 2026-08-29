@@ -4,6 +4,7 @@ import type {
   Conversation,
   Message,
   Notification,
+  MarketplaceListing,
   Payment,
   PaymentMethod,
   Profile,
@@ -186,6 +187,14 @@ export async function getProviders(query = "", category = "") {
   if (category && category !== "Semua") params.set("category", category);
   const suffix = params.size ? `?${params.toString()}` : "";
   return apiRequest<Provider[]>(`/providers${suffix}`, {}, false);
+}
+
+export async function getMarketplaceListings(query = "", category = "") {
+  const params = new URLSearchParams();
+  if (query.trim()) params.set("q", query.trim());
+  if (category && category !== "Semua") params.set("category", category);
+  const suffix = params.size ? `?${params.toString()}` : "";
+  return apiRequest<MarketplaceListing[]>(`/marketplace/listings${suffix}`, {}, false);
 }
 
 export async function getProfile(): Promise<Profile> {

@@ -96,6 +96,20 @@ export type Banner = {
   active: boolean;
 };
 
+export type MarketplaceListing = {
+  id: string;
+  name: string;
+  slug: string;
+  category: string;
+  location: string;
+  description: string;
+  priceFrom: number;
+  rating: number;
+  jobs: number;
+  verified: boolean;
+  status: "active" | "inactive" | "pending";
+};
+
 export type Payment = {
   id: string;
   taskId: string;
