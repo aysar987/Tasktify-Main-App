@@ -5,7 +5,7 @@ export default function NotificationsPage() {
   return (
     <>
       <PageHeader
-        title="notification"
+        title="Notification"
       />
       <NotificationList />
     </>
