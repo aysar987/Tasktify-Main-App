@@ -12,9 +12,7 @@ export default async function MarketplacePage({ searchParams }: { searchParams: 
   return (
     <>
       <PageHeader
-        eyebrow="Marketplace"
         title="Jelajahi lapak dan task yang tersedia"
-        description="Lihat daftar marketplace yang aktif, lalu pilih task yang paling cocok dengan kemampuan Anda."
       />
       <MarketplaceBrowser initialQuery={q} />
       <div className="mt-8">
