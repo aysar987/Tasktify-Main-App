@@ -131,7 +131,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Mobile bottom navbar: show only icons for Home, Tasks, Notification, Pesan */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t bg-white lg:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white shadow-[0_-8px_24px_rgba(15,23,42,0.08)] lg:hidden">
         <div className="mx-auto max-w-[1440px] px-4">
           <div className="flex justify-around py-2">
             {baseNavigation.slice(0, 4).map(({ href, icon: Icon, label }) => {
