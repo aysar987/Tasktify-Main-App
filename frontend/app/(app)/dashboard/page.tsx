@@ -166,14 +166,14 @@ export default function DashboardPage() {
                 <span className="mt-2 text-sm font-semibold text-white">Buat Task</span>
               </Link>
 
-              <Link href="/market" className="flex flex-col items-center">
+              <Link href="/penyedia" className="flex flex-col items-center">
                 <div className="flex h-16 w-16 items-center justify-center">
                   <Image src="/images/DoTask.svg" alt="Do Task" width={120} height={120} />
                 </div>
                 <span className="mt-2 text-sm font-semibold text-white">Ambil Task</span>
               </Link>
 
-              <Link href="/penyedia" className="flex flex-col items-center">
+              <Link href="/market" className="flex flex-col items-center">
                 <div className="flex h-16 w-16 items-center justify-center">
                   <Image src="/images/MarketPlace.svg" alt="Marketplace" width={120} height={120} />
                 </div>
@@ -220,7 +220,7 @@ export default function DashboardPage() {
                 href="/market"
                 className="flex min-h-11 items-center gap-1 font-bold text-white"
               >
-                Jelajahi penyedia <ArrowUpRight className="size-4" />
+                Jelajahi lapak <ArrowUpRight className="size-4" />
               </Link>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">

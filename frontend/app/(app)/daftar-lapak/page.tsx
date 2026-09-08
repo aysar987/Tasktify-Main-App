@@ -42,7 +42,7 @@ export default function RegisterListingPage() {
         eyebrow="Marketplace"
         title="Daftarkan lapak Anda"
         description="Tawarkan layanan Anda agar mudah ditemukan oleh pengguna Tasktify."
-        action={<Link href="/market" className={secondaryButton}>Lihat marketplace</Link>}
+        action={<Link href="/market" className={secondaryButton}>Lihat market</Link>}
       />
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         <form onSubmit={submit} className="rounded-2xl border border-slate-200 bg-white p-5 md:p-7">
