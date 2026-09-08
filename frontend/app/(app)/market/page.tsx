@@ -12,9 +12,7 @@ export default async function MarketPage({ searchParams }: { searchParams: Promi
   return (
     <>
       <PageHeader
-        title="Jelajahi lapak yang tersedia"
-        description="Temukan penyedia layanan terbaik untuk kebutuhan Anda."
-        action={<Link href="/daftar-market" className={primaryButton}>Daftarkan lapak</Link>}
+        title="Marketplace"
       />
       <MarketplaceBrowser initialQuery={q} />
     </>
