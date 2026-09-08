@@ -197,6 +197,19 @@ export async function getMarketplaceListings(query = "", category = "") {
   return apiRequest<MarketplaceListing[]>(`/marketplace/listings${suffix}`, {}, false);
 }
 
+export async function saveMarketplaceListing(payload: {
+  name: string;
+  category: string;
+  location: string;
+  description: string;
+  priceFrom: number;
+}) {
+  return apiRequest<MarketplaceListing>("/me/marketplace-listing", {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function getProfile(): Promise<Profile> {
   return apiRequest<Profile>("/me");
 }
