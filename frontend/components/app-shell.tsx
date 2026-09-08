@@ -12,7 +12,7 @@ import { Brand } from "./brand";
 
 const baseNavigation = [
   { href: "/dashboard", label: "Home", icon: Home },
-  { href: "/penyedia", label: "Market", icon: Briefcase },
+  { href: "/market", label: "Market", icon: Briefcase },
   { href: "/notifications", label: "Notification", icon: Bell },
   { href: "/chat", label: "Chat", icon: MessageSquareText },
 ];
@@ -50,7 +50,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   function search(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const query = String(new FormData(event.currentTarget).get("query") ?? "").trim();
-    if (query) window.location.assign(`/penyedia?q=${encodeURIComponent(query)}`);
+    if (query) window.location.assign(`/market?q=${encodeURIComponent(query)}`);
   }
 
   return (

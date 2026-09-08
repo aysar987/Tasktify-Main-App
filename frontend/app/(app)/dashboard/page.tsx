@@ -65,7 +65,7 @@ export default function DashboardPage() {
   function search(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const query = String(new FormData(event.currentTarget).get("query") ?? "").trim();
-    if (query) window.location.assign(`/penyedia?q=${encodeURIComponent(query)}`);
+    if (query) window.location.assign(`/market?q=${encodeURIComponent(query)}`);
   }
 
   async function logout() {
@@ -166,7 +166,7 @@ export default function DashboardPage() {
                 <span className="mt-2 text-sm font-semibold text-white">Buat Task</span>
               </Link>
 
-              <Link href="/marketplace" className="flex flex-col items-center">
+              <Link href="/market" className="flex flex-col items-center">
                 <div className="flex h-16 w-16 items-center justify-center">
                   <Image src="/images/DoTask.svg" alt="Do Task" width={120} height={120} />
                 </div>
@@ -217,7 +217,7 @@ export default function DashboardPage() {
                 </h2>
               </div>
               <Link
-                href="/penyedia"
+                href="/market"
                 className="flex min-h-11 items-center gap-1 font-bold text-white"
               >
                 Jelajahi penyedia <ArrowUpRight className="size-4" />

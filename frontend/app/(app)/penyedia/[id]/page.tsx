@@ -35,7 +35,7 @@ export default function ProviderDetailPage() {
 
   return (
     <>
-      <PageHeader eyebrow="Penyedia" title={provider.name} description={provider.title} backHref="/penyedia" />
+      <PageHeader eyebrow="Penyedia" title={provider.name} description={provider.title} backHref="/market" />
       <div className="grid gap-6 xl:grid-cols-[1fr_340px]">
         <div className="space-y-6">
           <section className="rounded-2xl border border-slate-200 bg-white p-6">

@@ -10,7 +10,7 @@ export default function TaskSubmittedPage() {
       <h1 className="mt-3 font-[var(--font-manrope)] text-4xl font-extrabold tracking-tight md:text-5xl">Kami sedang mencari ahlinya.</h1>
       <p className="mx-auto mt-4 max-w-xl text-lg leading-8 text-slate-600">Permintaan <strong>TSK-1051</strong> sudah dipublikasikan ke marketplace. Anda akan mendapat notifikasi begitu ada penyedia yang mengambil task ini.</p>
       <div className="mt-8 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-left"><div className="flex items-start gap-4"><Clock3 className="mt-0.5 size-6 shrink-0 text-amber-700" /><div><strong className="block">Status: Menunggu penyedia</strong><p className="mt-1 text-sm leading-6 text-slate-600">Rata-rata penyedia merespons dalam 5–15 menit. Anda tetap dapat menjelajahi daftar penyedia.</p></div></div></div>
-      <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row"><Link href="/activity" className={primaryButton}>Pantau aktivitas</Link><Link href="/penyedia" className={secondaryButton}><Search className="size-5" /> Jelajahi penyedia</Link></div>
+      <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row"><Link href="/activity" className={primaryButton}>Pantau aktivitas</Link><Link href="/market" className={secondaryButton}><Search className="size-5" /> Jelajahi penyedia</Link></div>
     </div>
   );
 }
