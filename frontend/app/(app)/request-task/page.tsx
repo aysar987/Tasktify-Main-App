@@ -1,7 +1,22 @@
+import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
 import { RequestTaskForm } from "@/components/request-task-form";
-import { PageHeader } from "@/components/ui";
 
 export default async function RequestTaskPage({ searchParams }: { searchParams: Promise<{ provider?: string }> }) {
   const { provider } = await searchParams;
-  return <><PageHeader eyebrow="Task baru" title="Apa yang perlu diselesaikan?" description="Ceritakan kebutuhan Anda dan kami akan mencarikan tenaga profesional yang tepat." backHref="/dashboard" /><RequestTaskForm providerId={provider} /></>;
+  return (
+    <div className="-mx-4 -my-7 min-h-[calc(100dvh+3.5rem)] bg-gradient-to-b from-sky-400 via-blue-700 to-slate-950 px-4 pb-12 pt-7 sm:-mx-6 sm:-my-10 sm:px-6 lg:-mx-10 lg:px-10">
+      <header className="mx-auto mb-8 max-w-6xl">
+        <Link href="/dashboard" aria-label="Kembali ke dashboard" className="grid size-11 place-items-center rounded-full bg-white/95 text-slate-900 shadow-lg transition hover:bg-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/50">
+          <ArrowLeft className="size-5" />
+        </Link>
+        <p className="mt-8 text-sm font-extrabold uppercase tracking-[.2em] text-sky-100">Task baru</p>
+        <h1 className="mt-2 max-w-2xl font-[var(--font-manrope)] text-3xl font-extrabold tracking-tight text-white md:text-5xl">Apa yang perlu diselesaikan?</h1>
+        <p className="mt-3 max-w-2xl text-base leading-7 text-blue-50 md:text-lg">Ceritakan kebutuhan Anda dan kami akan mencarikan tenaga profesional yang tepat.</p>
+      </header>
+      <div className="mx-auto max-w-6xl">
+        <RequestTaskForm providerId={provider} />
+      </div>
+    </div>
+  );
 }

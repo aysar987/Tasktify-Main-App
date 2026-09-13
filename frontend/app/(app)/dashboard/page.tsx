@@ -159,7 +159,7 @@ export default function DashboardPage() {
 
           <section className="mt-6">
             <div className="grid grid-cols-3 gap-6">
-              <Link href="/request-task" className="flex flex-col items-center">
+              <Link href="/create-task" className="flex flex-col items-center">
                 <div className="flex h-16 w-16 items-center justify-center">
                   <Image src="/images/AddTask.svg" alt="Add Task" width={120} height={120} />
                 </div>

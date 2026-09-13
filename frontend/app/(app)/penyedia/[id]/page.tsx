@@ -72,7 +72,7 @@ export default function ProviderDetailPage() {
             <span className="block text-xs text-slate-500">Mulai dari</span>
             <strong className="text-lg text-slate-950">{rupiah(provider.priceFrom)}</strong>
           </div>
-          <Link href={`/request-task?provider=${provider.id}`} className={`${primaryButton} w-full`}>
+          <Link href={`/create-task?provider=${provider.id}`} className={`${primaryButton} w-full`}>
             Pilih penyedia ini
           </Link>
         </aside>
