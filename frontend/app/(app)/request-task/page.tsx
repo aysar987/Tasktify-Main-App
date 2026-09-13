@@ -10,9 +10,7 @@ export default async function RequestTaskPage({ searchParams }: { searchParams: 
         <Link href="/dashboard" aria-label="Kembali ke dashboard" className="grid size-11 place-items-center rounded-full bg-white/95 text-slate-900 shadow-lg transition hover:bg-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/50">
           <ArrowLeft className="size-5" />
         </Link>
-        <p className="mt-8 text-sm font-extrabold uppercase tracking-[.2em] text-sky-100">Task baru</p>
         <h1 className="mt-2 max-w-2xl font-[var(--font-manrope)] text-3xl font-extrabold tracking-tight text-white md:text-5xl">Apa yang perlu diselesaikan?</h1>
-        <p className="mt-3 max-w-2xl text-base leading-7 text-blue-50 md:text-lg">Ceritakan kebutuhan Anda dan kami akan mencarikan tenaga profesional yang tepat.</p>
       </header>
       <div className="mx-auto max-w-6xl">
         <RequestTaskForm providerId={provider} />
