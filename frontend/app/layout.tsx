@@ -1,10 +1,6 @@
 import type { Metadata, Viewport } from "next";
-import { Poppins } from "next/font/google";
 import { ServiceWorkerRegistration } from "@/components/service-worker-registration";
 import "./globals.css";
-
-const poppinsBody = Poppins({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], variable: "--font-inter" });
-const poppinsHeading = Poppins({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], variable: "--font-manrope" });
 
 export const metadata: Metadata = {
   title: {
@@ -42,7 +38,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="id">
-      <body className={`${poppinsBody.variable} ${poppinsHeading.variable} font-[var(--font-inter)] antialiased`}>
+      <body className="font-[var(--font-inter)] antialiased">
         {children}
         <ServiceWorkerRegistration />
       </body>

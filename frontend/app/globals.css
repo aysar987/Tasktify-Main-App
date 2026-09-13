@@ -19,6 +19,8 @@
   --foreground: #0f172a;
   --brand-primary: #1b8fdf;
   --brand-accent: #5ec4ff;
+  --font-inter: "Avenir Next", "Segoe UI", sans-serif;
+  --font-manrope: "Avenir Next", "Segoe UI", sans-serif;
 }
 
 * {
