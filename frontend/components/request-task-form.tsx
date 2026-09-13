@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Banknote, Check, CreditCard, LoaderCircle } from "lucide-react";
+import { ArrowRight, Banknote, CreditCard, LoaderCircle } from "lucide-react";
 import Script from "next/script";
 import { useRouter } from "next/navigation";
 import { FormEvent, useRef, useState } from "react";
@@ -16,10 +16,12 @@ export function RequestTaskForm({ providerId }: { providerId?: string }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
+  const paymentCardRef = useRef<HTMLDivElement>(null);
   function continueToPayment() {
     if (!formRef.current?.reportValidity()) return;
     setError("");
     setStep(2);
+    window.requestAnimationFrame(() => paymentCardRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
   }
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -62,7 +64,7 @@ export function RequestTaskForm({ providerId }: { providerId?: string }) {
     }
   };
   return (
-    <form ref={formRef} onSubmit={submit} className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_300px]">
+    <form ref={formRef} onSubmit={submit} className="pb-20">
       <Script src={midtransSnapScriptUrl} data-client-key={midtransClientKey} strategy="afterInteractive" />
       <div className="space-y-6">
         <div className="space-y-6 rounded-[24px] border border-white/70 bg-white p-5 shadow-2xl shadow-slate-950/20 md:p-8">
@@ -75,7 +77,7 @@ export function RequestTaskForm({ providerId }: { providerId?: string }) {
         </fieldset>
         <div className="flex flex-col-reverse gap-3 border-t border-slate-200 pt-6 sm:flex-row sm:justify-end"><button type="button" onClick={() => router.back()} className={`${secondaryButton} rounded-full`}>Batalkan</button><button type="button" onClick={continueToPayment} className={`${primaryButton} rounded-full`}>Lanjutkan <ArrowRight className="size-5" /></button></div>
         </div>
-        {step === 2 && <div className="space-y-6 rounded-[24px] border border-white/70 bg-white p-5 shadow-2xl shadow-slate-950/20 md:p-8"><fieldset className="space-y-3">
+        {step === 2 && <div ref={paymentCardRef} className="space-y-6 rounded-[24px] border border-white/70 bg-white p-5 shadow-2xl shadow-slate-950/20 md:p-8"><fieldset className="space-y-3">
           <legend className="font-[var(--font-manrope)] text-xl font-extrabold">Metode pembayaran</legend>
           <p className="text-sm text-slate-500">Biaya task akan langsung ditagihkan saat Anda mengirim permintaan ini.</p>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -109,7 +111,6 @@ export function RequestTaskForm({ providerId }: { providerId?: string }) {
         <div className="flex flex-col-reverse gap-3 border-t border-slate-200 pt-6 sm:flex-row sm:justify-end"><button type="button" onClick={() => setStep(1)} className={`${secondaryButton} rounded-full`}>Kembali</button><button type="submit" disabled={loading} className={`${primaryButton} rounded-full`}>{loading ? <LoaderCircle className="size-5 animate-spin" /> : <ArrowRight className="size-5" />} {method === "online" ? "Kirim & bayar online" : "Kirim permintaan"}</button></div>
         </div>}
       </div>
-      <aside className="h-fit rounded-[24px] border border-white/20 bg-white/10 p-6 text-white shadow-xl backdrop-blur xl:sticky xl:top-28"><h2 className="font-[var(--font-manrope)] text-lg font-extrabold">Sebelum mengirim</h2><ul className="mt-4 space-y-4">{["Pastikan lokasi pengerjaan akurat", "Tentukan harga yang realistis", "Jangan cantumkan data sensitif", "Anda dapat membatalkan sebelum task diterima"].map((item) => <li key={item} className="flex gap-3 text-sm leading-6 text-blue-50"><span className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full bg-sky-400 text-slate-950"><Check className="size-3" /></span>{item}</li>)}</ul></aside>
     </form>
   );
 }
