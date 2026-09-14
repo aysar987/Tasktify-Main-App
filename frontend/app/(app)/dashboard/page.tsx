@@ -88,7 +88,8 @@ export default function DashboardPage() {
   }, [isDragging, slides.length]);
 
   const renderedSlides = slides.length > 1 ? [slides[slides.length - 1], ...slides, slides[0]] : slides;
-  const trackTransform = `translate3d(calc(-${trackIndex * 100}% + ${dragOffset}px), 0, 0)`;
+  const slideWidth = renderedSlides.length ? 100 / renderedSlides.length : 100;
+  const trackTransform = `translate3d(calc(-${trackIndex * slideWidth}% + ${dragOffset}px), 0, 0)`;
   const initials = (profile?.fullName || profile?.username || "U")
     .split(/\s+/)
     .slice(0, 2)
