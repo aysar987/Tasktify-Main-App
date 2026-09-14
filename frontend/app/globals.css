@@ -39,6 +39,19 @@ body {
   color: var(--foreground);
 }
 
+@keyframes wizard-slide-forward {
+  from { opacity: 0; transform: translateX(100%); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes wizard-slide-backward {
+  from { opacity: 0; transform: translateX(-100%); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.wizard-slide-forward { animation: wizard-slide-forward 360ms ease-in-out both; }
+.wizard-slide-backward { animation: wizard-slide-backward 360ms ease-in-out both; }
+
 button,
 a {
   -webkit-tap-highlight-color: transparent;
