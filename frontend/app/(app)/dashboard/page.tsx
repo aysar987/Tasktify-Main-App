@@ -314,18 +314,12 @@ export default function DashboardPage() {
             <div className="mb-5 flex items-end justify-between gap-4">
               <div>
                 <p className="text-sm font-bold uppercase tracking-wider text-white/70">
-                  Pilihan teratas
+                  
                 </p>
                 <h2 className="mt-1 font-[var(--font-manrope)] text-2xl font-extrabold text-white">
-                  Penyedia rekomendasi
+                  Rekomendasi Jasa
                 </h2>
               </div>
-              <Link
-                href="/market"
-                className="flex min-h-11 items-center gap-1 font-bold text-white"
-              >
-                Jelajahi lapak <ArrowUpRight className="size-4" />
-              </Link>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {providers.slice(0, 3).map((provider) => (

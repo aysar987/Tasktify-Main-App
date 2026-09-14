@@ -1,27 +1,42 @@
-import { MapPin, ShieldCheck, Star } from "lucide-react";
+import { BriefcaseBusiness, MapPin, Star } from "lucide-react";
 import Link from "next/link";
 import { rating, rupiah } from "@/lib/format";
 import type { Provider } from "@/types";
 
 export function ProviderCard({ provider }: { provider: Provider }) {
   return (
-    <article className="group flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-5 transition hover:border-orange-300">
-      <Link href={`/market/${provider.id}`} className="flex items-start gap-4 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-orange-200 rounded-xl">
-        <div className="grid size-14 shrink-0 place-items-center rounded-2xl bg-slate-900 font-bold text-white">{provider.initials}</div>
-        <div className="min-w-0">
-          <div className="flex items-center gap-1.5"><h3 className="truncate font-[var(--font-manrope)] font-extrabold group-hover:text-orange-700">{provider.name}</h3>{provider.verified && <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">Tasker terverifikasi</span>}</div>
-          <p className="mt-1 truncate text-sm text-slate-500">{provider.title}</p>
+    <Link
+      href={`/market/${provider.id}`}
+      className="group block h-full overflow-hidden rounded-[24px] border border-blue-200 bg-white shadow-sm transition duration-200 hover:-translate-y-1 hover:border-blue-400 hover:shadow-lg active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-200"
+    >
+      <div className="relative flex aspect-[1.55] items-center justify-center overflow-hidden bg-gradient-to-br from-sky-300 via-blue-500 to-indigo-800">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.34),transparent_36%)]" />
+        <BriefcaseBusiness className="relative size-16 text-white/90 transition duration-300 group-hover:scale-110" strokeWidth={1.35} />
+        <span className="absolute bottom-4 left-4 rounded-full bg-white/90 px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-blue-800">
+          {provider.category}
+        </span>
+      </div>
+      <div className="flex min-h-[164px] flex-col p-5">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h3 className="truncate font-[var(--font-manrope)] text-lg font-extrabold text-slate-950 group-hover:text-blue-700">
+              {provider.name}
+            </h3>
+            <p className="mt-1 truncate text-sm text-slate-500">{provider.title}</p>
+          </div>
+          {provider.verified && <span className="shrink-0 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-[10px] font-bold text-emerald-700">Terverifikasi</span>}
         </div>
-      </Link>
-      <div className="mt-5 flex items-center gap-4 border-y border-slate-100 py-3 text-sm">
-        <span className="flex items-center gap-1 font-bold text-slate-800"><Star className="size-4 fill-amber-400 text-amber-400" />{rating(provider.rating)}</span>
-        <span className="text-slate-500">{provider.jobs} pekerjaan</span>
+        <div className="mt-auto flex items-end justify-between gap-3 border-t border-slate-100 pt-4">
+          <div>
+            <span className="block text-xs text-slate-500">Mulai dari</span>
+            <strong className="text-base font-extrabold text-slate-950">{rupiah(provider.priceFrom)}</strong>
+          </div>
+          <div className="text-right text-xs text-slate-500">
+            <span className="flex items-center justify-end gap-1 font-bold text-slate-800"><Star className="size-4 fill-amber-400 text-amber-400" />{rating(provider.rating)}</span>
+            <span className="mt-1 flex items-center justify-end gap-1"><MapPin className="size-3.5" />{provider.location}</span>
+          </div>
+        </div>
       </div>
-      <p className="mt-4 flex items-center gap-2 text-sm text-slate-600"><MapPin className="size-4 text-slate-400" />{provider.location}</p>
-      <div className="mt-auto flex items-end justify-between gap-3 pt-5">
-        <div><span className="block text-xs text-slate-500">Mulai dari</span><strong className="text-sm text-slate-950">{rupiah(provider.priceFrom)}</strong></div>
-        <Link href={`/request-task?provider=${provider.id}`} className="inline-flex min-h-10 items-center rounded-lg border border-slate-300 px-4 text-sm font-bold transition group-hover:border-orange-600 group-hover:text-orange-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-orange-200">Lihat</Link>
-      </div>
-    </article>
+    </Link>
   );
 }
