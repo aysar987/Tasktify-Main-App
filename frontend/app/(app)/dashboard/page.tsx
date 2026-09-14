@@ -54,11 +54,14 @@ export default function DashboardPage() {
   ];
 
   useEffect(() => {
-    setActiveSlide(0);
-    setTrackIndex(1);
-    setDragOffset(0);
-    setTransitionEnabled(false);
-    requestAnimationFrame(() => setTransitionEnabled(true));
+    const frame = requestAnimationFrame(() => {
+      setActiveSlide(0);
+      setTrackIndex(1);
+      setDragOffset(0);
+      setTransitionEnabled(false);
+      requestAnimationFrame(() => setTransitionEnabled(true));
+    });
+    return () => cancelAnimationFrame(frame);
   }, [slides.length]);
 
   useEffect(() => {
