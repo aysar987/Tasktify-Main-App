@@ -18,8 +18,15 @@ export default function DashboardPage() {
   const [providers, setProviders] = useState<Provider[]>([]);
   const [banners, setBanners] = useState<Banner[]>([]);
   const [activeSlide, setActiveSlide] = useState(0);
+  const [trackIndex, setTrackIndex] = useState(1);
+  const [dragOffset, setDragOffset] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [transitionEnabled, setTransitionEnabled] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const carouselRef = useRef<HTMLElement | null>(null);
+  const dragStartX = useRef(0);
+  const didDrag = useRef(false);
 
   useEffect(() => {
     Promise.all([getProfile(), getTasks(), getProviders(), getBanners()]).then(
@@ -47,14 +54,38 @@ export default function DashboardPage() {
   ];
 
   useEffect(() => {
-    if (slides.length < 2) return;
-    const interval = window.setInterval(() => {
-      setActiveSlide((current) => (current + 1) % slides.length);
-    }, 4000);
-    return () => window.clearInterval(interval);
+    setActiveSlide(0);
+    setTrackIndex(1);
+    setDragOffset(0);
+    setTransitionEnabled(false);
+    requestAnimationFrame(() => setTransitionEnabled(true));
   }, [slides.length]);
 
-  const activeSlideItem = slides[activeSlide] ?? slides[0];
+  useEffect(() => {
+    if (slides.length < 2 || isDragging) return;
+    let frame = 0;
+    let lastTime = performance.now();
+    let elapsed = 0;
+    const tick = (time: number) => {
+      elapsed += time - lastTime;
+      lastTime = time;
+      if (elapsed >= 4500) {
+        elapsed = 0;
+        setActiveSlide((current) => {
+          const next = (current + 1) % slides.length;
+          setTransitionEnabled(true);
+          setTrackIndex(next + 1);
+          return next;
+        });
+      }
+      frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [isDragging, slides.length]);
+
+  const renderedSlides = slides.length > 1 ? [slides[slides.length - 1], ...slides, slides[0]] : slides;
+  const trackTransform = `translate3d(calc(-${trackIndex * 100}% + ${dragOffset}px), 0, 0)`;
   const initials = (profile?.fullName || profile?.username || "U")
     .split(/\s+/)
     .slice(0, 2)
@@ -75,18 +106,84 @@ export default function DashboardPage() {
 
   return (
     <div>
-      <section className="relative -mx-4 -mt-7 min-h-[220px] overflow-hidden sm:-mx-6 sm:min-h-[300px] lg:-mx-10 lg:-mt-10">
-        {activeSlideItem.kind === "photo" ? (
-          <>
-            <Image unoptimized src={activeSlideItem.banner.imageUrl} alt="" fill className="object-cover" />
-            <Link href={activeSlideItem.banner.href} className="absolute inset-0" aria-label="Buka banner" />
-          </>
-        ) : (
-          <>
-            <div className="absolute inset-0 bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-600" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.28),transparent_30%)]" />
-          </>
-        )}
+      <section
+        ref={carouselRef}
+        onPointerDown={(event) => {
+          if (slides.length < 2) return;
+          setIsDragging(true);
+          setTransitionEnabled(false);
+          dragStartX.current = event.clientX;
+          didDrag.current = false;
+          event.currentTarget.setPointerCapture(event.pointerId);
+        }}
+        onPointerMove={(event) => {
+          if (!isDragging) return;
+          const offset = event.clientX - dragStartX.current;
+          if (Math.abs(offset) > 4) didDrag.current = true;
+          setDragOffset(offset);
+        }}
+        onPointerUp={(event) => {
+          if (!isDragging) return;
+          const width = carouselRef.current?.clientWidth ?? 1;
+          const offset = event.clientX - dragStartX.current;
+          const threshold = Math.max(50, width * 0.18);
+          setIsDragging(false);
+          setTransitionEnabled(true);
+          setDragOffset(0);
+          if (Math.abs(offset) >= threshold) {
+            setActiveSlide((current) => {
+              const next = offset < 0 ? (current + 1) % slides.length : (current - 1 + slides.length) % slides.length;
+              setTrackIndex(next + 1);
+              return next;
+            });
+          }
+          event.currentTarget.releasePointerCapture(event.pointerId);
+        }}
+        onPointerCancel={() => {
+          setIsDragging(false);
+          setTransitionEnabled(true);
+          setDragOffset(0);
+        }}
+        className="relative -mx-4 -mt-7 min-h-[220px] touch-pan-y select-none overflow-hidden sm:-mx-6 sm:min-h-[300px] lg:-mx-10 lg:-mt-10"
+      >
+        <div
+          onTransitionEnd={(event) => {
+            if (event.target !== event.currentTarget || slides.length < 2) return;
+            if (trackIndex === 0) {
+              setTransitionEnabled(false);
+              setTrackIndex(slides.length);
+              setActiveSlide(slides.length - 1);
+              requestAnimationFrame(() => setTransitionEnabled(true));
+            } else if (trackIndex === slides.length + 1) {
+              setTransitionEnabled(false);
+              setTrackIndex(1);
+              setActiveSlide(0);
+              requestAnimationFrame(() => setTransitionEnabled(true));
+            }
+          }}
+          className={`absolute inset-y-0 left-0 flex h-full ${isDragging ? "cursor-grabbing" : "cursor-grab"}`}
+          style={{
+            width: `${renderedSlides.length * 100}%`,
+            transform: trackTransform,
+            transition: transitionEnabled ? "transform 520ms cubic-bezier(0.65, 0, 0.35, 1)" : "none",
+          }}
+        >
+          {renderedSlides.map((slide, index) => (
+            <div key={`${slide.kind}-${slide.kind === "photo" ? slide.banner.id : index}`} style={{ width: `${100 / renderedSlides.length}%` }} className="relative h-full shrink-0">
+              {slide.kind === "photo" ? (
+                <>
+                  <Image unoptimized src={slide.banner.imageUrl} alt="" fill draggable={false} className="pointer-events-none object-cover" />
+                  <Link href={slide.banner.href} onClick={(event) => { if (didDrag.current) event.preventDefault(); }} className="absolute inset-0" aria-label="Buka banner" />
+                </>
+              ) : (
+                <>
+                  <div className="absolute inset-0 bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-600" />
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.28),transparent_30%)]" />
+                </>
+              )}
+            </div>
+          ))}
+        </div>
         <div className="absolute inset-x-4 top-4 z-20 flex items-center gap-3 sm:hidden">
           <form onSubmit={search} className="relative min-w-0 flex-1">
             <Search className="absolute left-4 top-1/2 size-5 -translate-y-1/2 text-slate-500" />
@@ -130,10 +227,13 @@ export default function DashboardPage() {
                 key={slide.kind === "default" ? "default" : slide.banner.id}
                 type="button"
                 aria-label={`Pilih banner ${index + 1}`}
-                onClick={() => setActiveSlide(index)}
-                className={`pointer-events-auto h-2.5 rounded-full shadow transition ${
-                  activeSlide === index ? "w-10 bg-white" : "w-2.5 bg-white/60 hover:bg-white/85"
-                }`}
+                onClick={() => {
+                  if (didDrag.current) return;
+                  setTransitionEnabled(true);
+                  setActiveSlide(index);
+                  setTrackIndex(index + 1);
+                }}
+                className={`pointer-events-auto h-2.5 rounded-full shadow transition-all duration-300 ${activeSlide === index ? "w-10 bg-white" : "w-2.5 bg-white/60 hover:bg-white/85"}`}
               />
             ))}
           </div>
