@@ -15,6 +15,7 @@ export default function DashboardPage() {
   const [profile, setProfile] = useState<Profile>();
   const [providers, setProviders] = useState<Provider[]>([]);
   const [banners, setBanners] = useState<Banner[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeSlide, setActiveSlide] = useState(0);
   const [trackIndex, setTrackIndex] = useState(1);
   const [dragOffset, setDragOffset] = useState(0);
@@ -27,13 +28,13 @@ export default function DashboardPage() {
   const didDrag = useRef(false);
 
   useEffect(() => {
-    Promise.all([getProfile(), getProviders(), getBanners()]).then(
-      ([nextProfile, nextProviders, nextBanners]) => {
+    Promise.all([getProfile(), getProviders(), getBanners()])
+      .then(([nextProfile, nextProviders, nextBanners]) => {
         setProfile(nextProfile);
         setProviders(nextProviders);
         setBanners(nextBanners);
-      },
-    );
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   useEffect(() => {
@@ -244,18 +245,29 @@ export default function DashboardPage() {
       <div className="relative z-10 -mt-10 -mx-4 -mb-7 rounded-3xl bg-orange-600 pb-10 pt-6 sm:-mx-6 sm:-mt-12 lg:-mx-10 lg:-mt-14 lg:-mb-10">
         <div className="px-4 sm:px-6 lg:px-10">
           <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-lg">
-            {profile?.avatarUrl ? (
-              <Image unoptimized src={profile.avatarUrl} alt="" width={56} height={56} className="size-14 shrink-0 rounded-full object-cover" />
+            {loading ? (
+              <>
+                <span className="size-14 shrink-0 animate-pulse rounded-full bg-slate-200" />
+                <div className="min-w-0 flex-1">
+                  <div className="h-5 w-40 max-w-full animate-pulse rounded-full bg-slate-200" />
+                </div>
+              </>
             ) : (
-              <span className="grid size-14 shrink-0 place-items-center rounded-full bg-slate-900 text-lg font-bold text-white">
-                {initials}
-              </span>
+              <>
+                {profile?.avatarUrl ? (
+                  <Image unoptimized src={profile.avatarUrl} alt="" width={56} height={56} className="size-14 shrink-0 rounded-full object-cover" />
+                ) : (
+                  <span className="grid size-14 shrink-0 place-items-center rounded-full bg-slate-900 text-lg font-bold text-white">
+                    {initials}
+                  </span>
+                )}
+                <div className="min-w-0">
+                  <h1 className="truncate font-[var(--font-manrope)] text-xl font-bold text-slate-950 sm:text-xl">
+                    {profile?.fullName || profile?.username || "Pengguna"}.
+                  </h1>
+                </div>
+              </>
             )}
-            <div className="min-w-0">
-              <h1 className="truncate font-[var(--font-manrope)] text-xl font-bold text-slate-950 sm:text-xl">
-                {profile?.fullName || profile?.username || "Pengguna"}.
-              </h1>
-            </div>
           </div>
 
           <section className="mt-6">
@@ -289,9 +301,23 @@ export default function DashboardPage() {
               </h2>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {providers.slice(0, 3).map((provider) => (
-                <ProviderCard key={provider.id} provider={provider} />
-              ))}
+              {loading
+                ? Array.from({ length: 3 }).map((_, index) => (
+                    <div key={index} className="overflow-hidden rounded-[24px] border border-white/20 bg-white">
+                      <div className="h-[150px] animate-pulse bg-blue-100" />
+                      <div className="flex flex-col gap-2 p-3">
+                        <div className="h-5 w-3/4 animate-pulse rounded-full bg-slate-200" />
+                        <div className="h-4 w-1/2 animate-pulse rounded-full bg-slate-200" />
+                        <div className="mt-2 flex items-center justify-between border-t border-slate-100 pt-2">
+                          <div className="h-4 w-16 animate-pulse rounded-full bg-slate-200" />
+                          <div className="h-4 w-12 animate-pulse rounded-full bg-slate-200" />
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                : providers.slice(0, 3).map((provider) => (
+                    <ProviderCard key={provider.id} provider={provider} />
+                  ))}
             </div>
           </section>
         </div>
