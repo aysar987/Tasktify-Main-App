@@ -41,6 +41,7 @@ type TaskResponse = {
   provider?: Provider;
   note: string;
   perspective?: "client" | "provider";
+  imageUrl?: string;
 };
 
 function mapTask(row: TaskResponse): Task {
@@ -58,6 +59,7 @@ function mapTask(row: TaskResponse): Task {
     provider: row.provider,
     note: row.note,
     perspective: row.perspective,
+    imageUrl: row.imageUrl,
   };
 }
 
@@ -122,10 +124,21 @@ export async function createTask(payload: {
   note: string;
   providerId?: string;
   method: PaymentMethod;
+  image?: File;
 }) {
+  const form = new FormData();
+  form.set("title", payload.title);
+  form.set("category", payload.category);
+  form.set("location", payload.location);
+  form.set("budget", String(payload.budget));
+  form.set("schedule", payload.schedule);
+  form.set("note", payload.note);
+  if (payload.providerId) form.set("providerId", payload.providerId);
+  form.set("method", payload.method);
+  if (payload.image) form.set("image", payload.image);
   const result = await apiRequest<CreateTaskResponse>("/tasks", {
     method: "POST",
-    body: JSON.stringify(payload),
+    body: form,
   });
   return { task: mapTask(result.task), payment: result.payment };
 }

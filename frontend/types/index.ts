@@ -30,6 +30,7 @@ export type Task = {
   provider?: Provider;
   note: string;
   perspective?: "client" | "provider";
+  imageUrl?: string;
 };
 
 export type Profile = {

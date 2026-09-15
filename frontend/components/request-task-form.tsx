@@ -1,6 +1,7 @@
 "use client";
 
-import { Banknote, CreditCard, LoaderCircle } from "lucide-react";
+import { Banknote, CreditCard, ImagePlus, LoaderCircle } from "lucide-react";
+import Image from "next/image";
 import Script from "next/script";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
@@ -11,7 +12,7 @@ import { inputClass, primaryButton, secondaryButton } from "./ui";
 
 type TaskFields = { title: string; location: string; budget: string; schedule: string; note: string };
 const initialFields: TaskFields = { title: "", location: "", budget: "", schedule: "", note: "" };
-const TOTAL_STEPS = 6;
+const TOTAL_STEPS = 7;
 
 export function RequestTaskForm({ providerId }: { providerId?: string }) {
   const router = useRouter();
@@ -19,6 +20,8 @@ export function RequestTaskForm({ providerId }: { providerId?: string }) {
   const [step, setStep] = useState(1);
   const [direction, setDirection] = useState<"forward" | "backward">("forward");
   const [fields, setFields] = useState<TaskFields>(initialFields);
+  const [image, setImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -26,6 +29,15 @@ export function RequestTaskForm({ providerId }: { providerId?: string }) {
     setFields((current) => ({ ...current, [name]: value }));
     setError("");
   };
+
+  function pickImage(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0] ?? null;
+    setImage(file);
+    setImagePreview((current) => {
+      if (current) URL.revokeObjectURL(current);
+      return file ? URL.createObjectURL(file) : "";
+    });
+  }
 
   function validate(current: number) {
     if (current === 1 && !fields.title.trim()) return "Nama task wajib diisi.";
@@ -81,6 +93,7 @@ export function RequestTaskForm({ providerId }: { providerId?: string }) {
         note: fields.note,
         providerId,
         method,
+        image: image ?? undefined,
       });
       if (method === "online" && payment?.snapToken && window.snap) {
         window.snap.pay(payment.snapToken, {
@@ -152,7 +165,33 @@ export function RequestTaskForm({ providerId }: { providerId?: string }) {
                     <textarea {...fieldProps("note")} rows={5} className={`${inputClass} py-3`} placeholder="Jelaskan masalah, kondisi lokasi, dan hasil yang Anda harapkan..." autoFocus />
                   </StepField>
                 )}
-                {step === 6 && <PaymentOptions method={method} setMethod={setMethod} />}
+                {step === 6 && (
+                  <StepField label="Foto task" required={false} helper="Bantu penyedia memahami kondisi pekerjaan lewat foto.">
+                    <span className="mt-2 flex items-center gap-4">
+                      <span className="relative flex h-24 w-36 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-dashed border-slate-300 bg-slate-50">
+                        {imagePreview ? (
+                          <Image src={imagePreview} alt="" fill className="object-cover" unoptimized />
+                        ) : (
+                          <ImagePlus className="size-6 text-slate-400" />
+                        )}
+                      </span>
+                      <span className="flex flex-col gap-2">
+                        <span className="relative inline-flex w-fit cursor-pointer items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 hover:border-slate-400">
+                          Pilih foto
+                          <input
+                            name="image"
+                            type="file"
+                            accept="image/png,image/jpeg,image/webp"
+                            onChange={pickImage}
+                            className="absolute inset-0 cursor-pointer opacity-0"
+                          />
+                        </span>
+                        <span className="text-xs font-normal text-slate-500">JPG, PNG, atau WebP. Maksimal 5 MB.</span>
+                      </span>
+                    </span>
+                  </StepField>
+                )}
+                {step === 7 && <PaymentOptions method={method} setMethod={setMethod} />}
               </fieldset>
               {error && <p role="alert" className="mt-4 text-sm font-semibold text-red-700">{error}</p>}
               <div className="mt-8 flex items-center justify-between gap-3 border-t border-slate-200 pt-5">
@@ -191,10 +230,20 @@ export function RequestTaskForm({ providerId }: { providerId?: string }) {
   );
 }
 
-function StepField({ label, helper, children }: { label: string; helper?: string; children: React.ReactNode }) {
+function StepField({
+  label,
+  helper,
+  required = true,
+  children,
+}: {
+  label: string;
+  helper?: string;
+  required?: boolean;
+  children: React.ReactNode;
+}) {
   return (
     <label className="block text-sm font-bold text-slate-700">
-      {label} <span className="text-red-600">*</span>
+      {label} {required && <span className="text-red-600">*</span>}
       {children}
       {helper && <span className="mt-2 block text-xs font-normal leading-5 text-slate-500">{helper}</span>}
     </label>

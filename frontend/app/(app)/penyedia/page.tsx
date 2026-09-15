@@ -10,7 +10,7 @@ export default async function ProviderTaskMarketPage({ searchParams }: { searchP
 	const { q } = await searchParams;
 	return (
 		<>
-			<PageHeader title="Task yang tersedia" description="Temukan task yang dapat Anda ambil dan kerjakan." />
+			<PageHeader title="Task yang tersedia" />
 			<TaskMarketBrowser initialQuery={q} />
 		</>
 	);
