@@ -197,6 +197,14 @@ export async function getMarketplaceListings(query = "", category = "") {
   return apiRequest<MarketplaceListing[]>(`/marketplace/listings${suffix}`, {}, false);
 }
 
+export async function getMarketplaceListing(id: string): Promise<MarketplaceListing> {
+  return apiRequest<MarketplaceListing>(
+    `/marketplace/listings/${encodeURIComponent(id)}`,
+    {},
+    false,
+  );
+}
+
 export async function saveMarketplaceListing(payload: {
   name: string;
   category: string;
@@ -424,6 +432,42 @@ export async function rejectProvider(id: string, note = ""): Promise<Provider> {
 
 export async function getBanners(): Promise<Banner[]> {
   return apiRequest<Banner[]>("/banners");
+}
+
+export async function getAdminMarketplaceListings(
+  status?: ProviderVerificationStatus,
+): Promise<MarketplaceListing[]> {
+  const suffix = status ? `?status=${encodeURIComponent(status)}` : "";
+  return apiRequest<MarketplaceListing[]>(`/admin/marketplace-listings${suffix}`);
+}
+
+export async function verifyMarketplaceListing(id: string): Promise<MarketplaceListing> {
+  return apiRequest<MarketplaceListing>(
+    `/admin/marketplace-listings/${encodeURIComponent(id)}/verify`,
+    { method: "POST" },
+  );
+}
+
+export async function rejectMarketplaceListing(
+  id: string,
+  note = "",
+): Promise<MarketplaceListing> {
+  return apiRequest<MarketplaceListing>(
+    `/admin/marketplace-listings/${encodeURIComponent(id)}/reject`,
+    { method: "POST", body: JSON.stringify({ note }) },
+  );
+}
+
+export async function deleteMarketplaceListing(id: string): Promise<void> {
+  await apiRequest<void>(`/admin/marketplace-listings/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
+}
+
+export async function startProviderChat(providerId: string): Promise<Conversation> {
+  return apiRequest<Conversation>(`/providers/${encodeURIComponent(providerId)}/chat`, {
+    method: "POST",
+  });
 }
 
 export async function getAdminBanners(): Promise<Banner[]> {

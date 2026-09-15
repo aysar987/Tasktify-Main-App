@@ -98,6 +98,7 @@ export type Banner = {
 
 export type MarketplaceListing = {
   id: string;
+  providerId?: string;
   name: string;
   slug: string;
   category: string;
@@ -107,6 +108,8 @@ export type MarketplaceListing = {
   rating: number;
   jobs: number;
   verified: boolean;
+  verificationStatus: ProviderVerificationStatus;
+  verificationNote?: string;
   status: "active" | "inactive" | "pending";
   imageUrl?: string;
 };

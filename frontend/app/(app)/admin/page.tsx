@@ -3,10 +3,11 @@
 import { ShieldAlert } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AdminBannerManager } from "@/components/admin-banner-manager";
+import { AdminListingCard } from "@/components/admin-listing-card";
 import { AdminProviderCard } from "@/components/admin-provider-card";
 import { PageHeader } from "@/components/ui";
-import { getAdminProviders, getProfile } from "@/lib/api";
-import type { Profile, Provider, ProviderVerificationStatus } from "@/types";
+import { getAdminMarketplaceListings, getAdminProviders, getProfile } from "@/lib/api";
+import type { MarketplaceListing, Profile, Provider, ProviderVerificationStatus } from "@/types";
 
 const tabs: { value: ProviderVerificationStatus | "all"; label: string }[] = [
   { value: "pending", label: "Menunggu" },
@@ -17,6 +18,7 @@ const tabs: { value: ProviderVerificationStatus | "all"; label: string }[] = [
 
 const sections = [
   { value: "providers", label: "Verifikasi penyedia" },
+  { value: "listings", label: "Lapak" },
   { value: "banners", label: "Banner dashboard" },
 ] as const;
 
@@ -25,6 +27,8 @@ export default function AdminPage() {
   const [section, setSection] = useState<(typeof sections)[number]["value"]>("providers");
   const [tab, setTab] = useState<ProviderVerificationStatus | "all">("pending");
   const [providers, setProviders] = useState<Provider[]>([]);
+  const [listingTab, setListingTab] = useState<ProviderVerificationStatus | "all">("pending");
+  const [listings, setListings] = useState<MarketplaceListing[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -52,6 +56,26 @@ export default function AdminPage() {
     };
   }, [profile, section, tab]);
 
+  useEffect(() => {
+    if (!profile || profile.role !== "admin" || section !== "listings") return;
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      setError("");
+      try {
+        const items = await getAdminMarketplaceListings(listingTab === "all" ? undefined : listingTab);
+        if (!cancelled) setListings(items);
+      } catch (cause) {
+        if (!cancelled) setError(cause instanceof Error ? cause.message : "Data gagal dimuat.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [profile, section, listingTab]);
+
   if (profile && profile.role !== "admin")
     return (
       <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center">
@@ -65,11 +89,13 @@ export default function AdminPage() {
     <>
       <PageHeader
         eyebrow="Admin"
-        title={section === "providers" ? "Verifikasi penyedia" : "Banner dashboard"}
+        title={section === "providers" ? "Verifikasi penyedia" : section === "listings" ? "Lapak" : "Banner dashboard"}
         description={
           section === "providers"
             ? "Review pendaftar penyedia layanan sebelum mereka bisa menerima task."
-            : "Atur banner promosi yang tampil di dashboard pengguna tanpa perlu mengubah kode."
+            : section === "listings"
+              ? "Verifikasi lapak sebelum tampil di marketplace, atau hapus lapak yang tidak sesuai."
+              : "Atur banner promosi yang tampil di dashboard pengguna tanpa perlu mengubah kode."
         }
       />
       <div className="mb-6 flex gap-2 overflow-x-auto pb-1">
@@ -86,6 +112,44 @@ export default function AdminPage() {
       </div>
       {section === "banners" ? (
         <AdminBannerManager />
+      ) : section === "listings" ? (
+        <>
+          <div className="mb-6 flex gap-2 overflow-x-auto pb-1">
+            {tabs.map((item) => (
+              <button
+                key={item.value}
+                type="button"
+                onClick={() => setListingTab(item.value)}
+                className={`min-h-10 shrink-0 cursor-pointer rounded-full border px-4 text-sm font-bold transition ${listingTab === item.value ? "border-orange-600 bg-orange-600 text-white" : "border-slate-300 bg-white text-slate-600 hover:border-orange-400"}`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+          {error && (
+            <p role="alert" className="mb-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">
+              {error}
+            </p>
+          )}
+          {loading ? (
+            <p className="py-16 text-center text-slate-500">Memuat...</p>
+          ) : listings.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center text-slate-500">
+              Tidak ada lapak di kategori ini.
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {listings.map((listing) => (
+                <AdminListingCard
+                  key={listing.id}
+                  listing={listing}
+                  onUpdated={(updated) => setListings((prev) => prev.map((item) => (item.id === updated.id ? updated : item)))}
+                  onDeleted={(id) => setListings((prev) => prev.filter((item) => item.id !== id))}
+                />
+              ))}
+            </div>
+          )}
+        </>
       ) : (
         <>
           <div className="mb-6 flex gap-2 overflow-x-auto pb-1">

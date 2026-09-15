@@ -1,8 +1,9 @@
 "use client";
 
 import { ArrowLeft, MessageSquareText, Search, Send, UserRound } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
-import { getConversations, getMessages, sendMessage } from "@/lib/api";
+import { getConversations, getMessages, sendMessage, startProviderChat } from "@/lib/api";
 import { getSupabase } from "@/lib/supabase";
 import type { Conversation, Message } from "@/types";
 
@@ -17,7 +18,8 @@ function formatChatDate(iso: string) {
   return date.toLocaleDateString("en-GB");
 }
 
-export function ChatPanel() {
+export function ChatPanel({ initialProviderId }: { initialProviderId?: string } = {}) {
+  const router = useRouter();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [active, setActive] = useState<Conversation>();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -26,18 +28,38 @@ export function ChatPanel() {
   const [query, setQuery] = useState("");
   const [error, setError] = useState("");
   const [mobileView, setMobileView] = useState<"list" | "chat">("list");
+  const [startingChat, setStartingChat] = useState(Boolean(initialProviderId));
 
   useEffect(() => {
     getSupabase()
       .auth.getUser()
       .then(({ data }) => setUserId(data.user?.id ?? ""));
     getConversations()
-      .then((items) => setConversations(items))
-      .catch((cause: unknown) =>
+      .then(async (items) => {
+        setConversations(items);
+        if (!initialProviderId) return;
+        try {
+          const conversation = await startProviderChat(initialProviderId);
+          setConversations((current) => [
+            conversation,
+            ...current.filter((chat) => chat.id !== conversation.id),
+          ]);
+          setActive(conversation);
+          setMobileView("chat");
+        } catch (cause) {
+          setError(cause instanceof Error ? cause.message : "Chat gagal dimulai.");
+        } finally {
+          setStartingChat(false);
+          router.replace("/chat");
+        }
+      })
+      .catch((cause: unknown) => {
         setError(
           cause instanceof Error ? cause.message : "Pesan gagal dimuat.",
-        ),
-      );
+        );
+        setStartingChat(false);
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   useEffect(() => {
     if (!active) return;
@@ -60,6 +82,9 @@ export function ChatPanel() {
       setError(cause instanceof Error ? cause.message : "Pesan gagal dikirim.");
     }
   }
+
+  if (startingChat)
+    return <p className="py-16 text-center text-slate-500">Memulai percakapan...</p>;
 
   if (!conversations.length)
     return (

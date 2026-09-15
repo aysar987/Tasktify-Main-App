@@ -39,7 +39,7 @@ export default function RegisterListingPage() {
         priceFrom: Number(form.get("priceFrom")),
         image: image instanceof File && image.size > 0 ? image : undefined,
       });
-      setMessage("Lapak berhasil didaftarkan dan sekarang tampil di marketplace.");
+      setMessage("Lapak berhasil didaftarkan. Menunggu verifikasi admin sebelum tampil di marketplace.");
       event.currentTarget.reset();
       setImagePreview((current) => {
         if (current) URL.revokeObjectURL(current);

@@ -232,7 +232,7 @@ export default function DashboardPage() {
         )}
       </section>
 
-      <div className="relative z-10 -mt-10 -mx-4 -mb-7 rounded-3xl bg-orange-600 pb-10 pt-6 sm:-mx-6 sm:-mt-12 lg:-mx-10 lg:-mt-14 lg:-mb-10">
+      <div className="relative z-10 -mt-20 -mx-4 -mb-7 rounded-3xl bg-orange-600 pb-10 pt-6 sm:-mx-6 sm:-mt-24 lg:-mx-10 lg:-mt-28 lg:-mb-10">
         <div className="px-4 sm:px-6 lg:px-10">
           <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-lg">
             {loading ? (
