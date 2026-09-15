@@ -251,7 +251,7 @@ export function MarketplaceBrowser({ initialQuery = "" }: { initialQuery?: strin
         {visible.map((listing) => (
           <article
             key={listing.id}
-            className="group flex flex-col overflow-hidden rounded-2xl border border-blue-200 bg-white transition hover:-translate-y-0.5 hover:border-blue-400 hover:shadow-lg"
+            className="group flex flex-col overflow-hidden rounded-2xl border border-blue-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-blue-400 hover:shadow-lg"
           >
             <div className="relative flex h-[130px] items-center justify-center overflow-hidden bg-gradient-to-br from-sky-300 via-blue-500 to-indigo-800">
               {listing.imageUrl ? (

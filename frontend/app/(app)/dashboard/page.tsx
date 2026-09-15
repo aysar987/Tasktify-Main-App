@@ -293,7 +293,7 @@ export default function DashboardPage() {
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {loading
                 ? Array.from({ length: 3 }).map((_, index) => (
-                    <div key={index} className="overflow-hidden rounded-[24px] border border-white/20 bg-white">
+                    <div key={index} className="overflow-hidden rounded-[24px] border border-white/20 bg-white shadow-sm">
                       <div className="h-[150px] animate-pulse bg-blue-100" />
                       <div className="flex flex-col gap-2 p-3">
                         <div className="h-5 w-3/4 animate-pulse rounded-full bg-slate-200" />
