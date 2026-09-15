@@ -1,20 +1,18 @@
 "use client";
 
-import { ArrowUpRight, ChevronDown, LogOut, Search, Store } from "lucide-react";
+import { ChevronDown, LogOut, Search } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ProviderCard } from "@/components/provider-card";
-import { TaskCard } from "@/components/task-card";
-import { getBanners, getProfile, getProviders, getTasks } from "@/lib/api";
+import { getBanners, getProfile, getProviders } from "@/lib/api";
 import { getSupabase } from "@/lib/supabase";
-import type { Banner, Profile, Provider, Task } from "@/types";
+import type { Banner, Profile, Provider } from "@/types";
 
 type Slide = { kind: "default" } | { kind: "photo"; banner: Banner };
 
 export default function DashboardPage() {
   const [profile, setProfile] = useState<Profile>();
-  const [tasks, setTasks] = useState<Task[]>([]);
   const [providers, setProviders] = useState<Provider[]>([]);
   const [banners, setBanners] = useState<Banner[]>([]);
   const [activeSlide, setActiveSlide] = useState(0);
@@ -29,10 +27,9 @@ export default function DashboardPage() {
   const didDrag = useRef(false);
 
   useEffect(() => {
-    Promise.all([getProfile(), getTasks(), getProviders(), getBanners()]).then(
-      ([nextProfile, nextTasks, nextProviders, nextBanners]) => {
+    Promise.all([getProfile(), getProviders(), getBanners()]).then(
+      ([nextProfile, nextProviders, nextBanners]) => {
         setProfile(nextProfile);
-        setTasks(nextTasks);
         setProviders(nextProviders);
         setBanners(nextBanners);
       },
@@ -287,39 +284,9 @@ export default function DashboardPage() {
           </section>
           <section className="mt-10">
             <div className="mb-5 flex items-end justify-between gap-4">
-              <p className="text-sm font-bold uppercase tracking-wider text-white/70">
-                Aktivitas terbaru
-              </p>
-              <Link
-                href="/activity"
-                className="flex min-h-11 items-center gap-1 font-bold text-white"
-              >
-                Lihat semua <ArrowUpRight className="size-4" />
-              </Link>
-            </div>
-            <div className="grid gap-4 xl:grid-cols-2">
-              {tasks.length ? (
-                tasks
-                  .slice(0, 2)
-                  .map((task) => <TaskCard key={task.id} task={task} />)
-              ) : (
-                <Empty
-                  icon={Store}
-                  text="Belum ada task. Buat task pertama Anda."
-                />
-              )}
-            </div>
-          </section>
-          <section className="mt-10">
-            <div className="mb-5 flex items-end justify-between gap-4">
-              <div>
-                <p className="text-sm font-bold uppercase tracking-wider text-white/70">
-                  
-                </p>
-                <h2 className="mt-1 font-[var(--font-manrope)] text-2xl font-extrabold text-white">
-                  Rekomendasi Jasa
-                </h2>
-              </div>
+              <h2 className="font-[var(--font-manrope)] text-2xl font-extrabold text-white">
+                Rekomendasi Jasa
+              </h2>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {providers.slice(0, 3).map((provider) => (
@@ -329,15 +296,6 @@ export default function DashboardPage() {
           </section>
         </div>
       </div>
-    </div>
-  );
-}
-
-function Empty({ icon: Icon, text }: { icon: typeof Store; text: string }) {
-  return (
-    <div className="col-span-full rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center text-slate-500">
-      <Icon className="mx-auto mb-3 size-7" />
-      {text}
     </div>
   );
 }
