@@ -1,25 +1,38 @@
 "use client";
 
-import { MapPin, Search, ShieldCheck, Star, Store } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { ArrowLeftRight, ChevronDown, Search, Store } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { getMarketplaceListings } from "@/lib/api";
 import type { MarketplaceListing } from "@/types";
 
-const categories = ["Semua", "Listrik", "Plumbing", "AC", "Pertukangan", "Kebersihan"];
+const categories = ["Listrik", "Plumbing", "AC", "Pertukangan", "Kebersihan"];
+const PAGE_SIZE = 12;
+
+type FeeSort = "default" | "asc" | "desc";
+type RelevanceSort = "relevan" | "rating" | "jobs";
+type OpenMenu = "fee" | "terkait" | "filter" | null;
 
 export function MarketplaceBrowser({ initialQuery = "" }: { initialQuery?: string }) {
   const [query, setQuery] = useState(initialQuery);
-  const [category, setCategory] = useState("Semua");
   const [listings, setListings] = useState<MarketplaceListing[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const [feeSort, setFeeSort] = useState<FeeSort>("default");
+  const [relevanceSort, setRelevanceSort] = useState<RelevanceSort>("relevan");
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
+
+  const [openMenu, setOpenMenu] = useState<OpenMenu>(null);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const toolbarRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const timer = window.setTimeout(async () => {
       setLoading(true);
       setError("");
       try {
-        setListings(await getMarketplaceListings(query, category));
+        setListings(await getMarketplaceListings(query));
       } catch (cause) {
         setError(cause instanceof Error ? cause.message : "Daftar marketplace gagal dimuat.");
       } finally {
@@ -28,59 +41,198 @@ export function MarketplaceBrowser({ initialQuery = "" }: { initialQuery?: strin
     }, 200);
 
     return () => window.clearTimeout(timer);
-  }, [category, query]);
+  }, [query]);
+
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [query, feeSort, relevanceSort, selectedCategories, verifiedOnly]);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (toolbarRef.current && !toolbarRef.current.contains(event.target as Node)) setOpenMenu(null);
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return listings.filter((listing) => {
-      const matchesCategory = category === "Semua" || listing.category === category;
-      const matchesQuery =
-        !q ||
-        listing.name.toLowerCase().includes(q) ||
-        listing.category.toLowerCase().includes(q) ||
-        listing.location.toLowerCase().includes(q);
-      return matchesCategory && matchesQuery;
+    let result = listings.filter((listing) => {
+      const matchesCategory = selectedCategories.length === 0 || selectedCategories.includes(listing.category);
+      const matchesVerified = !verifiedOnly || listing.verified;
+      return matchesCategory && matchesVerified;
     });
-  }, [category, listings, query]);
+
+    if (relevanceSort === "rating") {
+      result = [...result].sort((a, b) => b.rating - a.rating);
+    } else if (relevanceSort === "jobs") {
+      result = [...result].sort((a, b) => b.jobs - a.jobs);
+    }
+
+    if (feeSort === "asc") {
+      result = [...result].sort((a, b) => a.priceFrom - b.priceFrom);
+    } else if (feeSort === "desc") {
+      result = [...result].sort((a, b) => b.priceFrom - a.priceFrom);
+    }
+
+    return result;
+  }, [listings, selectedCategories, verifiedOnly, relevanceSort, feeSort]);
+
+  const visible = filtered.slice(0, visibleCount);
+  const activeFilterCount = selectedCategories.length + (verifiedOnly ? 1 : 0);
+
+  function toggleCategory(item: string) {
+    setSelectedCategories((current) =>
+      current.includes(item) ? current.filter((c) => c !== item) : [...current, item],
+    );
+  }
 
   return (
-    <>
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 md:p-5">
-        <div className="flex flex-col gap-3 md:flex-row">
-          <label className="relative flex-1">
-            <span className="sr-only">Cari marketplace</span>
-            <Search className="absolute left-4 top-1/2 size-5 -translate-y-1/2 text-slate-400" />
-            <input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Cari lapak, kategori, atau kota..."
-              className="min-h-12 w-full rounded-xl border border-slate-300 pl-12 pr-4 outline-none focus:border-orange-600 focus:ring-4 focus:ring-orange-100"
-            />
-          </label>
+    <div>
+      <label className="relative mb-4 block">
+        <span className="sr-only">Cari lapak</span>
+        <Search className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-slate-400" />
+        <input
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Search..."
+          className="min-h-12 w-full rounded-2xl border-0 bg-slate-100 pl-12 pr-4 text-base outline-none placeholder:text-slate-400 focus:ring-4 focus:ring-orange-100"
+        />
+      </label>
+
+      <div ref={toolbarRef} className="relative mb-5 flex flex-wrap items-center gap-2.5">
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setOpenMenu((current) => (current === "fee" ? null : "fee"))}
+            className={`flex min-h-11 cursor-pointer items-center gap-1.5 rounded-full border px-4 text-sm font-bold transition ${
+              feeSort !== "default" ? "border-orange-600 bg-orange-50 text-orange-700" : "border-slate-200 bg-slate-100 text-slate-900 hover:border-slate-300"
+            }`}
+          >
+            Fee <ChevronDown className="size-4" />
+          </button>
+          {openMenu === "fee" && (
+            <div className="absolute left-0 top-full z-20 mt-2 w-48 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg">
+              {(
+                [
+                  ["default", "Semua Harga"],
+                  ["asc", "Harga Terendah"],
+                  ["desc", "Harga Tertinggi"],
+                ] as [FeeSort, string][]
+              ).map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => {
+                    setFeeSort(value);
+                    setOpenMenu(null);
+                  }}
+                  className={`flex w-full cursor-pointer items-center px-4 py-2.5 text-left text-sm font-semibold transition hover:bg-slate-50 ${feeSort === value ? "text-orange-700" : "text-slate-700"}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
-        <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
-          {categories.map((item) => (
-            <button
-              key={item}
-              type="button"
-              onClick={() => setCategory(item)}
-              className={`min-h-10 shrink-0 cursor-pointer rounded-full border px-4 text-sm font-bold transition ${
-                category === item
-                  ? "border-orange-600 bg-orange-600 text-white"
-                  : "border-slate-300 bg-white text-slate-600 hover:border-orange-400"
-              }`}
-            >
-              {item}
-            </button>
-          ))}
+
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setOpenMenu((current) => (current === "terkait" ? null : "terkait"))}
+            className={`flex min-h-11 cursor-pointer items-center gap-1.5 rounded-full border px-4 text-sm font-bold transition ${
+              relevanceSort !== "relevan" ? "border-orange-600 bg-orange-50 text-orange-700" : "border-slate-200 bg-slate-100 text-slate-900 hover:border-slate-300"
+            }`}
+          >
+            Terkait <ChevronDown className="size-4" />
+          </button>
+          {openMenu === "terkait" && (
+            <div className="absolute left-0 top-full z-20 mt-2 w-48 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg">
+              {(
+                [
+                  ["relevan", "Paling Relevan"],
+                  ["rating", "Rating Tertinggi"],
+                  ["jobs", "Tugas Terbanyak"],
+                ] as [RelevanceSort, string][]
+              ).map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => {
+                    setRelevanceSort(value);
+                    setOpenMenu(null);
+                  }}
+                  className={`flex w-full cursor-pointer items-center px-4 py-2.5 text-left text-sm font-semibold transition hover:bg-slate-50 ${relevanceSort === value ? "text-orange-700" : "text-slate-700"}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setOpenMenu((current) => (current === "filter" ? null : "filter"))}
+            className={`flex min-h-11 cursor-pointer items-center gap-1.5 rounded-full border px-4 text-sm font-bold transition ${
+              activeFilterCount > 0 ? "border-orange-600 bg-orange-50 text-orange-700" : "border-slate-200 bg-slate-100 text-slate-900 hover:border-slate-300"
+            }`}
+          >
+            Filter <ArrowLeftRight className="size-4 rotate-90" />
+            {activeFilterCount > 0 && (
+              <span className="grid size-4 place-items-center rounded-full bg-orange-600 text-[10px] font-bold text-white">{activeFilterCount}</span>
+            )}
+          </button>
+          {openMenu === "filter" && (
+            <div className="absolute right-0 top-full z-20 mt-2 w-64 rounded-xl border border-slate-200 bg-white p-4 shadow-lg">
+              <p className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-400">Kategori</p>
+              <div className="flex flex-col gap-2">
+                {categories.map((item) => (
+                  <label key={item} className="flex cursor-pointer items-center gap-2 text-sm font-semibold text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={selectedCategories.includes(item)}
+                      onChange={() => toggleCategory(item)}
+                      className="size-4 rounded border-slate-300 text-orange-600 focus:ring-orange-500"
+                    />
+                    {item}
+                  </label>
+                ))}
+              </div>
+              <label className="mt-3 flex cursor-pointer items-center gap-2 border-t border-slate-100 pt-3 text-sm font-semibold text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={verifiedOnly}
+                  onChange={(event) => setVerifiedOnly(event.target.checked)}
+                  className="size-4 rounded border-slate-300 text-orange-600 focus:ring-orange-500"
+                />
+                Hanya Terverifikasi
+              </label>
+              {activeFilterCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedCategories([]);
+                    setVerifiedOnly(false);
+                  }}
+                  className="mt-3 w-full cursor-pointer text-center text-sm font-bold text-orange-700 hover:underline"
+                >
+                  Reset filter
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="mb-5 mt-7 flex items-center justify-between">
-        <p className="font-bold text-slate-700">
-          {loading ? "Memuat marketplace..." : `${filtered.length} lapak ditemukan`}
-        </p>
-      </div>
+      <p className="mb-4 text-sm text-slate-500">
+        {loading
+          ? "Memuat marketplace..."
+          : query.trim()
+            ? `Menampilkan ${visible.length} jasa dari total ${filtered.length} untuk "${query.trim()}"`
+            : `Menampilkan ${visible.length} jasa dari total ${filtered.length}`}
+      </p>
 
       {error && (
         <p role="alert" className="mb-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">
@@ -88,58 +240,19 @@ export function MarketplaceBrowser({ initialQuery = "" }: { initialQuery?: strin
         </p>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {filtered.map((listing) => (
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+        {visible.map((listing) => (
           <article
             key={listing.id}
-            className="group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white transition hover:border-orange-300"
+            className="group flex flex-col overflow-hidden rounded-2xl border border-blue-200 bg-white transition hover:-translate-y-0.5 hover:border-blue-400 hover:shadow-lg"
           >
-            <div className="flex aspect-[4/3] items-center justify-center bg-gradient-to-br from-orange-500 to-amber-400">
-              <Store className="size-10 text-white/95" />
+            <div className="relative flex h-[130px] items-center justify-center overflow-hidden bg-gradient-to-br from-sky-300 via-blue-500 to-indigo-800">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.34),transparent_36%)]" />
+              <Store className="relative size-9 text-white/90 transition duration-300 group-hover:scale-110" strokeWidth={1.35} />
             </div>
-            <div className="flex flex-1 flex-col p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-400">{listing.category}</span>
-                  <h3 className="mt-1 font-[var(--font-manrope)] text-lg font-extrabold text-slate-950">
-                    {listing.name}
-                  </h3>
-                </div>
-                {listing.verified && (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-[10px] font-bold text-emerald-700">
-                    <ShieldCheck className="size-3" /> Verifikasi
-                  </span>
-                )}
-              </div>
-
-              <div className="mt-3 space-y-2 text-sm text-slate-500">
-                <span className="flex items-center gap-2">
-                  <MapPin className="size-4 shrink-0" />
-                  <span>{listing.location}</span>
-                </span>
-                <span className="flex items-center gap-2">
-                  <Star className="size-4 shrink-0 fill-yellow-400 text-yellow-400" />
-                  <span>
-                    {listing.rating.toFixed(1)} · {listing.jobs} tugas selesai
-                  </span>
-                </span>
-              </div>
-
-              <p className="mt-3 line-clamp-3 text-sm leading-6 text-slate-600">{listing.description}</p>
-
-              <div className="mt-auto pt-4">
-                <div className="flex items-center justify-between border-t border-slate-100 pt-3">
-                  <div>
-                    <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Mulai dari</div>
-                    <strong className="text-base text-slate-950">
-                      Rp{listing.priceFrom.toLocaleString("id-ID")}
-                    </strong>
-                  </div>
-                  <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold uppercase text-slate-600">
-                    {listing.status}
-                  </span>
-                </div>
-              </div>
+            <div className="p-3">
+              <h3 className="truncate text-sm font-extrabold text-slate-950">{listing.name}</h3>
+              <p className="mt-1 truncate text-xs text-slate-500">{listing.category}</p>
             </div>
           </article>
         ))}
@@ -152,6 +265,18 @@ export function MarketplaceBrowser({ initialQuery = "" }: { initialQuery?: strin
           <p className="mt-2 text-slate-500">Coba ubah kata pencarian atau pilih kategori lain.</p>
         </div>
       )}
-    </>
+
+      {!loading && filtered.length > visible.length && (
+        <div className="mt-6 flex justify-center">
+          <button
+            type="button"
+            onClick={() => setVisibleCount((count) => count + PAGE_SIZE)}
+            className="min-h-11 cursor-pointer rounded-xl border border-slate-300 bg-white px-6 text-sm font-bold text-slate-700 transition hover:border-orange-400 hover:text-orange-700"
+          >
+            Muat lebih banyak
+          </button>
+        </div>
+      )}
+    </div>
   );
 }

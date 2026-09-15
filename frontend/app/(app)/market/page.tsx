@@ -12,7 +12,7 @@ export default async function MarketPage({ searchParams }: { searchParams: Promi
   return (
     <>
       <PageHeader
-        title="Marketplace"
+        title="Market"
       />
       <MarketplaceBrowser initialQuery={q} />
     </>
