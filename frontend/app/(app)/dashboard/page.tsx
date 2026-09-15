@@ -9,7 +9,7 @@ import { getBanners, getProfile, getProviders } from "@/lib/api";
 import { getSupabase } from "@/lib/supabase";
 import type { Banner, Profile, Provider } from "@/types";
 
-type Slide = { kind: "default" } | { kind: "photo"; banner: Banner };
+type Slide = { kind: "photo"; banner: Banner };
 
 export default function DashboardPage() {
   const [profile, setProfile] = useState<Profile>();
@@ -46,10 +46,7 @@ export default function DashboardPage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const slides: Slide[] = [
-    { kind: "default" },
-    ...banners.map((banner): Slide => ({ kind: "photo", banner })),
-  ];
+  const slides: Slide[] = banners.map((banner): Slide => ({ kind: "photo", banner }));
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
@@ -146,46 +143,39 @@ export default function DashboardPage() {
           setTransitionEnabled(true);
           setDragOffset(0);
         }}
-        className="relative -mx-4 -mt-7 min-h-[220px] touch-pan-y select-none overflow-hidden sm:-mx-6 sm:min-h-[300px] lg:-mx-10 lg:-mt-10"
+        className="relative -mx-4 -mt-7 min-h-[220px] touch-pan-y select-none overflow-hidden bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-600 sm:-mx-6 sm:min-h-[300px] lg:-mx-10 lg:-mt-10"
       >
-        <div
-          onTransitionEnd={(event) => {
-            if (event.target !== event.currentTarget || slides.length < 2) return;
-            if (trackIndex === 0) {
-              setTransitionEnabled(false);
-              setTrackIndex(slides.length);
-              setActiveSlide(slides.length - 1);
-              requestAnimationFrame(() => setTransitionEnabled(true));
-            } else if (trackIndex === slides.length + 1) {
-              setTransitionEnabled(false);
-              setTrackIndex(1);
-              setActiveSlide(0);
-              requestAnimationFrame(() => setTransitionEnabled(true));
-            }
-          }}
-          className={`absolute inset-y-0 left-0 flex h-full ${isDragging ? "cursor-grabbing" : "cursor-grab"}`}
-          style={{
-            width: `${renderedSlides.length * 100}%`,
-            transform: trackTransform,
-            transition: transitionEnabled ? "transform 520ms cubic-bezier(0.65, 0, 0.35, 1)" : "none",
-          }}
-        >
-          {renderedSlides.map((slide, index) => (
-            <div key={`${slide.kind}-${slide.kind === "photo" ? slide.banner.id : index}`} style={{ width: `${100 / renderedSlides.length}%` }} className="relative h-full shrink-0">
-              {slide.kind === "photo" ? (
-                <>
-                  <Image unoptimized src={slide.banner.imageUrl} alt="" fill draggable={false} className="pointer-events-none object-cover" />
-                  <Link href={slide.banner.href} onClick={(event) => { if (didDrag.current) event.preventDefault(); }} className="absolute inset-0" aria-label="Buka banner" />
-                </>
-              ) : (
-                <>
-                  <div className="absolute inset-0 bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-600" />
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.28),transparent_30%)]" />
-                </>
-              )}
-            </div>
-          ))}
-        </div>
+        {slides.length > 0 && (
+          <div
+            onTransitionEnd={(event) => {
+              if (event.target !== event.currentTarget || slides.length < 2) return;
+              if (trackIndex === 0) {
+                setTransitionEnabled(false);
+                setTrackIndex(slides.length);
+                setActiveSlide(slides.length - 1);
+                requestAnimationFrame(() => setTransitionEnabled(true));
+              } else if (trackIndex === slides.length + 1) {
+                setTransitionEnabled(false);
+                setTrackIndex(1);
+                setActiveSlide(0);
+                requestAnimationFrame(() => setTransitionEnabled(true));
+              }
+            }}
+            className={`absolute inset-y-0 left-0 flex h-full ${isDragging ? "cursor-grabbing" : "cursor-grab"}`}
+            style={{
+              width: `${renderedSlides.length * 100}%`,
+              transform: trackTransform,
+              transition: transitionEnabled ? "transform 520ms cubic-bezier(0.65, 0, 0.35, 1)" : "none",
+            }}
+          >
+            {renderedSlides.map((slide, index) => (
+              <div key={`${slide.banner.id}-${index}`} style={{ width: `${100 / renderedSlides.length}%` }} className="relative h-full shrink-0">
+                <Image unoptimized src={slide.banner.imageUrl} alt="" fill draggable={false} className="pointer-events-none object-cover" />
+                <Link href={slide.banner.href} onClick={(event) => { if (didDrag.current) event.preventDefault(); }} className="absolute inset-0" aria-label="Buka banner" />
+              </div>
+            ))}
+          </div>
+        )}
         <div className="absolute inset-x-4 top-4 z-20 flex items-center gap-3 sm:hidden">
           <form onSubmit={search} className="relative min-w-0 flex-1">
             <Search className="absolute left-4 top-1/2 size-5 -translate-y-1/2 text-slate-500" />
@@ -226,7 +216,7 @@ export default function DashboardPage() {
           <div className="pointer-events-none absolute inset-x-0 bottom-4 flex items-center justify-center gap-2">
             {slides.map((slide, index) => (
               <button
-                key={slide.kind === "default" ? "default" : slide.banner.id}
+                key={slide.banner.id}
                 type="button"
                 aria-label={`Pilih banner ${index + 1}`}
                 onClick={() => {
