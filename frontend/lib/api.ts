@@ -203,10 +203,18 @@ export async function saveMarketplaceListing(payload: {
   location: string;
   description: string;
   priceFrom: number;
+  image?: File;
 }) {
+  const form = new FormData();
+  form.set("name", payload.name);
+  form.set("category", payload.category);
+  form.set("location", payload.location);
+  form.set("description", payload.description);
+  form.set("priceFrom", String(payload.priceFrom));
+  if (payload.image) form.set("image", payload.image);
   return apiRequest<MarketplaceListing>("/me/marketplace-listing", {
     method: "PUT",
-    body: JSON.stringify(payload),
+    body: form,
   });
 }
 

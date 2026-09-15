@@ -1,6 +1,7 @@
 "use client";
 
-import { CheckCircle2, CircleDollarSign, LoaderCircle, MapPin, Store } from "lucide-react";
+import { CheckCircle2, CircleDollarSign, ImagePlus, LoaderCircle, MapPin, Store } from "lucide-react";
+import Image from "next/image";
 import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { PageHeader, inputClass, primaryButton, secondaryButton } from "@/components/ui";
@@ -12,10 +13,20 @@ export default function RegisterListingPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [imagePreview, setImagePreview] = useState("");
+
+  function pickImage(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    setImagePreview((current) => {
+      if (current) URL.revokeObjectURL(current);
+      return file ? URL.createObjectURL(file) : "";
+    });
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
+    const image = form.get("image");
     setSaving(true);
     setMessage("");
     setError("");
@@ -26,9 +37,14 @@ export default function RegisterListingPage() {
         location: String(form.get("location")),
         description: String(form.get("description")),
         priceFrom: Number(form.get("priceFrom")),
+        image: image instanceof File && image.size > 0 ? image : undefined,
       });
       setMessage("Lapak berhasil didaftarkan dan sekarang tampil di marketplace.");
       event.currentTarget.reset();
+      setImagePreview((current) => {
+        if (current) URL.revokeObjectURL(current);
+        return "";
+      });
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Lapak gagal didaftarkan.");
     } finally {
@@ -62,6 +78,31 @@ export default function RegisterListingPage() {
             Deskripsi layanan
             <textarea name="description" required minLength={20} maxLength={1000} rows={5} placeholder="Jelaskan layanan, keunggulan, dan area yang Anda layani..." className={`${inputClass} py-3`} />
             <span className="mt-2 block text-xs font-normal text-slate-500">Minimal 20 karakter agar calon pelanggan memahami layanan Anda.</span>
+          </label>
+          <label className="mt-5 block text-sm font-bold text-slate-700">
+            Foto banner lapak
+            <span className="mt-2 flex items-center gap-4">
+              <span className="relative flex h-24 w-36 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-dashed border-slate-300 bg-slate-50">
+                {imagePreview ? (
+                  <Image src={imagePreview} alt="" fill className="object-cover" unoptimized />
+                ) : (
+                  <ImagePlus className="size-6 text-slate-400" />
+                )}
+              </span>
+              <span className="flex flex-col gap-2">
+                <span className="relative inline-flex w-fit cursor-pointer items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 hover:border-slate-400">
+                  Pilih foto
+                  <input
+                    name="image"
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    onChange={pickImage}
+                    className="absolute inset-0 cursor-pointer opacity-0"
+                  />
+                </span>
+                <span className="text-xs font-normal text-slate-500">JPG, PNG, atau WebP. Maksimal 5 MB.</span>
+              </span>
+            </span>
           </label>
           <div className="mt-7 flex justify-end border-t border-slate-200 pt-6">
             <button disabled={saving} className={`${primaryButton} disabled:opacity-50`}>

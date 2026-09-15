@@ -4,16 +4,16 @@ import { ChevronDown, LogOut, Search } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { ProviderCard } from "@/components/provider-card";
-import { getBanners, getProfile, getProviders } from "@/lib/api";
+import { MarketplaceListingCard } from "@/components/marketplace-listing-card";
+import { getBanners, getMarketplaceListings, getProfile } from "@/lib/api";
 import { getSupabase } from "@/lib/supabase";
-import type { Banner, Profile, Provider } from "@/types";
+import type { Banner, MarketplaceListing, Profile } from "@/types";
 
 type Slide = { kind: "photo"; banner: Banner };
 
 export default function DashboardPage() {
   const [profile, setProfile] = useState<Profile>();
-  const [providers, setProviders] = useState<Provider[]>([]);
+  const [listings, setListings] = useState<MarketplaceListing[]>([]);
   const [banners, setBanners] = useState<Banner[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeSlide, setActiveSlide] = useState(0);
@@ -28,10 +28,10 @@ export default function DashboardPage() {
   const didDrag = useRef(false);
 
   useEffect(() => {
-    Promise.all([getProfile(), getProviders(), getBanners()])
-      .then(([nextProfile, nextProviders, nextBanners]) => {
+    Promise.all([getProfile(), getMarketplaceListings(), getBanners()])
+      .then(([nextProfile, nextListings, nextBanners]) => {
         setProfile(nextProfile);
-        setProviders(nextProviders);
+        setListings(nextListings);
         setBanners(nextBanners);
       })
       .finally(() => setLoading(false));
@@ -305,8 +305,8 @@ export default function DashboardPage() {
                       </div>
                     </div>
                   ))
-                : providers.slice(0, 3).map((provider) => (
-                    <ProviderCard key={provider.id} provider={provider} />
+                : listings.slice(0, 3).map((listing) => (
+                    <MarketplaceListingCard key={listing.id} listing={listing} />
                   ))}
             </div>
           </section>

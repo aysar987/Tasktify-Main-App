@@ -108,6 +108,7 @@ export type MarketplaceListing = {
   jobs: number;
   verified: boolean;
   status: "active" | "inactive" | "pending";
+  imageUrl?: string;
 };
 
 export type Payment = {
