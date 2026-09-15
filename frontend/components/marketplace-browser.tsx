@@ -45,10 +45,6 @@ export function MarketplaceBrowser({ initialQuery = "" }: { initialQuery?: strin
   }, [query]);
 
   useEffect(() => {
-    setVisibleCount(PAGE_SIZE);
-  }, [query, feeSort, relevanceSort, selectedCategories, verifiedOnly]);
-
-  useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (toolbarRef.current && !toolbarRef.current.contains(event.target as Node)) setOpenMenu(null);
     }
@@ -86,6 +82,7 @@ export function MarketplaceBrowser({ initialQuery = "" }: { initialQuery?: strin
     setSelectedCategories((current) =>
       current.includes(item) ? current.filter((c) => c !== item) : [...current, item],
     );
+    setVisibleCount(PAGE_SIZE);
   }
 
   return (
@@ -95,7 +92,10 @@ export function MarketplaceBrowser({ initialQuery = "" }: { initialQuery?: strin
         <Search className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-slate-400" />
         <input
           value={query}
-          onChange={(event) => setQuery(event.target.value)}
+          onChange={(event) => {
+            setQuery(event.target.value);
+            setVisibleCount(PAGE_SIZE);
+          }}
           placeholder="Search..."
           className="min-h-12 w-full rounded-2xl border-0 bg-slate-100 pl-12 pr-4 text-base outline-none placeholder:text-slate-400 focus:ring-4 focus:ring-orange-100"
         />
@@ -127,6 +127,7 @@ export function MarketplaceBrowser({ initialQuery = "" }: { initialQuery?: strin
                   onClick={() => {
                     setFeeSort(value);
                     setOpenMenu(null);
+                    setVisibleCount(PAGE_SIZE);
                   }}
                   className={`flex w-full cursor-pointer items-center px-4 py-2.5 text-left text-sm font-semibold transition hover:bg-slate-50 ${feeSort === value ? "text-orange-700" : "text-slate-700"}`}
                 >
@@ -162,6 +163,7 @@ export function MarketplaceBrowser({ initialQuery = "" }: { initialQuery?: strin
                   onClick={() => {
                     setRelevanceSort(value);
                     setOpenMenu(null);
+                    setVisibleCount(PAGE_SIZE);
                   }}
                   className={`flex w-full cursor-pointer items-center px-4 py-2.5 text-left text-sm font-semibold transition hover:bg-slate-50 ${relevanceSort === value ? "text-orange-700" : "text-slate-700"}`}
                 >
@@ -205,7 +207,10 @@ export function MarketplaceBrowser({ initialQuery = "" }: { initialQuery?: strin
                 <input
                   type="checkbox"
                   checked={verifiedOnly}
-                  onChange={(event) => setVerifiedOnly(event.target.checked)}
+                  onChange={(event) => {
+                    setVerifiedOnly(event.target.checked);
+                    setVisibleCount(PAGE_SIZE);
+                  }}
                   className="size-4 rounded border-slate-300 text-orange-600 focus:ring-orange-500"
                 />
                 Hanya Terverifikasi
@@ -216,6 +221,7 @@ export function MarketplaceBrowser({ initialQuery = "" }: { initialQuery?: strin
                   onClick={() => {
                     setSelectedCategories([]);
                     setVerifiedOnly(false);
+                    setVisibleCount(PAGE_SIZE);
                   }}
                   className="mt-3 w-full cursor-pointer text-center text-sm font-bold text-orange-700 hover:underline"
                 >

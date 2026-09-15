@@ -1,6 +1,6 @@
 "use client";
 
-import { Briefcase, Bell, ChevronDown, CircleUserRound, Home, LogOut, MessageSquareText, Search, ShieldCheck, Store } from "lucide-react";
+import { Briefcase, Bell, ChevronDown, Home, LogOut, MessageSquareText, Search, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
