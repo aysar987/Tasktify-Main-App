@@ -225,6 +225,7 @@ export async function saveMarketplaceListing(payload: {
   description: string;
   priceFrom: number;
   image?: File;
+  services?: { name: string; description: string }[];
 }) {
   const form = new FormData();
   form.set("name", payload.name);
@@ -233,6 +234,7 @@ export async function saveMarketplaceListing(payload: {
   form.set("description", payload.description);
   form.set("priceFrom", String(payload.priceFrom));
   if (payload.image) form.set("image", payload.image);
+  if (payload.services) form.set("services", JSON.stringify(payload.services));
   return apiRequest<MarketplaceListing>("/me/marketplace-listing", {
     method: "PUT",
     body: form,

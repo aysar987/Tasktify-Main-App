@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, CircleDollarSign, ImagePlus, LoaderCircle, MapPin, Store } from "lucide-react";
+import { CheckCircle2, CircleDollarSign, ImagePlus, LoaderCircle, MapPin, Plus, Store, X } from "lucide-react";
 import Image from "next/image";
 import { FormEvent, useState } from "react";
 import Link from "next/link";
@@ -8,12 +8,14 @@ import { PageHeader, inputClass, primaryButton, secondaryButton } from "@/compon
 import { saveMarketplaceListing } from "@/lib/api";
 
 const categories = ["Listrik", "Plumbing", "AC", "Pertukangan", "Kebersihan", "Lainnya"];
+const emptyService = { name: "", description: "" };
 
 export default function RegisterListingPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [imagePreview, setImagePreview] = useState("");
+  const [services, setServices] = useState([{ ...emptyService }]);
 
   function pickImage(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -21,6 +23,18 @@ export default function RegisterListingPage() {
       if (current) URL.revokeObjectURL(current);
       return file ? URL.createObjectURL(file) : "";
     });
+  }
+
+  function updateService(index: number, field: "name" | "description", value: string) {
+    setServices((current) => current.map((service, i) => (i === index ? { ...service, [field]: value } : service)));
+  }
+
+  function addService() {
+    setServices((current) => [...current, { ...emptyService }]);
+  }
+
+  function removeService(index: number) {
+    setServices((current) => current.filter((_, i) => i !== index));
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -38,6 +52,9 @@ export default function RegisterListingPage() {
         description: String(form.get("description")),
         priceFrom: Number(form.get("priceFrom")),
         image: image instanceof File && image.size > 0 ? image : undefined,
+        services: services
+          .filter((service) => service.name.trim())
+          .map((service) => ({ name: service.name.trim(), description: service.description.trim() })),
       });
       setMessage("Lapak berhasil didaftarkan. Menunggu verifikasi admin sebelum tampil di marketplace.");
       event.currentTarget.reset();
@@ -45,6 +62,7 @@ export default function RegisterListingPage() {
         if (current) URL.revokeObjectURL(current);
         return "";
       });
+      setServices([{ ...emptyService }]);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Lapak gagal didaftarkan.");
     } finally {
@@ -104,6 +122,48 @@ export default function RegisterListingPage() {
               </span>
             </span>
           </label>
+          <div className="mt-7 border-t border-slate-200 pt-6">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-bold text-slate-700">Jenis jasa</p>
+                <p className="mt-1 text-xs font-normal text-slate-500">Rincikan layanan yang Anda tawarkan. Bebas menambah sebanyak yang diperlukan.</p>
+              </div>
+              <button
+                type="button"
+                onClick={addService}
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-bold text-slate-700 hover:border-slate-400"
+              >
+                <Plus className="size-4" /> Tambah
+              </button>
+            </div>
+            <div className="mt-4 space-y-3">
+              {services.map((service, index) => (
+                <div key={index} className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 md:grid-cols-[1fr_1fr_auto]">
+                  <input
+                    value={service.name}
+                    onChange={(event) => updateService(index, "name", event.target.value)}
+                    placeholder="Nama jasa, contoh: Pasang Instalasi Baru"
+                    className={`${inputClass} mt-0 bg-white`}
+                  />
+                  <input
+                    value={service.description}
+                    onChange={(event) => updateService(index, "description", event.target.value)}
+                    placeholder="Penjelasan singkat (opsional)"
+                    className={`${inputClass} mt-0 bg-white`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeService(index)}
+                    disabled={services.length === 1}
+                    aria-label="Hapus jasa"
+                    className="grid size-11 shrink-0 place-items-center justify-self-end rounded-xl border border-slate-300 bg-white text-slate-500 transition hover:border-red-300 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40 md:justify-self-auto"
+                  >
+                    <X className="size-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
           <div className="mt-7 flex justify-end border-t border-slate-200 pt-6">
             <button disabled={saving} className={`${primaryButton} disabled:opacity-50`}>
               {saving && <LoaderCircle className="size-5 animate-spin" />}

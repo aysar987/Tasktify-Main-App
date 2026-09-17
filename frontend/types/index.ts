@@ -97,6 +97,11 @@ export type Banner = {
   active: boolean;
 };
 
+export type MarketplaceListingService = {
+  name: string;
+  description: string;
+};
+
 export type MarketplaceListing = {
   id: string;
   providerId?: string;
@@ -113,6 +118,7 @@ export type MarketplaceListing = {
   verificationNote?: string;
   status: "active" | "inactive" | "pending";
   imageUrl?: string;
+  services?: MarketplaceListingService[];
 };
 
 export type Payment = {
