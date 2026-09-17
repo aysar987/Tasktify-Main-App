@@ -1,12 +1,12 @@
 "use client";
 
-import { ArrowLeft, MapPin, MessageCircle, Plus, Star } from "lucide-react";
+import { ArrowLeft, MapPin, Plus, Star } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getMarketplaceListing } from "@/lib/api";
-import { rating, rupiah } from "@/lib/format";
+import { rating } from "@/lib/format";
 import type { MarketplaceListing } from "@/types";
 
 const fallbackServices = [{ name: "Jasa umum", description: "Ajukan permintaan langsung ke lapak ini." }];
@@ -63,14 +63,12 @@ export default function MarketplaceListingDetailPage() {
               <MapPin className="size-4" />
               {listing.location}
             </span>
-            <span>Mulai dari <strong className="text-slate-950">{rupiah(listing.priceFrom)}</strong></span>
           </div>
           {listing.providerId ? (
             <Link
               href={`/chat?with=${encodeURIComponent(listing.providerId)}`}
-              className="mt-5 inline-flex min-h-12 items-center gap-2 rounded-xl bg-blue-600 px-5 font-bold text-white transition hover:bg-blue-700"
+              className="mt-5 inline-flex min-h-12 items-center gap-2 rounded-xl bg-[#42B2FF] px-5 font-bold text-white transition hover:bg-[#2f9eef]"
             >
-              <MessageCircle className="size-5" />
               Start Conversation
             </Link>
           ) : (
