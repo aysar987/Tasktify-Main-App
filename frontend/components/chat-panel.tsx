@@ -2,10 +2,16 @@
 
 import { ArrowLeft, MessageSquareText, Search, Send, UserRound } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { FormEvent, useEffect, useState } from "react";
-import { getConversations, getMessages, sendMessage, startProviderChat } from "@/lib/api";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
+import { getConversations, getMessages, markConversationRead, sendMessage, startProviderChat } from "@/lib/api";
+import { CHAT_UNREAD_CHANGED } from "@/lib/chat-events";
 import { getSupabase } from "@/lib/supabase";
 import type { Conversation, Message } from "@/types";
+import { ChatPushPrompt } from "./chat-push-prompt";
+
+function newestFirst(chats: Conversation[]) {
+  return [...chats].sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
+}
 
 function formatChatDate(iso: string) {
   const date = new Date(iso);
@@ -29,6 +35,15 @@ export function ChatPanel({ initialProviderId }: { initialProviderId?: string } 
   const [error, setError] = useState("");
   const [mobileView, setMobileView] = useState<"list" | "chat">("list");
   const [startingChat, setStartingChat] = useState(Boolean(initialProviderId));
+  const openChatId = useRef<string>(undefined);
+  const lastMarkedRead = useRef("");
+
+  const refreshConversations = useCallback(async () => {
+    const items = await getConversations();
+    setConversations(
+      items.map((chat) => (chat.id === openChatId.current ? { ...chat, unreadCount: 0 } : chat)),
+    );
+  }, []);
 
   useEffect(() => {
     getSupabase()
@@ -61,22 +76,56 @@ export function ChatPanel({ initialProviderId }: { initialProviderId?: string } 
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  // Keep the list (order, last message, unread markers) current while it is on screen.
   useEffect(() => {
-    if (!active) return;
-    const refresh = () =>
-      getMessages(active.id)
-        .then(setMessages)
-        .catch(() => setError("Isi percakapan gagal dimuat."));
+    if (mobileView !== "list") return;
+    const timer = window.setInterval(() => {
+      if (!document.hidden) void refreshConversations().catch(() => undefined);
+    }, 5000);
+    return () => window.clearInterval(timer);
+  }, [mobileView, refreshConversations]);
+  // Poll the open chat; messages the viewer received count as read while it is open.
+  useEffect(() => {
+    if (!active || mobileView !== "chat") return;
+    openChatId.current = active.id;
+    lastMarkedRead.current = "";
+    const refresh = async () => {
+      try {
+        const next = await getMessages(active.id);
+        setMessages(next);
+        const latestIncoming = userId ? next.findLast((message) => message.senderId !== userId) : undefined;
+        if (latestIncoming && latestIncoming.id !== lastMarkedRead.current) {
+          lastMarkedRead.current = latestIncoming.id;
+          markConversationRead(active.id)
+            .then(() => window.dispatchEvent(new Event(CHAT_UNREAD_CHANGED)))
+            .catch(() => {
+              lastMarkedRead.current = "";
+            });
+        }
+      } catch {
+        setError("Isi percakapan gagal dimuat.");
+      }
+    };
     void refresh();
     const timer = window.setInterval(refresh, 3000);
-    return () => window.clearInterval(timer);
-  }, [active]);
+    return () => {
+      window.clearInterval(timer);
+      openChatId.current = undefined;
+    };
+  }, [active, mobileView, userId]);
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (!active || !draft.trim()) return;
     try {
-      await sendMessage(active.id, draft);
+      const sent = await sendMessage(active.id, draft);
       setMessages(await getMessages(active.id));
+      setConversations((current) =>
+        newestFirst(
+          current.map((chat) =>
+            chat.id === active.id ? { ...chat, lastMessage: sent.body, updatedAt: sent.createdAt } : chat,
+          ),
+        ),
+      );
       setDraft("");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Pesan gagal dikirim.");
@@ -100,7 +149,7 @@ export function ChatPanel({ initialProviderId }: { initialProviderId?: string } 
       </div>
     );
 
-  const filtered = conversations.filter((chat) =>
+  const filtered = newestFirst(conversations).filter((chat) =>
     chat.counterpartName.toLowerCase().includes(query.toLowerCase()),
   );
 
@@ -110,7 +159,10 @@ export function ChatPanel({ initialProviderId }: { initialProviderId?: string } 
         <header className="flex min-h-16 shrink-0 items-center gap-3 border-b border-slate-200 pb-4">
           <button
             type="button"
-            onClick={() => setMobileView("list")}
+            onClick={() => {
+              setMobileView("list");
+              void refreshConversations().catch(() => undefined);
+            }}
             aria-label="Kembali ke daftar percakapan"
             className="grid size-9 shrink-0 cursor-pointer place-items-center rounded-lg hover:bg-slate-100"
           >
@@ -171,6 +223,8 @@ export function ChatPanel({ initialProviderId }: { initialProviderId?: string } 
         />
       </label>
 
+      <ChatPushPrompt />
+
       <h2 className="mb-1 mt-6 font-[var(--font-manrope)] text-2xl font-extrabold text-slate-950">
         Your chats
       </h2>
@@ -188,6 +242,9 @@ export function ChatPanel({ initialProviderId }: { initialProviderId?: string } 
             type="button"
             onClick={() => {
               setActive(chat);
+              setConversations((current) =>
+                current.map((item) => (item.id === chat.id ? { ...item, unreadCount: 0 } : item)),
+              );
               setMobileView("chat");
             }}
             className="flex w-full cursor-pointer items-center gap-3 border-b border-slate-100 py-4 text-left"
@@ -196,14 +253,27 @@ export function ChatPanel({ initialProviderId }: { initialProviderId?: string } 
               <UserRound className="size-7" strokeWidth={1.6} />
             </span>
             <span className="min-w-0 flex-1">
-              <strong className="block truncate text-base text-slate-950">
+              <strong className={`block truncate text-base text-slate-950 ${chat.unreadCount > 0 ? "font-extrabold" : ""}`}>
                 {chat.counterpartName}
               </strong>
-              <span className="mt-0.5 block truncate text-sm text-slate-500">
+              <span className={`mt-0.5 block truncate text-sm ${chat.unreadCount > 0 ? "font-semibold text-slate-800" : "text-slate-500"}`}>
                 {chat.provider.title}
               </span>
             </span>
-            <span className="shrink-0 text-sm text-slate-400">{formatChatDate(chat.updatedAt)}</span>
+            <span className="flex shrink-0 flex-col items-end gap-1.5">
+              <span className={`text-sm ${chat.unreadCount > 0 ? "font-semibold text-blue-600" : "text-slate-400"}`}>
+                {formatChatDate(chat.updatedAt)}
+              </span>
+              {chat.unreadCount > 0 && (
+                <span
+                  role="status"
+                  aria-label={`${chat.unreadCount} pesan belum dibaca`}
+                  className="grid h-6 min-w-6 place-items-center rounded-full bg-blue-600 px-1.5 text-xs font-bold text-white"
+                >
+                  {chat.unreadCount > 99 ? "99+" : chat.unreadCount}
+                </span>
+              )}
+            </span>
           </button>
         ))}
       </div>

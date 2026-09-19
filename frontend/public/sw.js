@@ -65,3 +65,43 @@ self.addEventListener("fetch", (event) => {
     );
   }
 });
+
+self.addEventListener("push", (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    data = { body: event.data ? event.data.text() : "" };
+  }
+  const title = data.title || "Tasktify";
+  event.waitUntil(
+    Promise.all([
+      self.registration.showNotification(title, {
+        body: data.body || "Ada pesan baru.",
+        icon: "/icons/icon-192.png",
+        badge: "/icons/icon-192.png",
+        // Same tag per conversation: new messages replace the previous banner.
+        tag: data.tag || "tasktify-chat",
+        renotify: true,
+        data: { url: data.url || "/chat" },
+      }),
+      // Dot on the installed app icon; the app clears it once it is opened.
+      self.navigator.setAppBadge ? self.navigator.setAppBadge().catch(() => undefined) : undefined,
+    ]),
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const target = new URL(event.notification.data?.url || "/chat", self.location.origin).href;
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((windows) => {
+      for (const client of windows) {
+        if (new URL(client.url).origin === self.location.origin && "focus" in client) {
+          return client.focus().then((focused) => ("navigate" in focused ? focused.navigate(target) : focused));
+        }
+      }
+      return self.clients.openWindow(target);
+    }),
+  );
+});

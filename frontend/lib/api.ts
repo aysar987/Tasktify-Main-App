@@ -263,6 +263,35 @@ export async function getConversations(): Promise<Conversation[]> {
   return apiRequest<Conversation[]>("/conversations");
 }
 
+export async function getUnreadConversationCount(): Promise<number> {
+  const result = await apiRequest<{ count: number }>("/conversations/unread-count");
+  return result.count;
+}
+
+export async function markConversationRead(conversationId: string) {
+  await apiRequest<void>(`/conversations/${encodeURIComponent(conversationId)}/read`, {
+    method: "POST",
+  });
+}
+
+export async function getPushConfig(): Promise<{ publicKey: string; enabled: boolean }> {
+  return apiRequest<{ publicKey: string; enabled: boolean }>("/push/public-key");
+}
+
+export async function savePushSubscription(subscription: PushSubscriptionJSON) {
+  await apiRequest<void>("/push/subscriptions", {
+    method: "POST",
+    body: JSON.stringify(subscription),
+  });
+}
+
+export async function deletePushSubscription(endpoint: string) {
+  await apiRequest<void>("/push/subscriptions", {
+    method: "DELETE",
+    body: JSON.stringify({ endpoint }),
+  });
+}
+
 export async function getMessages(conversationId: string): Promise<Message[]> {
   return apiRequest<Message[]>(
     `/conversations/${encodeURIComponent(conversationId)}/messages`,

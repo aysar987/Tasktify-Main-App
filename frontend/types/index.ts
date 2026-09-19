@@ -52,6 +52,7 @@ export type Conversation = {
   counterpartInitials: string;
   lastMessage: string;
   updatedAt: string;
+  unreadCount: number;
 };
 
 export type Message = {
