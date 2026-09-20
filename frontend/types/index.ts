@@ -60,6 +60,7 @@ export type Message = {
   conversationId: string;
   senderId: string;
   body: string;
+  readAt?: string | null;
   createdAt: string;
 };
 

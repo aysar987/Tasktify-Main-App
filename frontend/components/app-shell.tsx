@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { getProfile, getUnreadConversationCount } from "@/lib/api";
 import { CHAT_UNREAD_CHANGED } from "@/lib/chat-events";
+import { useConversationOpen } from "@/lib/chat-view";
 import { disablePush } from "@/lib/push";
 import { getSupabase } from "@/lib/supabase";
 import type { Profile } from "@/types";
@@ -32,6 +33,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [profile, setProfile] = useState<Profile>();
   const [unreadChats, setUnreadChats] = useState(0);
+  const conversationOpen = useConversationOpen((state) => state.open);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => { getProfile().then(setProfile).catch(() => undefined); }, []);
@@ -167,6 +169,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Mobile bottom navbar: show only icons for Home, Tasks, Notification, Pesan */}
+      {!conversationOpen && (
       <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white shadow-[0_-8px_24px_rgba(15,23,42,0.08)] lg:hidden">
         <div className="mx-auto max-w-[1440px] px-4">
           <div className="flex justify-around py-2">
@@ -189,7 +192,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </nav>
-      
+      )}
     </div>
   );
 }

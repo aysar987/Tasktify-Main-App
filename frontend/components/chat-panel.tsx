@@ -1,17 +1,22 @@
 "use client";
 
-import { ArrowLeft, MessageSquareText, Search, Send, UserRound } from "lucide-react";
+import { ArrowLeft, Check, CheckCheck, MessageSquareText, Search, Send, UserRound } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
+import { FormEvent, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { getConversations, getMessages, markConversationRead, sendMessage, startProviderChat } from "@/lib/api";
 import { CHAT_UNREAD_CHANGED } from "@/lib/chat-events";
+import { useConversationOpen } from "@/lib/chat-view";
 import { getSupabase } from "@/lib/supabase";
 import type { Conversation, Message } from "@/types";
 import { ChatPushPrompt } from "./chat-push-prompt";
+import { PageHeader } from "./ui";
 
 function newestFirst(chats: Conversation[]) {
   return [...chats].sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
 }
+
+const NO_MESSAGES: Message[] = [];
+const messageTime = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
 
 function formatChatDate(iso: string) {
   const date = new Date(iso);
@@ -28,7 +33,9 @@ export function ChatPanel({ initialProviderId }: { initialProviderId?: string } 
   const router = useRouter();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [active, setActive] = useState<Conversation>();
-  const [messages, setMessages] = useState<Message[]>([]);
+  // Messages are kept together with the conversation they belong to, so a
+  // previously opened chat never flashes while the next one loads.
+  const [thread, setThread] = useState<{ id: string; items: Message[] }>();
   const [userId, setUserId] = useState("");
   const [draft, setDraft] = useState("");
   const [query, setQuery] = useState("");
@@ -37,6 +44,11 @@ export function ChatPanel({ initialProviderId }: { initialProviderId?: string } 
   const [startingChat, setStartingChat] = useState(Boolean(initialProviderId));
   const openChatId = useRef<string>(undefined);
   const lastMarkedRead = useRef("");
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const scrolledFor = useRef<string>(undefined);
+  const stickToBottom = useRef(true);
+  const setConversationOpen = useConversationOpen((state) => state.setOpen);
+  const messages = thread && active && thread.id === active.id ? thread.items : NO_MESSAGES;
 
   const refreshConversations = useCallback(async () => {
     const items = await getConversations();
@@ -76,6 +88,21 @@ export function ChatPanel({ initialProviderId }: { initialProviderId?: string } 
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  useEffect(() => {
+    setConversationOpen(mobileView === "chat" && Boolean(active));
+  }, [mobileView, active, setConversationOpen]);
+  useEffect(() => () => setConversationOpen(false), [setConversationOpen]);
+  // Opening a chat lands on the newest message; afterwards new messages only
+  // pull the view down while the reader is already near the bottom.
+  useLayoutEffect(() => {
+    const list = scrollRef.current;
+    if (!list || !active || !messages.length) return;
+    if (scrolledFor.current !== active.id) {
+      scrolledFor.current = active.id;
+      stickToBottom.current = true;
+    }
+    if (stickToBottom.current) list.scrollTop = list.scrollHeight;
+  }, [messages, active, mobileView]);
   // Keep the list (order, last message, unread markers) current while it is on screen.
   useEffect(() => {
     if (mobileView !== "list") return;
@@ -92,7 +119,7 @@ export function ChatPanel({ initialProviderId }: { initialProviderId?: string } 
     const refresh = async () => {
       try {
         const next = await getMessages(active.id);
-        setMessages(next);
+        setThread({ id: active.id, items: next });
         const latestIncoming = userId ? next.findLast((message) => message.senderId !== userId) : undefined;
         if (latestIncoming && latestIncoming.id !== lastMarkedRead.current) {
           lastMarkedRead.current = latestIncoming.id;
@@ -118,7 +145,8 @@ export function ChatPanel({ initialProviderId }: { initialProviderId?: string } 
     if (!active || !draft.trim()) return;
     try {
       const sent = await sendMessage(active.id, draft);
-      setMessages(await getMessages(active.id));
+      stickToBottom.current = true;
+      setThread({ id: active.id, items: await getMessages(active.id) });
       setConversations((current) =>
         newestFirst(
           current.map((chat) =>
@@ -133,10 +161,17 @@ export function ChatPanel({ initialProviderId }: { initialProviderId?: string } 
   }
 
   if (startingChat)
-    return <p className="py-16 text-center text-slate-500">Memulai percakapan...</p>;
+    return (
+      <>
+        <PageHeader title="Chat" />
+        <p className="py-16 text-center text-slate-500">Memulai percakapan...</p>
+      </>
+    );
 
   if (!conversations.length)
     return (
+      <>
+      <PageHeader title="Chat" />
       <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-20 text-center">
         <MessageSquareText className="mx-auto size-10 text-slate-400" />
         <h2 className="mt-4 font-[var(--font-manrope)] text-xl font-extrabold">
@@ -147,6 +182,7 @@ export function ChatPanel({ initialProviderId }: { initialProviderId?: string } 
         </p>
         {error && <p className="mt-3 text-sm text-red-700">{error}</p>}
       </div>
+      </>
     );
 
   const filtered = newestFirst(conversations).filter((chat) =>
@@ -155,11 +191,12 @@ export function ChatPanel({ initialProviderId }: { initialProviderId?: string } 
 
   if (mobileView === "chat" && active)
     return (
-      <div className="flex h-[70dvh] min-h-[420px] flex-col lg:h-[650px]">
+      <div className="flex h-[calc(100dvh-3.5rem)] min-h-[420px] flex-col lg:h-[calc(100dvh-5rem)]">
         <header className="flex min-h-16 shrink-0 items-center gap-3 border-b border-slate-200 pb-4">
           <button
             type="button"
             onClick={() => {
+              scrolledFor.current = undefined;
               setMobileView("list");
               void refreshConversations().catch(() => undefined);
             }}
@@ -176,19 +213,39 @@ export function ChatPanel({ initialProviderId }: { initialProviderId?: string } 
             <span className="block truncate text-xs text-slate-500">{active.provider.title}</span>
           </span>
         </header>
-        <div className="flex-1 space-y-4 overflow-y-auto bg-slate-50 p-4 sm:p-5">
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex ${message.senderId === userId ? "justify-end" : "justify-start"}`}
-            >
-              <p
-                className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-6 ${message.senderId === userId ? "rounded-br-sm bg-blue-600 text-white" : "rounded-bl-sm border border-slate-200 bg-white text-slate-700"}`}
-              >
-                {message.body}
-              </p>
-            </div>
-          ))}
+        <div
+          ref={scrollRef}
+          onScroll={(event) => {
+            const list = event.currentTarget;
+            stickToBottom.current = list.scrollHeight - list.scrollTop - list.clientHeight < 120;
+          }}
+          className="flex-1 space-y-3 overflow-y-auto bg-slate-50 p-4 sm:p-5"
+        >
+          {messages.map((message) => {
+            const mine = message.senderId === userId;
+            return (
+              <div key={message.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
+                <div
+                  className={`max-w-[80%] rounded-2xl px-3.5 pb-1.5 pt-2 text-sm leading-6 ${mine ? "rounded-br-sm bg-blue-600 text-white" : "rounded-bl-sm border border-slate-200 bg-white text-slate-700"}`}
+                >
+                  <p className="whitespace-pre-wrap break-words">{message.body}</p>
+                  <span className={`mt-0.5 flex items-center justify-end gap-1 text-[11px] leading-4 ${mine ? "text-blue-100" : "text-slate-400"}`}>
+                    <time dateTime={message.createdAt}>{messageTime.format(new Date(message.createdAt))}</time>
+                    {mine &&
+                      (message.readAt ? (
+                        <span role="img" aria-label="Sudah dibaca" title="Sudah dibaca">
+                          <CheckCheck className="size-3.5 text-emerald-300" />
+                        </span>
+                      ) : (
+                        <span role="img" aria-label="Terkirim" title="Terkirim">
+                          <Check className="size-3.5" />
+                        </span>
+                      ))}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
         </div>
         <form onSubmit={submit} className="flex shrink-0 gap-3 border-t border-slate-200 pt-4">
           <input
@@ -212,6 +269,7 @@ export function ChatPanel({ initialProviderId }: { initialProviderId?: string } 
 
   return (
     <div>
+      <PageHeader title="Chat" />
       <label className="relative block">
         <span className="sr-only">Cari percakapan</span>
         <Search className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-slate-400" />
