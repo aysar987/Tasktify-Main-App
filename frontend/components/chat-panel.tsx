@@ -18,6 +18,18 @@ function newestFirst(chats: Conversation[]) {
 const NO_MESSAGES: Message[] = [];
 const messageTime = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
 
+// Bubble corners are fully round (50) except the "tail" corner (15) at the bottom
+// on the sender's side. A bubble stacked under one from the same person also
+// flattens its top corner on that side, so a run of messages reads as one block.
+function bubbleRadius(mine: boolean, joinsPrevious: boolean) {
+  const round = "50px";
+  const tail = "15px";
+  // top-left top-right bottom-right bottom-left
+  return mine
+    ? `${round} ${joinsPrevious ? tail : round} ${tail} ${round}`
+    : `${joinsPrevious ? tail : round} ${round} ${round} ${tail}`;
+}
+
 function formatChatDate(iso: string) {
   const date = new Date(iso);
   const now = new Date();
@@ -219,26 +231,31 @@ export function ChatPanel({ initialProviderId }: { initialProviderId?: string } 
             const list = event.currentTarget;
             stickToBottom.current = list.scrollHeight - list.scrollTop - list.clientHeight < 120;
           }}
-          className="flex-1 space-y-3 overflow-y-auto bg-slate-50 p-4 sm:p-5"
+          className="flex flex-1 flex-col overflow-y-auto bg-slate-50 p-4 sm:p-5"
         >
-          {messages.map((message) => {
+          {messages.map((message, index) => {
             const mine = message.senderId === userId;
+            const joinsPrevious = index > 0 && messages[index - 1].senderId === message.senderId;
             return (
-              <div key={message.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
+              <div
+                key={message.id}
+                className={`flex ${mine ? "justify-end" : "justify-start"} ${index === 0 ? "" : joinsPrevious ? "mt-1" : "mt-3"}`}
+              >
                 <div
-                  className={`max-w-[80%] rounded-2xl px-3.5 pb-1.5 pt-2 text-sm leading-6 ${mine ? "rounded-br-sm bg-blue-600 text-white" : "rounded-bl-sm border border-slate-200 bg-white text-slate-700"}`}
+                  style={{ borderRadius: bubbleRadius(mine, joinsPrevious) }}
+                  className={`flex max-w-[80%] items-end gap-2 px-5 py-2 text-sm leading-6 ${mine ? "bg-[#1B8FDF] text-white" : "border border-slate-200 bg-white text-slate-700"}`}
                 >
-                  <p className="whitespace-pre-wrap break-words">{message.body}</p>
-                  <span className={`mt-0.5 flex items-center justify-end gap-1 text-[11px] leading-4 ${mine ? "text-blue-100" : "text-slate-400"}`}>
+                  <p className="min-w-0 whitespace-pre-wrap break-words">{message.body}</p>
+                  <span className={`flex shrink-0 items-center gap-1 text-[11px] leading-6 ${mine ? "text-white/85" : "text-slate-400"}`}>
                     <time dateTime={message.createdAt}>{messageTime.format(new Date(message.createdAt))}</time>
                     {mine &&
                       (message.readAt ? (
                         <span role="img" aria-label="Sudah dibaca" title="Sudah dibaca">
-                          <CheckCheck className="size-3.5 text-emerald-300" />
+                          <CheckCheck className="size-4 text-[#45DF1B]" />
                         </span>
                       ) : (
                         <span role="img" aria-label="Terkirim" title="Terkirim">
-                          <Check className="size-3.5" />
+                          <Check className="size-4 text-white/70" />
                         </span>
                       ))}
                   </span>
