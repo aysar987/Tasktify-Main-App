@@ -292,9 +292,13 @@ export async function deletePushSubscription(endpoint: string) {
   });
 }
 
-export async function getMessages(conversationId: string): Promise<Message[]> {
+/**
+ * `viewing` tells the server the reader is looking at this chat right now, so
+ * it does not push new messages to their devices while they are reading.
+ */
+export async function getMessages(conversationId: string, viewing = false): Promise<Message[]> {
   return apiRequest<Message[]>(
-    `/conversations/${encodeURIComponent(conversationId)}/messages`,
+    `/conversations/${encodeURIComponent(conversationId)}/messages${viewing ? "?viewing=1" : ""}`,
   );
 }
 

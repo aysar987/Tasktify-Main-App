@@ -83,7 +83,7 @@ self.addEventListener("push", (event) => {
         // Same tag per conversation: new messages replace the previous banner.
         tag: data.tag || "tasktify-chat",
         renotify: true,
-        data: { url: data.url || "/chat" },
+        data: { url: data.url || "/chat", conversationId: data.conversationId },
       }),
       // Dot on the installed app icon; the app clears it once it is opened.
       self.navigator.setAppBadge ? self.navigator.setAppBadge().catch(() => undefined) : undefined,

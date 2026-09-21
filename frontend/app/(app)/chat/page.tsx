@@ -3,8 +3,8 @@ import { ChatPanel } from "@/components/chat-panel";
 export default async function ChatPage({
   searchParams,
 }: {
-  searchParams: Promise<{ with?: string }>;
+  searchParams: Promise<{ with?: string; open?: string }>;
 }) {
-  const { with: withProviderId } = await searchParams;
-  return <ChatPanel initialProviderId={withProviderId} />;
+  const { with: withProviderId, open: openConversationId } = await searchParams;
+  return <ChatPanel initialProviderId={withProviderId} initialConversationId={openConversationId} />;
 }

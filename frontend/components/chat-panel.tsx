@@ -41,7 +41,16 @@ function formatChatDate(iso: string) {
   return date.toLocaleDateString("en-GB");
 }
 
-export function ChatPanel({ initialProviderId }: { initialProviderId?: string } = {}) {
+// Only a visible, focused tab counts as reading; a chat left open in the
+// background must still receive push notifications.
+function isReading() {
+  return document.visibilityState === "visible" && document.hasFocus();
+}
+
+export function ChatPanel({
+  initialProviderId,
+  initialConversationId,
+}: { initialProviderId?: string; initialConversationId?: string } = {}) {
   const router = useRouter();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [active, setActive] = useState<Conversation>();
@@ -53,7 +62,7 @@ export function ChatPanel({ initialProviderId }: { initialProviderId?: string } 
   const [query, setQuery] = useState("");
   const [error, setError] = useState("");
   const [mobileView, setMobileView] = useState<"list" | "chat">("list");
-  const [startingChat, setStartingChat] = useState(Boolean(initialProviderId));
+  const [startingChat, setStartingChat] = useState(Boolean(initialProviderId || initialConversationId));
   const openChatId = useRef<string>(undefined);
   const lastMarkedRead = useRef("");
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -76,6 +85,17 @@ export function ChatPanel({ initialProviderId }: { initialProviderId?: string } 
     getConversations()
       .then(async (items) => {
         setConversations(items);
+        if (initialConversationId) {
+          // Opened from a push notification: go straight to that conversation.
+          const target = items.find((chat) => chat.id === initialConversationId);
+          if (target) {
+            setActive({ ...target, unreadCount: 0 });
+            setMobileView("chat");
+          }
+          setStartingChat(false);
+          router.replace("/chat");
+          return;
+        }
         if (!initialProviderId) return;
         try {
           const conversation = await startProviderChat(initialProviderId);
@@ -130,7 +150,7 @@ export function ChatPanel({ initialProviderId }: { initialProviderId?: string } 
     lastMarkedRead.current = "";
     const refresh = async () => {
       try {
-        const next = await getMessages(active.id);
+        const next = await getMessages(active.id, isReading());
         setThread({ id: active.id, items: next });
         const latestIncoming = userId ? next.findLast((message) => message.senderId !== userId) : undefined;
         if (latestIncoming && latestIncoming.id !== lastMarkedRead.current) {
@@ -158,7 +178,7 @@ export function ChatPanel({ initialProviderId }: { initialProviderId?: string } 
     try {
       const sent = await sendMessage(active.id, draft);
       stickToBottom.current = true;
-      setThread({ id: active.id, items: await getMessages(active.id) });
+      setThread({ id: active.id, items: await getMessages(active.id, isReading()) });
       setConversations((current) =>
         newestFirst(
           current.map((chat) =>
