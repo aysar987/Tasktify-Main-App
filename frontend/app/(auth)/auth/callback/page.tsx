@@ -24,7 +24,7 @@ export default function AuthCallbackPage() {
       const { data } = await getSupabase().auth.getSession();
       if (!data.session) { if (active) setError("Tautan tidak valid atau sudah kedaluwarsa."); return; }
       const next = params.get("next") || "/dashboard";
-      router.replace(next.startsWith("/") ? next : "/dashboard");
+      router.replace(next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard");
       router.refresh();
     }
     finish();
