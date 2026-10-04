@@ -64,16 +64,12 @@ export default function MarketplaceListingDetailPage() {
               {listing.location}
             </span>
           </div>
-          {listing.providerId ? (
-            <Link
-              href={`/chat?with=${encodeURIComponent(listing.providerId)}`}
-              className="mt-5 inline-flex min-h-12 items-center gap-2 rounded-xl bg-[#42B2FF] px-5 font-bold text-white transition hover:bg-[#2f9eef]"
-            >
-              Start Conversation
-            </Link>
-          ) : (
-            <p className="mt-5 text-sm text-slate-500">Lapak ini belum tertaut ke penyedia. Pemesanan dan chat belum tersedia.</p>
-          )}
+          <Link
+            href={`/chat?listing=${encodeURIComponent(listing.id)}`}
+            className="mt-5 inline-flex min-h-12 items-center gap-2 rounded-xl bg-[#42B2FF] px-5 font-bold text-white transition hover:bg-[#2f9eef]"
+          >
+            Start Conversation
+          </Link>
         </section>
 
         <section className="rounded-[24px] bg-white p-6 shadow-sm">

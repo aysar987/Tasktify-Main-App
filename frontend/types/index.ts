@@ -48,6 +48,7 @@ export type Profile = {
 export type Conversation = {
   id: string;
   provider: Provider;
+  listing?: { id: string; name: string; category: string };
   counterpartName: string;
   counterpartInitials: string;
   lastMessage: string;

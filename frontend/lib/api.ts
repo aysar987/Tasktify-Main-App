@@ -218,6 +218,10 @@ export async function getMarketplaceListing(id: string): Promise<MarketplaceList
   );
 }
 
+export async function getMyMarketplaceListing(): Promise<MarketplaceListing | null> {
+  return apiRequest<MarketplaceListing | null>("/me/marketplace-listing");
+}
+
 export async function saveMarketplaceListing(payload: {
   name: string;
   category: string;
@@ -514,6 +518,12 @@ export async function deleteMarketplaceListing(id: string): Promise<void> {
 
 export async function startProviderChat(providerId: string): Promise<Conversation> {
   return apiRequest<Conversation>(`/providers/${encodeURIComponent(providerId)}/chat`, {
+    method: "POST",
+  });
+}
+
+export async function startMarketplaceListingChat(listingId: string): Promise<Conversation> {
+  return apiRequest<Conversation>(`/marketplace/listings/${encodeURIComponent(listingId)}/chat`, {
     method: "POST",
   });
 }

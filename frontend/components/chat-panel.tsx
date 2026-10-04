@@ -3,7 +3,7 @@
 import { ArrowLeft, Check, CheckCheck, MessageSquareText, Search, Send, UserRound } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { FormEvent, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { getConversations, getMessages, markConversationRead, sendMessage, startProviderChat } from "@/lib/api";
+import { getConversations, getMessages, markConversationRead, sendMessage, startMarketplaceListingChat, startProviderChat } from "@/lib/api";
 import { CHAT_UNREAD_CHANGED } from "@/lib/chat-events";
 import { useConversationOpen } from "@/lib/chat-view";
 import { getSupabase } from "@/lib/supabase";
@@ -49,8 +49,9 @@ function isReading() {
 
 export function ChatPanel({
   initialProviderId,
+  initialMarketplaceListingId,
   initialConversationId,
-}: { initialProviderId?: string; initialConversationId?: string } = {}) {
+}: { initialProviderId?: string; initialMarketplaceListingId?: string; initialConversationId?: string } = {}) {
   const router = useRouter();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [active, setActive] = useState<Conversation>();
@@ -62,7 +63,7 @@ export function ChatPanel({
   const [query, setQuery] = useState("");
   const [error, setError] = useState("");
   const [mobileView, setMobileView] = useState<"list" | "chat">("list");
-  const [startingChat, setStartingChat] = useState(Boolean(initialProviderId || initialConversationId));
+  const [startingChat, setStartingChat] = useState(Boolean(initialProviderId || initialMarketplaceListingId || initialConversationId));
   const openChatId = useRef<string>(undefined);
   const lastMarkedRead = useRef("");
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -96,9 +97,11 @@ export function ChatPanel({
           router.replace("/chat");
           return;
         }
-        if (!initialProviderId) return;
+        if (!initialProviderId && !initialMarketplaceListingId) return;
         try {
-          const conversation = await startProviderChat(initialProviderId);
+          const conversation = initialMarketplaceListingId
+            ? await startMarketplaceListingChat(initialMarketplaceListingId)
+            : await startProviderChat(initialProviderId!);
           setConversations((current) => [
             conversation,
             ...current.filter((chat) => chat.id !== conversation.id),
@@ -242,7 +245,7 @@ export function ChatPanel({
           </span>
           <span className="min-w-0">
             <strong className="block truncate">{active.counterpartName}</strong>
-            <span className="block truncate text-xs text-slate-500">{active.provider.title}</span>
+            <span className="block truncate text-xs text-slate-500">{active.listing ? `Lapak: ${active.listing.name} · ${active.listing.category}` : active.provider.title}</span>
           </span>
         </header>
         <div
@@ -352,7 +355,7 @@ export function ChatPanel({
                 {chat.counterpartName}
               </strong>
               <span className={`mt-0.5 block truncate text-sm ${chat.unreadCount > 0 ? "font-semibold text-slate-800" : "text-slate-500"}`}>
-                {chat.provider.title}
+                {chat.listing ? `Lapak · ${chat.listing.category}` : chat.provider.title}
               </span>
             </span>
             <span className="flex shrink-0 flex-col items-end gap-1.5">

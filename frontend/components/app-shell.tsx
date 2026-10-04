@@ -1,6 +1,6 @@
 "use client";
 
-import { Briefcase, Bell, ChevronDown, Home, LogOut, MessageSquareText, Search, ShieldCheck } from "lucide-react";
+import { Briefcase, Bell, ChevronDown, Home, LogOut, MessageSquareText, Search, ShieldCheck, Store } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -18,6 +18,7 @@ const baseNavigation = [
   { href: "/market", label: "Market", icon: Briefcase },
   { href: "/notifications", label: "Notification", icon: Bell },
   { href: "/chat", label: "Chat", icon: MessageSquareText },
+  { href: "/manage-listing", label: "Kelola Lapak", icon: Store },
 ];
 
 function UnreadBadge({ count, className = "" }: { count: number; className?: string }) {
@@ -173,7 +174,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white shadow-[0_-8px_24px_rgba(15,23,42,0.08)] lg:hidden">
         <div className="mx-auto max-w-[1440px] px-4">
           <div className="flex justify-around py-2">
-            {baseNavigation.slice(0, 4).map(({ href, icon: Icon, label }) => {
+            {baseNavigation.map(({ href, icon: Icon, label }) => {
               const active = pathname === href || pathname.startsWith(`${href}/`);
               return (
                 <Link
