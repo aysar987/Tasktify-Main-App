@@ -15,14 +15,45 @@ export default function AuthCallbackPage() {
       const params = new URLSearchParams(window.location.search);
       const hash = new URLSearchParams(window.location.hash.slice(1));
       const authError = params.get("error_description") || hash.get("error_description");
-      if (authError) { if (active) setError(authError); return; }
+      if (authError) {
+        sessionStorage.removeItem("tasktify_legal_consent");
+        if (active) setError(authError);
+        return;
+      }
       const code = params.get("code");
       if (code) {
         const { error: exchangeError } = await getSupabase().auth.exchangeCodeForSession(code);
         if (exchangeError) { if (active) setError(exchangeError.message); return; }
       }
       const { data } = await getSupabase().auth.getSession();
-      if (!data.session) { if (active) setError("Tautan tidak valid atau sudah kedaluwarsa."); return; }
+      if (!data.session) {
+        sessionStorage.removeItem("tasktify_legal_consent");
+        if (active) setError("Tautan tidak valid atau sudah kedaluwarsa.");
+        return;
+      }
+      const consentRecord = sessionStorage.getItem("tasktify_legal_consent");
+      if (consentRecord) {
+        try {
+          const consent = JSON.parse(consentRecord) as {
+            acceptedAt: string;
+            termsVersion: string;
+            privacyVersion: string;
+          };
+          const { error: updateError } = await getSupabase().auth.updateUser({
+            data: {
+              terms_accepted_at: consent.acceptedAt,
+              terms_version: consent.termsVersion,
+              privacy_version: consent.privacyVersion,
+            },
+          });
+          if (updateError) throw updateError;
+        } catch (cause) {
+          if (active) setError(cause instanceof Error ? cause.message : "Persetujuan tidak dapat disimpan.");
+          return;
+        } finally {
+          sessionStorage.removeItem("tasktify_legal_consent");
+        }
+      }
       const next = params.get("next") || "/dashboard";
       router.replace(next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard");
       router.refresh();

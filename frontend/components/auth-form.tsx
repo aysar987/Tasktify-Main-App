@@ -12,10 +12,15 @@ export function AuthForm({ mode }: { mode: "login" | "register" | "reset" | "upd
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [legalAccepted, setLegalAccepted] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
   async function signInWithGoogle() {
+    if (!legalAccepted) {
+      setError("Baca dan setujui Syarat Layanan serta Kebijakan Privasi untuk melanjutkan dengan Google.");
+      return;
+    }
     setGoogleLoading(true);
     setError("");
     try {
@@ -23,6 +28,11 @@ export function AuthForm({ mode }: { mode: "login" | "register" | "reset" | "upd
       const next = requestedNext.startsWith("/") && !requestedNext.startsWith("//")
         ? requestedNext
         : "/dashboard";
+      sessionStorage.setItem("tasktify_legal_consent", JSON.stringify({
+        acceptedAt: new Date().toISOString(),
+        termsVersion: "2026-10-04",
+        privacyVersion: "2026-10-04",
+      }));
       const { error: authError } = await getSupabase().auth.signInWithOAuth({
         provider: "google",
         options: {
@@ -31,6 +41,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" | "reset" | "upd
       });
       if (authError) throw authError;
     } catch (cause) {
+      sessionStorage.removeItem("tasktify_legal_consent");
       setError(cause instanceof Error ? cause.message : "Login dengan Google gagal dimulai.");
       setGoogleLoading(false);
     }
@@ -38,6 +49,10 @@ export function AuthForm({ mode }: { mode: "login" | "register" | "reset" | "upd
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (mode === "register" && !legalAccepted) {
+      setError("Baca dan setujui Syarat Layanan serta Kebijakan Privasi untuk membuat akun.");
+      return;
+    }
     setLoading(true);
     setError("");
     setMessage("");
@@ -63,6 +78,9 @@ export function AuthForm({ mode }: { mode: "login" | "register" | "reset" | "upd
               username: String(form.get("username")),
               full_name: String(form.get("fullName")),
               phone: String(form.get("phone")),
+              terms_accepted_at: new Date().toISOString(),
+              terms_version: "2026-10-04",
+              privacy_version: "2026-10-04",
             },
           },
         });
@@ -97,7 +115,14 @@ export function AuthForm({ mode }: { mode: "login" | "register" | "reset" | "upd
     {error && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-700">{error}</p>}
     {message && <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm font-semibold text-emerald-700">{message}</p>}
     {(mode === "login" || mode === "register") && <>
-      <button type="button" onClick={signInWithGoogle} disabled={googleLoading || loading} className="flex min-h-12 w-full items-center justify-center gap-3 rounded-xl border border-slate-300 bg-white px-4 font-bold text-slate-800 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50">
+      <label className="flex cursor-pointer items-start gap-3 text-sm leading-6 text-slate-700">
+        <input type="checkbox" checked={legalAccepted} onChange={(event) => setLegalAccepted(event.target.checked)} className="mt-1 size-4 shrink-0 accent-orange-600" />
+        <span>{mode === "register" ? "Saya telah membaca dan menyetujui" : "Untuk membuat akun atau melanjutkan dengan Google, saya telah membaca dan menyetujui"}{" "}
+          <Link href="/terms-of-service" target="_blank" rel="noreferrer" className="font-bold text-orange-700 underline">Syarat Layanan</Link>{" "}dan telah membaca{" "}
+          <Link href="/privacy-policy" target="_blank" rel="noreferrer" className="font-bold text-orange-700 underline">Kebijakan Privasi</Link>.
+        </span>
+      </label>
+      <button type="button" onClick={signInWithGoogle} disabled={!legalAccepted || googleLoading || loading} className="flex min-h-12 w-full items-center justify-center gap-3 rounded-xl border border-slate-300 bg-white px-4 font-bold text-slate-800 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50">
         {googleLoading ? <LoaderCircle className="size-5 animate-spin" /> : <svg aria-hidden="true" viewBox="0 0 48 48" className="size-5"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5Z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.77 7.18l7.73 6C44.4 37.88 46.98 31.7 46.98 24.55Z"/><path fill="#FBBC05" d="M10.53 28.59A14.4 14.4 0 0 1 9.75 24c0-1.59.27-3.13.76-4.59l-7.98-6.2A23.9 23.9 0 0 0 0 24c0 3.87.93 7.52 2.56 10.78l7.97-6.19Z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.9-5.8l-7.73-6c-2.14 1.44-4.88 2.3-8.17 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48Z"/></svg>}
         Lanjutkan dengan Google
       </button>
