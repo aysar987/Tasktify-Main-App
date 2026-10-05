@@ -106,6 +106,11 @@ export function AuthForm({ mode }: { mode: "login" | "register" | "reset" | "upd
     }
   }
 
+
+
+
+
+  
   const title = mode === "login" ? "Masuk ke Tasktify" : mode === "register" ? "Buat akun baru" : mode === "update" ? "Buat password baru" : "Reset password";
   return <form onSubmit={submit} className="space-y-5">
     <div><p className="text-sm font-bold uppercase tracking-wider text-orange-700">Akun Tasktify</p><h1 className="mt-2 font-[var(--font-manrope)] text-3xl font-extrabold">{title}</h1></div>
