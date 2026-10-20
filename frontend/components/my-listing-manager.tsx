@@ -72,7 +72,7 @@ export function MyListingManager() {
 
   return (
     <>
-      <PageHeader eyebrow="Akun penyedia" title="Kelola lapak" description="Perbarui informasi, harga, foto, dan jenis jasa yang tampil di marketplace." action={<Link href="/market" className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-700">Lihat marketplace</Link>} />
+      <PageHeader title="Kelola lapak" description="Perbarui informasi, harga, foto, dan jenis jasa yang tampil di marketplace." action={<Link href="/market" className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-700">Lihat marketplace</Link>} />
       {loading ? <p className="py-16 text-center text-slate-500">Memuat lapak...</p> : error && !listing ? (
         <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">{error}</p>
       ) : (
