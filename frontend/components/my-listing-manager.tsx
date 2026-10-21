@@ -69,10 +69,10 @@ function toServiceDraft(service: MarketplaceListingService): ServiceDraft {
   return {
     name: service.name,
     description: service.description,
-    price: String(service.price),
-    unit: service.unit,
-    duration: service.duration,
-    isActive: service.isActive,
+    price: service.price === undefined ? "" : String(service.price),
+    unit: service.unit ?? emptyService.unit,
+    duration: service.duration ?? "",
+    isActive: service.isActive ?? true,
   };
 }
 
@@ -105,7 +105,7 @@ export function MyListingManager() {
         setServiceTypes(current.serviceTypes ?? []);
         setHours({ ...emptyHours(), ...current.operatingHours });
         setDescription(current.description);
-        setWhatsApp(current.whatsapp);
+        setWhatsApp(current.whatsapp ?? "");
       })
       .catch((cause: unknown) => {
         if (active) setError(cause instanceof Error ? cause.message : "Lapak gagal dimuat.");
@@ -327,7 +327,7 @@ export function MyListingManager() {
       });
       setListing(saved);
       setServices(saved.services?.length ? saved.services.map(toServiceDraft) : [{ ...emptyService }]);
-      setWhatsApp(saved.whatsapp);
+      setWhatsApp(saved.whatsapp ?? "");
       setImage(undefined);
       setImagePreview("");
       setDirty(false);
