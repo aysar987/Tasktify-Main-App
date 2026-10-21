@@ -43,13 +43,14 @@ const emptyService = {
 type ServiceDraft = typeof emptyService;
 type ServiceType = (typeof serviceTypeOptions)[number][0];
 type DayKey = (typeof weekdays)[number][0];
-type HoursDay = MarketplaceOperatingHours[DayKey];
+type HoursDay = NonNullable<MarketplaceOperatingHours[DayKey]>;
+type FormOperatingHours = Record<DayKey, HoursDay>;
 type FormErrors = Record<string, string>;
 
-const emptyHours = (): MarketplaceOperatingHours =>
+const emptyHours = (): FormOperatingHours =>
   Object.fromEntries(
     weekdays.map(([day]) => [day, { isOpen: false, openTime: "09:00", closeTime: "17:00" }]),
-  ) as MarketplaceOperatingHours;
+  ) as FormOperatingHours;
 
 function formatRupiah(value: number) {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(value);
@@ -79,7 +80,7 @@ export function MyListingManager() {
   const [listing, setListing] = useState<MarketplaceListing | null>(null);
   const [services, setServices] = useState<ServiceDraft[]>([{ ...emptyService }]);
   const [serviceTypes, setServiceTypes] = useState<ServiceType[]>([]);
-  const [hours, setHours] = useState<MarketplaceOperatingHours>(emptyHours);
+  const [hours, setHours] = useState<FormOperatingHours>(emptyHours);
   const [copyDay, setCopyDay] = useState<DayKey>("monday");
   const [description, setDescription] = useState("");
   const [whatsApp, setWhatsApp] = useState("");
@@ -638,7 +639,7 @@ export function MyListingManager() {
                   onClick={() => {
                     setDirty(true);
                     const source = hours[copyDay];
-                    setHours(Object.fromEntries(weekdays.map(([day]) => [day, { ...source }])) as MarketplaceOperatingHours);
+                    setHours(Object.fromEntries(weekdays.map(([day]) => [day, { ...source }])) as FormOperatingHours);
                   }}
                   className="min-h-10 rounded-xl border border-slate-300 bg-white px-3 text-sm font-bold text-slate-700"
                 >

@@ -208,15 +208,48 @@ export async function getMarketplaceListings(query = "", category = "") {
   if (query.trim()) params.set("q", query.trim());
   if (category && category !== "Semua") params.set("category", category);
   const suffix = params.size ? `?${params.toString()}` : "";
-  return apiRequest<MarketplaceListing[]>(`/marketplace/listings${suffix}`, {}, false);
+  const listings = await apiRequest<MarketplaceListing[]>(`/marketplace/listings${suffix}`, {}, false);
+  return listings.map(normalizeMarketplaceListing);
 }
 
 export async function getMarketplaceListing(id: string): Promise<MarketplaceListing> {
-  return apiRequest<MarketplaceListing>(
+  const listing = await apiRequest<MarketplaceListing | null>(
     `/marketplace/listings/${encodeURIComponent(id)}`,
     {},
     false,
   );
+  if (!listing) throw new Error("Lapak tidak ditemukan atau belum dipublikasikan.");
+  return normalizeMarketplaceListing(listing);
+}
+
+function normalizeMarketplaceListing(listing: MarketplaceListing): MarketplaceListing {
+  const units: MarketplaceListingService["unit"][] = [
+    "per_pasangan",
+    "per_item",
+    "per_jam",
+    "per_meter",
+    "per_kg",
+    "per_unit",
+    "sekali_datang",
+  ];
+  const services = Array.isArray(listing.services) ? listing.services : [];
+  return {
+    ...listing,
+    whatsapp: listing.whatsapp ?? "",
+    fullAddress: listing.fullAddress ?? "",
+    serviceTypes: Array.isArray(listing.serviceTypes) ? listing.serviceTypes : ["buyer_location"],
+    operatingHours: listing.operatingHours ?? {},
+    instagramUrl: listing.instagramUrl ?? "",
+    tiktokUrl: listing.tiktokUrl ?? "",
+    termsWarranty: listing.termsWarranty ?? "",
+    services: services.map((service) => ({
+      ...service,
+      price: Number.isSafeInteger(service.price) ? service.price : listing.priceFrom,
+      unit: units.includes(service.unit) ? service.unit : "per_unit",
+      duration: service.duration ?? "",
+      isActive: service.isActive ?? true,
+    })),
+  };
 }
 
 export async function getMyMarketplaceListing(): Promise<MarketplaceListing | null> {

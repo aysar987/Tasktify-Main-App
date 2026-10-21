@@ -109,10 +109,10 @@ export type MarketplaceListingService = {
   isActive: boolean;
 };
 
-export type MarketplaceOperatingHours = Record<
+export type MarketplaceOperatingHours = Partial<Record<
   "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday",
   { isOpen: boolean; openTime: string; closeTime: string }
->;
+>>;
 
 export type MarketplaceListing = {
   id: string;
