@@ -5,6 +5,7 @@ import type {
   Message,
   Notification,
   MarketplaceListing,
+  MarketplaceListingService,
   Payment,
   PaymentMethod,
   Profile,
@@ -227,18 +228,30 @@ export async function saveMarketplaceListing(payload: {
   category: string;
   location: string;
   description: string;
-  priceFrom: number;
+  whatsapp: string;
+  fullAddress: string;
+  serviceTypes: ("buyer_location" | "provider_travel" | "pickup_delivery")[];
+  operatingHours: MarketplaceListing["operatingHours"];
+  instagramUrl: string;
+  tiktokUrl: string;
+  termsWarranty: string;
   image?: File;
-  services?: { name: string; description: string }[];
+  services: MarketplaceListingService[];
 }) {
   const form = new FormData();
   form.set("name", payload.name);
   form.set("category", payload.category);
   form.set("location", payload.location);
   form.set("description", payload.description);
-  form.set("priceFrom", String(payload.priceFrom));
+  form.set("whatsapp", payload.whatsapp);
+  form.set("fullAddress", payload.fullAddress);
+  form.set("serviceTypes", JSON.stringify(payload.serviceTypes));
+  form.set("operatingHours", JSON.stringify(payload.operatingHours));
+  form.set("instagramUrl", payload.instagramUrl);
+  form.set("tiktokUrl", payload.tiktokUrl);
+  form.set("termsWarranty", payload.termsWarranty);
   if (payload.image) form.set("image", payload.image);
-  if (payload.services) form.set("services", JSON.stringify(payload.services));
+  form.set("services", JSON.stringify(payload.services));
   return apiRequest<MarketplaceListing>("/me/marketplace-listing", {
     method: "PUT",
     body: form,

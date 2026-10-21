@@ -103,7 +103,16 @@ export type Banner = {
 export type MarketplaceListingService = {
   name: string;
   description: string;
+  price: number;
+  unit: "per_pasangan" | "per_item" | "per_jam" | "per_meter" | "per_kg" | "per_unit" | "sekali_datang";
+  duration: string;
+  isActive: boolean;
 };
+
+export type MarketplaceOperatingHours = Record<
+  "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday",
+  { isOpen: boolean; openTime: string; closeTime: string }
+>;
 
 export type MarketplaceListing = {
   id: string;
@@ -121,6 +130,13 @@ export type MarketplaceListing = {
   verificationNote?: string;
   status: "active" | "inactive" | "pending";
   imageUrl?: string;
+  whatsapp: string;
+  fullAddress: string;
+  serviceTypes: ("buyer_location" | "provider_travel" | "pickup_delivery")[];
+  operatingHours: MarketplaceOperatingHours;
+  instagramUrl: string;
+  tiktokUrl: string;
+  termsWarranty: string;
   services?: MarketplaceListingService[];
 };
 
