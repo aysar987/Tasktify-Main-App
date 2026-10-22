@@ -1,4 +1,4 @@
-const CACHE_VERSION = "tasktify-v1";
+const CACHE_VERSION = "tasktify-v2";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const PRECACHE_URLS = [
   "/offline.html",
@@ -50,18 +50,24 @@ self.addEventListener("fetch", (event) => {
   }
 
   if (["style", "script", "image", "font"].includes(request.destination)) {
+    // Stale-while-revalidate: serve the cached copy instantly, but refresh it
+    // in the background so replaced files in /public (e.g. a new logo) show
+    // up on the next load instead of staying stale forever.
     event.respondWith(
-      caches.match(request).then(
-        (cached) =>
-          cached ||
-          fetch(request).then((response) => {
-            if (response.ok) {
-              const copy = response.clone();
-              caches.open(STATIC_CACHE).then((cache) => cache.put(request, copy));
-            }
-            return response;
-          }),
-      ),
+      caches.match(request).then((cached) => {
+        const network = fetch(request).then((response) => {
+          if (response.ok) {
+            const copy = response.clone();
+            caches.open(STATIC_CACHE).then((cache) => cache.put(request, copy));
+          }
+          return response;
+        });
+        if (cached) {
+          event.waitUntil(network.catch(() => undefined));
+          return cached;
+        }
+        return network;
+      }),
     );
   }
 });
