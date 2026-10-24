@@ -12,8 +12,8 @@ export function Brand({ compact = false, showLogo = true }: { compact?: boolean;
         <Image
           src="/images/logo-tasktify.svg"
           alt=""
-          width={391}
-          height={335}
+          width={534}
+          height={720}
           priority
           className="h-10 w-auto shrink-0"
         />
@@ -22,8 +22,8 @@ export function Brand({ compact = false, showLogo = true }: { compact?: boolean;
         <Image
           src="/images/wordmark-tasktify.svg"
           alt="Tasktify"
-          width={511}
-          height={131}
+          width={690}
+          height={173}
           priority
           className="h-7 w-auto"
         />
