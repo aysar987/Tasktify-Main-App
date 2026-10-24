@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { ServiceWorkerRegistration } from "@/components/service-worker-registration";
+import "react-easy-crop/react-easy-crop.css";
 import "./globals.css";
 
 export const metadata: Metadata = {

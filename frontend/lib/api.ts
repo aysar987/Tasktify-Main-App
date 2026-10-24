@@ -529,7 +529,17 @@ export async function rejectProvider(id: string, note = ""): Promise<Provider> {
 }
 
 export async function getBanners(): Promise<Banner[]> {
-  return apiRequest<Banner[]>("/banners");
+  return (await apiRequest<Banner[]>("/banners")).map(normalizeBanner);
+}
+
+function normalizeBanner(banner: Banner): Banner {
+  const mobileImageUrl = banner.mobileImageUrl || banner.imageUrl;
+  return {
+    ...banner,
+    imageUrl: mobileImageUrl,
+    mobileImageUrl,
+    desktopImageUrl: banner.desktopImageUrl || mobileImageUrl,
+  };
 }
 
 export async function getAdminMarketplaceListings(
@@ -575,11 +585,12 @@ export async function startMarketplaceListingChat(listingId: string): Promise<Co
 }
 
 export async function getAdminBanners(): Promise<Banner[]> {
-  return apiRequest<Banner[]>("/admin/banners");
+  return (await apiRequest<Banner[]>("/admin/banners")).map(normalizeBanner);
 }
 
 type BannerFormPayload = {
-  image?: File;
+  mobileImage?: File;
+  desktopImage?: File;
   href: string;
   sortOrder: number;
   active: boolean;
@@ -587,14 +598,15 @@ type BannerFormPayload = {
 
 function bannerFormData(payload: BannerFormPayload): FormData {
   const form = new FormData();
-  if (payload.image) form.set("image", payload.image);
+  if (payload.mobileImage) form.set("mobileImage", payload.mobileImage);
+  if (payload.desktopImage) form.set("desktopImage", payload.desktopImage);
   form.set("href", payload.href);
   form.set("sortOrder", String(payload.sortOrder));
   form.set("active", String(payload.active));
   return form;
 }
 
-export async function createBanner(payload: BannerFormPayload & { image: File }): Promise<Banner> {
+export async function createBanner(payload: BannerFormPayload): Promise<Banner> {
   return apiRequest<Banner>("/admin/banners", {
     method: "POST",
     body: bannerFormData(payload),

@@ -96,6 +96,8 @@ export type Banner = {
   id: string;
   href: string;
   imageUrl: string;
+  mobileImageUrl: string;
+  desktopImageUrl: string;
   sortOrder: number;
   active: boolean;
 };

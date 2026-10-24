@@ -143,7 +143,7 @@ export default function DashboardPage() {
           setTransitionEnabled(true);
           setDragOffset(0);
         }}
-        className="relative -mx-4 -mt-7 min-h-[220px] touch-pan-y select-none overflow-hidden bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-600 sm:-mx-6 sm:min-h-[300px] lg:-mx-10 lg:-mt-10"
+        className="relative -mx-4 -mt-7 aspect-[2/1] touch-pan-y select-none overflow-hidden bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-600 md:aspect-[24/5] sm:-mx-6 lg:-mx-10 lg:-mt-10"
       >
         {slides.length > 0 && (
           <div
@@ -170,7 +170,17 @@ export default function DashboardPage() {
           >
             {renderedSlides.map((slide, index) => (
               <div key={`${slide.banner.id}-${index}`} style={{ width: `${100 / renderedSlides.length}%` }} className="relative h-full shrink-0">
-                <Image unoptimized src={slide.banner.imageUrl} alt="" fill draggable={false} className="pointer-events-none object-cover" />
+                <picture className="absolute inset-0 block">
+                  <source media="(min-width: 768px)" srcSet={slide.banner.desktopImageUrl} />
+                  <img
+                    src={slide.banner.mobileImageUrl}
+                    alt=""
+                    draggable={false}
+                    loading={index === trackIndex ? "eager" : "lazy"}
+                    decoding="async"
+                    className="pointer-events-none h-full w-full"
+                  />
+                </picture>
                 <Link href={slide.banner.href} onClick={(event) => { if (didDrag.current) event.preventDefault(); }} className="absolute inset-0" aria-label="Buka banner" />
               </div>
             ))}
