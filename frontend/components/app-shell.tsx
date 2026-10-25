@@ -166,12 +166,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Link href="/request-task" className="mt-4 inline-flex min-h-10 items-center font-bold text-orange-700">Mulai sekarang →</Link>
           </div>
         </aside>
-        <main id="main-content" className="min-w-0 flex-1 px-4 py-7 sm:px-6 lg:px-10 lg:py-10">{children}</main>
+        <main id="main-content" className="min-w-0 flex-1 px-4 pt-7 pb-[calc(6rem+env(safe-area-inset-bottom))] sm:px-6 sm:py-7 lg:px-10 lg:py-10">{children}</main>
       </div>
 
       {/* Mobile bottom navbar: show only icons for Home, Tasks, Notification, Pesan */}
       {!conversationOpen && (
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white shadow-[0_-8px_24px_rgba(15,23,42,0.08)] lg:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_rgba(15,23,42,0.08)] lg:hidden">
         <div className="mx-auto max-w-[1440px] px-4">
           <div className="flex justify-around py-2">
             {baseNavigation.map(({ href, icon: Icon, label }) => {
