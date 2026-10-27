@@ -127,7 +127,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" | "reset" | "upd
             priority
             className="mx-auto size-[72px] object-contain md:size-12"
           />
-          <h1 className="mt-4 text-3xl font-bold tracking-tight">Selamat Datang</h1>
+          <h1 className="mt-4 text-4xl font-bold tracking-tight">Selamat Datang</h1>
           <p className="mt-2 text-sm text-slate-600">silahkan login untuk masuk ke Tasktify</p>
         </div>
 
@@ -175,7 +175,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" | "reset" | "upd
             className="mt-1 size-4 shrink-0 accent-[#4294F7]"
           />
           <span>
-            Untuk membuat akun atau melanjutkan dengan Google, saya telah membaca dan menyetujui{" "}
+            Saya telah membaca dan menyetujui{" "}
             <Link href="/terms-of-service" target="_blank" rel="noreferrer" className="font-bold text-[#2879D8] underline">
               Syarat Layanan
             </Link>{" "}

@@ -16,10 +16,10 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           <Image
             src="/images/wordmark-tasktify.svg"
             alt="Tasktify."
-            width={180}
-            height={50}
+            width={140}
+            height={39}
             priority
-            className="h-[50px] w-[180px] object-contain object-left"
+            className="h-[39px] w-[140px] object-contain object-left"
           />
         </div>
         <div className="w-full max-w-[420px] md:rounded-[32px] md:border-2 md:border-[#4A90E2] md:bg-white md:p-8 md:shadow-[6px_8px_0_rgba(0,0,0,0.2)]">
