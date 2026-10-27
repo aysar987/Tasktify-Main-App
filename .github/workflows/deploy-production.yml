@@ -86,15 +86,23 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y sshpass
 
+      - name: Set up SSH key
+        env:
+          SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
       - name: Update source and provision VPS
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
           SSHPASS: ${{ secrets.VPS_PASSWORD }}
         run: |
-          sshpass -e ssh -o PreferredAuthentications=password -o PubkeyAuthentication=no \
-            -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-            "$VPS_USER@$VPS_HOST" 'bash -se' <<'REMOTE'
+          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes \
+          -o StrictHostKeyChecking=accept-new \
+          "$VPS_USER@$VPS_HOST" 'bash -se' <<'REMOTE'
           set -Eeuo pipefail
           export DEBIAN_FRONTEND=noninteractive
           apt-get update
