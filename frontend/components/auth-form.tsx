@@ -1,7 +1,6 @@
 "use client";
 
 import { LoaderCircle } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
@@ -10,19 +9,6 @@ import { getSupabase } from "@/lib/supabase";
 
 const authInputClass = "mt-2 min-h-12 w-full rounded-full border-0 bg-[#C2E2FB] px-5 text-base text-slate-950 outline-none transition placeholder:text-slate-600 focus:ring-4 focus:ring-[#4294F7]/35";
 const authPrimaryButton = "inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-full bg-[#4294F7] px-5 font-bold text-white transition hover:bg-[#2879D8] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#4294F7]/35 disabled:cursor-not-allowed disabled:opacity-50";
-
-function AuthMascot() {
-  return (
-    <Image
-      src="/images/logo-tasktify.svg"
-      alt="Maskot Tasktify"
-      width={72}
-      height={72}
-      priority
-      className="mx-auto size-[72px] object-contain md:size-12"
-    />
-  );
-}
 
 export function AuthForm({ mode }: { mode: "login" | "register" | "reset" | "update" }) {
   const router = useRouter();
@@ -133,8 +119,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" | "reset" | "upd
     return (
       <form onSubmit={submit} className="space-y-5 text-slate-950">
         <div className="text-center">
-          <AuthMascot />
-          <h1 className="mt-4 text-4xl font-bold tracking-tight">Selamat Datang</h1>
+          <h1 tabIndex={-1} className="text-4xl font-bold tracking-tight">Selamat Datang</h1>
           <p className="mt-2 text-sm text-slate-600">silahkan login untuk masuk ke Tasktify</p>
         </div>
 
@@ -223,8 +208,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" | "reset" | "upd
   return (
     <form onSubmit={submit} className="space-y-5 text-slate-950">
       <div className="text-center">
-        <AuthMascot />
-        <h1 className="mt-4 text-4xl font-bold tracking-tight">{title}</h1>
+        <h1 tabIndex={-1} className="text-4xl font-bold tracking-tight">{title}</h1>
       </div>
 
       {mode === "register" && (
