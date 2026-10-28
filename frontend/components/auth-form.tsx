@@ -131,7 +131,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" | "reset" | "upd
             required
             autoComplete="email"
             placeholder="nama@email.com"
-            className="mt-2 min-h-12 w-full rounded-full border-0 bg-[#C2E2FB] px-5 text-base text-slate-950 outline-none transition placeholder:text-slate-600 focus:ring-4 focus:ring-[#4294F7]/35"
+            className={authInputClass}
           />
         </label>
 
@@ -144,7 +144,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" | "reset" | "upd
             minLength={8}
             autoComplete="current-password"
             placeholder="Masukkan kata sandi"
-            className="mt-2 min-h-12 w-full rounded-full border-0 bg-[#C2E2FB] px-5 text-base text-slate-950 outline-none transition placeholder:text-slate-600 focus:ring-4 focus:ring-[#4294F7]/35"
+            className={authInputClass}
           />
           <Link href="/reset-password" className="mt-2 inline-flex text-sm font-semibold text-[#2879D8] hover:underline">
             Lupa Sandi ?
@@ -206,7 +206,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" | "reset" | "upd
   }
 
   return (
-    <form onSubmit={submit} className="space-y-5 text-slate-950">
+    <form onSubmit={submit} className={`${mode === "register" ? "space-y-4" : "space-y-5"} text-slate-950`}>
       <div className="text-center">
         <h1 tabIndex={-1} className="text-4xl font-bold tracking-tight">{title}</h1>
       </div>
