@@ -3,10 +3,11 @@
 import { ArrowLeftRight, ChevronDown, Search, Store } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getMarketplaceListings } from "@/lib/api";
+import { marketplaceCategories } from "@/lib/marketplace-categories";
 import { MarketplaceListingCard } from "@/components/marketplace-listing-card";
 import type { MarketplaceListing } from "@/types";
 
-const categories = ["Listrik", "Plumbing", "AC", "Pertukangan", "Kebersihan"];
+const categories = marketplaceCategories;
 const PAGE_SIZE = 12;
 
 type FeeSort = "default" | "asc" | "desc";

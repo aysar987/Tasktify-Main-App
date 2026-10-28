@@ -5,10 +5,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
 import { getMyMarketplaceListing, saveMarketplaceListing } from "@/lib/api";
+import { marketplaceCategories } from "@/lib/marketplace-categories";
 import type { MarketplaceListing, MarketplaceOperatingHours, MarketplaceListingService } from "@/types";
 import { PageHeader, inputClass, primaryButton } from "./ui";
 
-const categories = ["Listrik", "Plumbing", "AC", "Pertukangan", "Kebersihan", "Lainnya"];
 const weekdays = [
   ["monday", "Senin"],
   ["tuesday", "Selasa"],
@@ -393,7 +393,8 @@ export function MyListingManager() {
             <label className="block text-sm font-bold text-slate-700">Kategori
               <select id="field-category" data-validation-key="category" name="category" required defaultValue={listing?.category ?? ""} aria-invalid={Boolean(errors.category)} className={inputClass}>
                 <option value="" disabled>Pilih kategori</option>
-                {categories.map((category) => <option key={category}>{category}</option>)}
+                {listing?.category && !marketplaceCategories.some((category) => category === listing.category) && <option value={listing.category}>{listing.category}</option>}
+                {marketplaceCategories.map((category) => <option key={category}>{category}</option>)}
               </select>
               <InlineError message={errors.category} />
             </label>

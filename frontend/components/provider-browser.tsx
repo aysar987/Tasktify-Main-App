@@ -4,10 +4,11 @@ import { Search, Store } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getProviders } from "@/lib/api";
+import { marketplaceCategories } from "@/lib/marketplace-categories";
 import type { Provider } from "@/types";
 import { ProviderCard } from "./provider-card";
 
-const categories = ["Semua", "Listrik", "Plumbing", "AC", "Pertukangan", "Kebersihan"];
+const categories = ["Semua", ...marketplaceCategories];
 
 export function ProviderBrowser({ initialQuery = "" }: { initialQuery?: string }) {
   const [query, setQuery] = useState(initialQuery);
