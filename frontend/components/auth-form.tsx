@@ -7,7 +7,7 @@ import { FormEvent, useState } from "react";
 import { getSiteUrl } from "@/lib/site-url";
 import { getSupabase } from "@/lib/supabase";
 
-const authInputClass = "mt-2 min-h-12 w-full rounded-full border-0 bg-[#C2E2FB] px-5 text-base text-slate-950 outline-none transition placeholder:text-slate-600 focus:ring-4 focus:ring-[#4294F7]/35";
+const authInputClass = "mt-2 min-h-12 w-full rounded-full border-0 bg-[#E5F0FF] px-5 text-base text-slate-950 outline-none transition placeholder:text-slate-600 focus:ring-4 focus:ring-[#4294F7]/35";
 const authPrimaryButton = "inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-full bg-[#4294F7] px-5 font-bold text-white transition hover:bg-[#2879D8] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#4294F7]/35 disabled:cursor-not-allowed disabled:opacity-50";
 
 export function AuthForm({ mode }: { mode: "login" | "register" | "reset" | "update" }) {
@@ -206,7 +206,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" | "reset" | "upd
   }
 
   return (
-    <form onSubmit={submit} className={`${mode === "register" ? "space-y-4" : "space-y-5"} text-slate-950`}>
+    <form onSubmit={submit} className={`${mode === "register" ? "space-y-3" : "space-y-5"} text-slate-950`}>
       <div className="text-center">
         <h1 tabIndex={-1} className="text-4xl font-bold tracking-tight">{title}</h1>
       </div>
