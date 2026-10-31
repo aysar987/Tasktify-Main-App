@@ -1,4 +1,4 @@
-const CACHE_VERSION = "tasktify-v2";
+const CACHE_VERSION = "tasktify-v3";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const PRECACHE_URLS = [
   "/offline.html",
@@ -42,6 +42,11 @@ self.addEventListener("fetch", (event) => {
   }
 
   if (request.mode === "navigate") {
+    // Let the browser handle auth routes directly — the callback URL carries
+    // a one-time access_token in the hash that must reach the client JS intact.
+    if (url.pathname.startsWith("/auth/")) {
+      return;
+    }
     event.respondWith(
       fetch(request)
         .catch(() => caches.match("/offline.html")),
