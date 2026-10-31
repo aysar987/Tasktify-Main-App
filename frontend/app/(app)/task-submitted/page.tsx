@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 const planeIllustrationClass =
-  "pointer-events-none absolute right-0 top-0 z-0 h-[170vw] w-auto max-w-none object-contain md:right-[calc(50%-200px)] md:h-[82%]";
+  "pointer-events-none absolute left-1/2 top-0 z-0 h-[150vw] w-auto max-w-none -translate-x-1/2 object-contain md:h-[85%]";
 
 const buttonClass =
   "inline-flex min-h-12 items-center justify-center rounded-xl px-6 py-3 font-[var(--font-poppins)] font-semibold shadow-[0_4px_6px_rgba(0,0,0,0.25)] transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#3F93F5]/40 active:translate-y-0.5";
