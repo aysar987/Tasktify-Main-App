@@ -83,6 +83,16 @@ server {
     listen 80;
     listen [::]:80;
 
+    server_name www.tasktify.id;
+
+    # Canonical host is tasktify.id (auth redirects and cookies live there).
+    return 301 https://tasktify.id$request_uri;
+}
+
+server {
+    listen 80;
+    listen [::]:80;
+
     server_name api.tasktify.id;
 
     location / {
@@ -111,6 +121,8 @@ certbot --nginx \
   --register-unsafely-without-email \
   --redirect \
   --keep-until-expiring \
+  --expand \
   -d tasktify.id \
+  -d www.tasktify.id \
   -d api.tasktify.id
 
