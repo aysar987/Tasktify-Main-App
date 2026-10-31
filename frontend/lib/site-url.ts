@@ -4,5 +4,5 @@ export function getSiteUrl() {
   if (typeof window !== "undefined" && window.location.hostname === "localhost") {
     return window.location.origin;
   }
-  return "https://www.tasktify.id";
+  return "https://tasktify.id";
 }
