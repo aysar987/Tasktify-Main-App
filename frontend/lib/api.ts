@@ -195,14 +195,6 @@ export async function transitionTask(
   );
 }
 
-export async function getProviders(query = "", category = "") {
-  const params = new URLSearchParams();
-  if (query.trim()) params.set("q", query.trim());
-  if (category && category !== "Semua") params.set("category", category);
-  const suffix = params.size ? `?${params.toString()}` : "";
-  return apiRequest<Provider[]>(`/providers${suffix}`, {}, false);
-}
-
 export async function getMarketplaceListings(query = "", category = "") {
   const params = new URLSearchParams();
   if (query.trim()) params.set("q", query.trim());

@@ -6,7 +6,7 @@ export const midtransSnapScriptUrl = isProduction
   ? "https://app.midtrans.com/snap/snap.js"
   : "https://app.sandbox.midtrans.com/snap/snap.js";
 
-export type SnapCallbacks = {
+type SnapCallbacks = {
   onSuccess?: (result: unknown) => void;
   onPending?: (result: unknown) => void;
   onError?: (result: unknown) => void;

@@ -11,7 +11,7 @@ export type BannerCropPreset = {
   height: number;
 };
 
-export async function cropBannerImage(
+async function cropBannerImage(
   imageUrl: string,
   area: Area,
   preset: BannerCropPreset,
