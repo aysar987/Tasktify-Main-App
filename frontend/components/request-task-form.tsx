@@ -230,7 +230,7 @@ export function RequestTaskForm({ providerId }: { providerId?: string }) {
   );
 }
 
-function StepField({
+export function StepField({
   label,
   helper,
   required = true,
@@ -250,7 +250,7 @@ function StepField({
   );
 }
 
-function PaymentOptions({ method, setMethod }: { method: PaymentMethod; setMethod: (method: PaymentMethod) => void }) {
+export function PaymentOptions({ method, setMethod }: { method: PaymentMethod; setMethod: (method: PaymentMethod) => void }) {
   return (
     <fieldset className="space-y-3">
       <legend className="mb-3 font-[var(--font-manrope)] text-2xl font-extrabold text-slate-950">Metode pembayaran</legend>

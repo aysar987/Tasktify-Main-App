@@ -6,18 +6,8 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getMarketplaceListing } from "@/lib/api";
-import { rating, rupiah } from "@/lib/format";
+import { rating, rupiah, serviceUnitLabels } from "@/lib/format";
 import type { MarketplaceListing } from "@/types";
-
-const serviceUnitLabels: Record<string, string> = {
-  per_pasangan: "per pasang",
-  per_item: "per item",
-  per_jam: "per jam",
-  per_meter: "per meter",
-  per_kg: "per kg",
-  per_unit: "per unit",
-  sekali_datang: "sekali datang",
-};
 
 export default function MarketplaceListingDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -113,7 +103,7 @@ export default function MarketplaceListingDetailPage() {
               </div>
               {listing.providerId && (
                 <Link
-                  href={`/request-task?provider=${encodeURIComponent(listing.providerId)}`}
+                  href={`/request-task?listing=${encodeURIComponent(listing.id)}&service=${index}`}
                   aria-label={`Pesan ${service.name}`}
                   className="grid size-9 shrink-0 place-items-center rounded-full bg-blue-500 text-white transition hover:bg-blue-600"
                 >
