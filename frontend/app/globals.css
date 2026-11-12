@@ -2,6 +2,12 @@
 @import "tailwindcss";
 
 @theme {
+  --text-sm: 1rem;
+  --text-sm--line-height: 1.25;
+  --text-lg: 1.25rem;
+  --text-lg--line-height: 1.4;
+  --text-3xl: 2rem;
+  --text-3xl--line-height: 1.125;
   --color-orange-50: #eef9ff;
   --color-orange-100: #d9f2ff;
   --color-orange-200: #b8e8ff;

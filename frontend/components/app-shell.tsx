@@ -23,7 +23,7 @@ const baseNavigation = [
 
 function UnreadBadge({ count, className = "" }: { count: number; className?: string }) {
   return (
-    <span role="status" aria-label={`${count} percakapan belum dibaca`} className={`grid h-[18px] min-w-[18px] place-items-center rounded-full bg-blue-600 px-1 text-[10px] font-bold leading-none text-white ${className}`}>
+    <span role="status" aria-label={`${count} percakapan belum dibaca`} className={`grid h-[18px] min-w-[18px] place-items-center rounded-full bg-blue-600 px-1 text-xs font-bold leading-none text-white ${className}`}>
       {count > 99 ? "99+" : count}
     </span>
   );
@@ -186,7 +186,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     <Icon className="size-5" />
                     {href === "/chat" && unreadChats > 0 && <UnreadBadge count={unreadChats} className="absolute -right-2.5 -top-1.5" />}
                   </span>
-                  <span className="mt-0.5 text-[11px] leading-3">{label}</span>
+                  <span className="mt-0.5 text-xs leading-3">{label}</span>
                 </Link>
               );
             })}

@@ -269,7 +269,7 @@ export function ChatPanel({
                   className={`flex max-w-[80%] items-end gap-2 px-5 py-2 text-sm leading-6 ${mine ? "bg-[#1B8FDF] text-white" : "border border-slate-200 bg-white text-slate-700"}`}
                 >
                   <p className="min-w-0 whitespace-pre-wrap break-words">{message.body}</p>
-                  <span className={`flex shrink-0 items-center gap-1 text-[11px] leading-6 ${mine ? "text-white/85" : "text-slate-400"}`}>
+                  <span className={`flex shrink-0 items-center gap-1 text-xs leading-6 ${mine ? "text-white/85" : "text-slate-400"}`}>
                     <time dateTime={message.createdAt}>{messageTime.format(new Date(message.createdAt))}</time>
                     {mine &&
                       (message.readAt ? (

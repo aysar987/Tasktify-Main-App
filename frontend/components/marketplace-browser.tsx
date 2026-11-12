@@ -185,7 +185,7 @@ export function MarketplaceBrowser({ initialQuery = "" }: { initialQuery?: strin
           >
             Filter <ArrowLeftRight className="size-4 rotate-90" />
             {activeFilterCount > 0 && (
-              <span className="grid size-4 place-items-center rounded-full bg-orange-600 text-[10px] font-bold text-white">{activeFilterCount}</span>
+              <span className="grid size-4 place-items-center rounded-full bg-orange-600 text-xs font-bold text-white">{activeFilterCount}</span>
             )}
           </button>
           {openMenu === "filter" && (

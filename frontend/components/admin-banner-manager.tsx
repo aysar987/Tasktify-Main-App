@@ -315,13 +315,13 @@ export function AdminBannerManager() {
                 <div className="relative aspect-[2/1] overflow-hidden rounded-lg bg-slate-100">
                   <Image unoptimized src={banner.mobileImageUrl || banner.imageUrl} alt="" fill className="object-contain" />
                 </div>
-                <span className="text-center text-[10px] text-slate-500">Mobile / Desktop</span>
+                <span className="text-center text-xs text-slate-500">Mobile / Desktop</span>
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <strong className="truncate text-sm">{banner.href}</strong>
                   {!banner.active && (
-                    <span className="shrink-0 rounded-full border border-slate-300 bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-500">
+                    <span className="shrink-0 rounded-full border border-slate-300 bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-500">
                       Nonaktif
                     </span>
                   )}

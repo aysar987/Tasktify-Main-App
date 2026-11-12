@@ -20,10 +20,10 @@ export default function TaskSubmittedPage() {
         className={planeIllustrationClass}
       />
       <div className="relative z-10 mx-auto flex w-full max-w-5xl flex-col items-center text-center">
-        <h1 className="whitespace-nowrap font-[var(--font-poppins)] text-[clamp(1.25rem,4.5vw,4rem)] font-bold leading-none text-[#3F93F5]">
+        <h1 className="whitespace-nowrap font-[var(--font-poppins)] text-xl font-bold leading-none text-[#3F93F5] sm:text-4xl md:text-[64px]">
           Taskmu Berhasil Terkirim!
         </h1>
-        <p className="mt-1 font-[var(--font-poppins)] text-[clamp(0.9rem,2.1vw,1.8rem)] font-medium leading-tight text-[#3F93F5]">
+        <p className="mt-1 font-[var(--font-poppins)] text-base font-medium leading-tight text-[#3F93F5] sm:text-xl md:text-3xl">
           kami sedang mencari ahlinya
         </p>
         <div className="mt-8 flex flex-wrap items-center justify-center gap-4 sm:gap-6">
