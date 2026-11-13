@@ -8,7 +8,7 @@ export function TaskMarketCard({ task }: { task: Task }) {
   return (
     <Link
       href={`/marketplace/${task.id}`}
-      className="group block overflow-hidden rounded-2xl border border-blue-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-blue-400 hover:shadow-lg"
+      className="group block overflow-hidden rounded-2xl border border-blue-200 bg-white shadow-sm card-hover hover:border-blue-400"
     >
       <div className="relative flex h-[130px] items-center justify-center overflow-hidden bg-gradient-to-br from-sky-300 via-blue-500 to-indigo-800">
         {task.imageUrl ? (

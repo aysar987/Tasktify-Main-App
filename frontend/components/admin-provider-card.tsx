@@ -74,7 +74,7 @@ export function AdminProviderCard({
   const StatusIcon = statusMeta.icon;
 
   return (
-    <article className="rounded-2xl border border-slate-200 bg-white p-5">
+    <article className="rounded-2xl border border-slate-200 bg-white p-5 transition-shadow duration-200 hover:shadow-md">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex items-center gap-4">
           <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-slate-900 font-bold text-white">{provider.initials}</span>

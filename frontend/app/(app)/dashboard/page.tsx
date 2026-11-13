@@ -214,9 +214,9 @@ export default function DashboardPage() {
                   <p className="mt-1 truncate text-sm font-semibold text-slate-900">{profile?.fullName || profile?.username || "Pengguna"}</p>
                 </div>
                 <div className="py-1.5">
-                  <Link href="/profile" onClick={() => setMenuOpen(false)} className="flex items-center justify-between px-3 py-2 text-sm font-medium text-slate-700"><span>Manage Account</span><ChevronDown className="size-4 -rotate-90" /></Link>
-                  <Link href="/activity" onClick={() => setMenuOpen(false)} className="flex items-center justify-between px-3 py-2 text-sm font-medium text-slate-700"><span>Activities</span><ChevronDown className="size-4 -rotate-90" /></Link>
-                  <button type="button" onClick={() => { setMenuOpen(false); void logout(); }} className="flex w-full items-center justify-between px-3 py-2 text-left text-sm font-medium text-red-600"><span>Logout</span><LogOut className="size-4" /></button>
+                  <Link href="/profile" onClick={() => setMenuOpen(false)} className="flex items-center justify-between px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"><span>Manage Account</span><ChevronDown className="size-4 -rotate-90" /></Link>
+                  <Link href="/activity" onClick={() => setMenuOpen(false)} className="flex items-center justify-between px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"><span>Activities</span><ChevronDown className="size-4 -rotate-90" /></Link>
+                  <button type="button" onClick={() => { setMenuOpen(false); void logout(); }} className="flex w-full items-center justify-between px-3 py-2 text-left text-sm font-medium text-red-600 transition-colors hover:bg-red-50 active:scale-100"><span>Logout</span><LogOut className="size-4" /></button>
                 </div>
               </div>
             )}
@@ -272,22 +272,22 @@ export default function DashboardPage() {
 
           <section className="mt-6">
             <div className="grid grid-cols-3 gap-6">
-              <Link href="/create-task" className="flex flex-col items-center">
-                <div className="flex h-16 w-16 items-center justify-center">
+              <Link href="/create-task" className="group flex flex-col items-center rounded-2xl press focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/40">
+                <div className="flex h-16 w-16 items-center justify-center transition-transform duration-200 ease-out group-hover:-translate-y-1 group-hover:scale-105">
                   <Image src="/images/AddTask.svg" alt="Add Task" width={120} height={120} />
                 </div>
                 <span className="mt-2 text-sm font-semibold text-white">Buat Task</span>
               </Link>
 
-              <Link href="/penyedia" className="flex flex-col items-center">
-                <div className="flex h-16 w-16 items-center justify-center">
+              <Link href="/penyedia" className="group flex flex-col items-center rounded-2xl press focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/40">
+                <div className="flex h-16 w-16 items-center justify-center transition-transform duration-200 ease-out group-hover:-translate-y-1 group-hover:scale-105">
                   <Image src="/images/DoTask.svg" alt="Do Task" width={120} height={120} />
                 </div>
                 <span className="mt-2 text-sm font-semibold text-white">Ambil Task</span>
               </Link>
 
-              <Link href="/market" className="flex flex-col items-center">
-                <div className="flex h-16 w-16 items-center justify-center">
+              <Link href="/market" className="group flex flex-col items-center rounded-2xl press focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/40">
+                <div className="flex h-16 w-16 items-center justify-center transition-transform duration-200 ease-out group-hover:-translate-y-1 group-hover:scale-105">
                   <Image src="/images/MarketPlace.svg" alt="Marketplace" width={120} height={120} />
                 </div>
                 <span className="mt-2 text-sm font-semibold text-white">Marketplace</span>

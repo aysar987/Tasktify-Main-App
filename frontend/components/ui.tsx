@@ -3,14 +3,14 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 export const inputClass = "mt-2 min-h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-base text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-orange-600 focus:ring-4 focus:ring-orange-100";
-export const primaryButton = "inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-xl bg-orange-600 px-5 font-bold text-white transition hover:bg-orange-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-orange-200 disabled:cursor-not-allowed disabled:opacity-50";
-export const secondaryButton = "inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-5 font-bold text-slate-800 transition hover:border-slate-400 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-200";
+export const primaryButton = "inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-xl bg-orange-600 px-5 font-bold text-white shadow-sm shadow-orange-600/20 transition duration-150 hover:bg-orange-700 hover:shadow-md hover:shadow-orange-600/30 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-orange-200 disabled:cursor-not-allowed disabled:opacity-50";
+export const secondaryButton = "inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-5 font-bold text-slate-800 transition duration-150 hover:border-slate-400 hover:bg-slate-50 hover:shadow-sm active:scale-[0.97] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-200";
 
 export function PageHeader({ eyebrow, title, description, action, backHref }: { eyebrow?: string; title: string; description?: string; action?: ReactNode; backHref?: string }) {
   return (
     <div className="mb-8 flex flex-col gap-5 border-b border-slate-200 pb-7 sm:flex-row sm:items-end sm:justify-between">
       <div className="flex items-start gap-4">
-        {backHref && <Link href={backHref} aria-label="Kembali" className="grid size-11 shrink-0 place-items-center rounded-xl border border-slate-300 bg-white transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-orange-200"><ArrowLeft className="size-5" /></Link>}
+        {backHref && <Link href={backHref} aria-label="Kembali" className="grid size-11 shrink-0 place-items-center rounded-xl border border-slate-300 bg-white transition hover:bg-slate-50 active:scale-[0.94] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-orange-200"><ArrowLeft className="size-5" /></Link>}
         <div>
           {eyebrow && <p className="mb-2 text-sm font-bold uppercase tracking-[.16em] text-orange-700">{eyebrow}</p>}
           <h1 className="font-[var(--font-manrope)] text-3xl font-extrabold tracking-tight text-slate-950 md:text-4xl">{title}</h1>

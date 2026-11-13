@@ -71,7 +71,7 @@ export function AdminListingCard({
   const StatusIcon = statusMeta.icon;
 
   return (
-    <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+    <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white transition-shadow duration-200 hover:shadow-md">
       <div className="relative flex h-32 items-center justify-center overflow-hidden bg-gradient-to-br from-sky-300 via-blue-500 to-indigo-800">
         {listing.imageUrl ? (
           <Image unoptimized src={listing.imageUrl} alt="" fill className="object-cover" />

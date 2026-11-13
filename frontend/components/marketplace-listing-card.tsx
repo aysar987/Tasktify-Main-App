@@ -6,7 +6,7 @@ import type { MarketplaceListing } from "@/types";
 
 export function MarketplaceListingCard({ listing }: { listing: MarketplaceListing }) {
   return (
-    <div className="group flex h-full flex-col overflow-hidden rounded-[24px] border border-blue-200 bg-white shadow-sm transition duration-200 hover:-translate-y-1 hover:border-blue-400 hover:shadow-lg">
+    <div className="group flex h-full flex-col overflow-hidden rounded-[24px] border border-blue-200 bg-white shadow-sm card-hover hover:border-blue-400">
       <Link href={`/market/${listing.id}`} className="flex flex-1 flex-col">
         <div className="relative flex h-[150px] items-center justify-center overflow-hidden bg-gradient-to-br from-sky-300 via-blue-500 to-indigo-800">
           {listing.imageUrl ? (
