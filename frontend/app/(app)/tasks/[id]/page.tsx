@@ -5,7 +5,6 @@ import {
   CircleDollarSign,
   MapPin,
   ShieldCheck,
-  Star,
 } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -15,8 +14,9 @@ import { PaymentPanel } from "@/components/payment-panel";
 import { TaskGallery } from "@/components/task-photos";
 import { PageHeader, StatusBadge } from "@/components/ui";
 import { getTask } from "@/lib/api";
-import { rating, rupiah } from "@/lib/format";
+import { rupiah } from "@/lib/format";
 import type { Task } from "@/types";
+import { RatingBadge } from "@/components/rating-badge";
 
 export default function TaskDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -107,10 +107,7 @@ export default function TaskDetailPage() {
                   <p className="mt-1 text-sm text-slate-500">
                     {task.provider.title}
                   </p>
-                  <span className="mt-2 flex items-center gap-1 text-sm font-bold">
-                    <Star className="size-4 fill-amber-400 text-amber-400" />
-                    {rating(task.provider.rating)}
-                  </span>
+                  <RatingBadge rating={task.provider.rating} reviewCount={task.provider.reviewCount} className="mt-2" />
                 </div>
               </div>
             </section>

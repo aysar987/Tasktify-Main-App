@@ -131,6 +131,8 @@ export async function createTask(payload: {
   schedule: string;
   note: string;
   providerId?: string;
+  /** Lapak the order was placed from; its review then counts toward that lapak. */
+  marketplaceListingId?: string;
   method: PaymentMethod;
   image?: File;
 }) {
@@ -141,6 +143,7 @@ export async function createTask(payload: {
   form.set("schedule", payload.schedule);
   form.set("note", payload.note);
   if (payload.providerId) form.set("providerId", payload.providerId);
+  if (payload.marketplaceListingId) form.set("marketplaceListingId", payload.marketplaceListingId);
   form.set("method", payload.method);
   if (payload.image) form.set("image", payload.image);
   const result = await apiRequest<CreateTaskResponse>("/tasks", {

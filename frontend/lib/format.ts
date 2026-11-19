@@ -6,10 +6,6 @@ export function rupiah(value: number) {
   }).format(value);
 }
 
-export function rating(value: number) {
-  return value.toFixed(1);
-}
-
 export const serviceUnitLabels: Record<string, string> = {
   per_pasangan: "per pasang",
   per_item: "per item",

@@ -6,6 +6,7 @@ import { getMarketplaceListings } from "@/lib/api";
 import { marketplaceCategories } from "@/lib/marketplace-categories";
 import { MarketplaceListingCard } from "@/components/marketplace-listing-card";
 import type { MarketplaceListing } from "@/types";
+import { compareByRating } from "@/components/rating-badge";
 
 const categories = marketplaceCategories;
 const PAGE_SIZE = 12;
@@ -62,7 +63,8 @@ export function MarketplaceBrowser({ initialQuery = "" }: { initialQuery?: strin
     });
 
     if (relevanceSort === "rating") {
-      result = [...result].sort((a, b) => b.rating - a.rating);
+      // Rated lapaks first; "Baru" ones (no reviews) after them, not ranked as 0 stars.
+      result = [...result].sort(compareByRating);
     } else if (relevanceSort === "jobs") {
       result = [...result].sort((a, b) => b.jobs - a.jobs);
     }

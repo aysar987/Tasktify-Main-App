@@ -1,13 +1,14 @@
 "use client";
 
-import { ArrowLeft, MapPin, Plus, Star } from "lucide-react";
+import { ArrowLeft, MapPin, Plus } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getMarketplaceListing } from "@/lib/api";
-import { rating, rupiah, serviceUnitLabels } from "@/lib/format";
+import { rupiah, serviceUnitLabels } from "@/lib/format";
 import type { MarketplaceListing } from "@/types";
+import { RatingBadge } from "@/components/rating-badge";
 
 export default function MarketplaceListingDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -51,10 +52,7 @@ export default function MarketplaceListingDetailPage() {
               <h1 className="truncate font-[var(--font-manrope)] text-2xl font-extrabold text-slate-950">{listing.name}</h1>
               <p className="mt-1 text-slate-500">{listing.category}</p>
             </div>
-            <span className="flex shrink-0 items-center gap-1 pt-1 font-bold text-slate-800">
-              <Star className="size-5 fill-amber-400 text-amber-400" />
-              {rating(listing.rating)}
-            </span>
+            <RatingBadge rating={listing.rating} reviewCount={listing.reviewCount} size="md" className="mt-1" />
           </div>
           <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-slate-500">
             <span className="flex items-center gap-1.5">

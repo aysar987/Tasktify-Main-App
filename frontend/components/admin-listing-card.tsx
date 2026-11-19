@@ -1,12 +1,13 @@
 "use client";
 
-import { BriefcaseBusiness, Check, MapPin, ShieldAlert, ShieldCheck, ShieldQuestion, Star, Trash2, X } from "lucide-react";
+import { BriefcaseBusiness, Check, MapPin, ShieldAlert, ShieldCheck, ShieldQuestion, Trash2, X } from "lucide-react";
 import Image from "next/image";
 import { FormEvent, useState } from "react";
 import { deleteMarketplaceListing, rejectMarketplaceListing, verifyMarketplaceListing } from "@/lib/api";
-import { rating, rupiah } from "@/lib/format";
+import { rupiah } from "@/lib/format";
 import type { MarketplaceListing } from "@/types";
 import { primaryButton, secondaryButton } from "./ui";
+import { RatingBadge } from "@/components/rating-badge";
 
 const STATUS_META = {
   pending: { icon: ShieldQuestion, label: "Menunggu review", className: "border-amber-200 bg-amber-50 text-amber-800" },
@@ -87,10 +88,7 @@ export function AdminListingCard({
         <h3 className="font-[var(--font-manrope)] font-extrabold">{listing.name}</h3>
         <p className="text-sm text-slate-500">{listing.category}</p>
         <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-slate-600">
-          <span className="flex items-center gap-1 font-bold text-slate-800">
-            <Star className="size-4 fill-amber-400 text-amber-400" />
-            {rating(listing.rating)}
-          </span>
+          <RatingBadge rating={listing.rating} reviewCount={listing.reviewCount} />
           <span className="flex items-center gap-1.5">
             <MapPin className="size-4 text-slate-400" />
             {listing.location}

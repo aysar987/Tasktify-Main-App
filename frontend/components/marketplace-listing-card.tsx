@@ -1,8 +1,9 @@
-import { BriefcaseBusiness, MapPin, Star } from "lucide-react";
+import { BriefcaseBusiness, MapPin } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { rating, rupiah } from "@/lib/format";
+import { rupiah } from "@/lib/format";
 import type { MarketplaceListing } from "@/types";
+import { RatingBadge } from "@/components/rating-badge";
 
 export function MarketplaceListingCard({ listing }: { listing: MarketplaceListing }) {
   return (
@@ -23,7 +24,7 @@ export function MarketplaceListingCard({ listing }: { listing: MarketplaceListin
             <h3 className="truncate font-[var(--font-manrope)] text-lg font-extrabold text-slate-950 group-hover:text-blue-700">
               {listing.name}
             </h3>
-            <span className="flex shrink-0 items-center gap-1 text-sm font-bold text-slate-800"><Star className="size-4 fill-amber-400 text-amber-400" />{rating(listing.rating)}</span>
+            <RatingBadge rating={listing.rating} reviewCount={listing.reviewCount} />
           </div>
           <p className="truncate text-sm text-slate-500">{listing.category}</p>
           <div className="mt-2 flex items-end justify-between gap-3 border-t border-slate-100 pt-2">

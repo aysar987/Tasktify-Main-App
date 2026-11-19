@@ -1,14 +1,15 @@
 "use client";
 
-import { MapPin, Star } from "lucide-react";
+import { MapPin } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ProviderReviews } from "@/components/provider-reviews";
 import { PageHeader, primaryButton } from "@/components/ui";
 import { getProvider, getProviderRatings } from "@/lib/api";
-import { rating, rupiah } from "@/lib/format";
+import { rupiah } from "@/lib/format";
 import type { Provider, Rating } from "@/types";
+import { RatingBadge } from "@/components/rating-badge";
 
 export default function ProviderDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -50,11 +51,7 @@ export default function ProviderDetailPage() {
               </div>
             </div>
             <div className="mt-6 flex flex-wrap items-center gap-5 border-y border-slate-100 py-4 text-sm">
-              <span className="flex items-center gap-1 font-bold text-slate-800">
-                <Star className="size-4 fill-amber-400 text-amber-400" />
-                {rating(provider.rating)}
-              </span>
-              <span className="text-slate-500">{provider.jobs} pekerjaan selesai</span>
+              <RatingBadge rating={provider.rating} reviewCount={provider.reviewCount} />
               <span className="flex items-center gap-1.5 text-slate-500">
                 <MapPin className="size-4" />
                 {provider.location}

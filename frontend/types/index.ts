@@ -8,7 +8,10 @@ export type Provider = {
   title: string;
   category: string;
   location: string;
-  rating: number;
+  /** Average review score; null while there are no reviews ("Baru"). */
+  rating: number | null;
+  /** Number of reviews. */
+  reviewCount: number;
   jobs: number;
   verified: boolean;
   verificationStatus: ProviderVerificationStatus;
@@ -143,7 +146,10 @@ export type MarketplaceListing = {
   location: string;
   description: string;
   priceFrom: number;
-  rating: number;
+  /** Average review score; null while there are no reviews ("Baru"). */
+  rating: number | null;
+  /** Number of reviews. */
+  reviewCount: number;
   jobs: number;
   verified: boolean;
   verificationStatus: ProviderVerificationStatus;

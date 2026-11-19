@@ -131,6 +131,7 @@ export function ServiceOrderForm({ listingId, serviceIndex }: { listingId: strin
         schedule: new Date(schedule).toISOString(),
         note: (note.trim() ? `${orderLine}\n\nCatatan pembeli: ${note.trim()}` : orderLine).slice(0, 2000),
         providerId: listing.providerId,
+        marketplaceListingId: listing.id,
         method,
       });
       if (method === "online") {
