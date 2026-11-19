@@ -585,6 +585,11 @@ export async function deleteMarketplaceListing(id: string): Promise<void> {
   });
 }
 
+/** Opens the conversation about a task with its provider, creating it on first use. */
+export async function startTaskChat(taskId: string): Promise<Conversation> {
+  return apiRequest<Conversation>(`/tasks/${encodeURIComponent(taskId)}/chat`, { method: "POST" });
+}
+
 export async function startProviderChat(providerId: string): Promise<Conversation> {
   return apiRequest<Conversation>(`/providers/${encodeURIComponent(providerId)}/chat`, {
     method: "POST",

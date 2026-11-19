@@ -63,13 +63,22 @@ export function TaskActions({
     getPayment(taskId).then((value) => setPayment(value ?? null)).catch(() => undefined);
     return subscribePayment(taskId, setPayment);
   }, [taskId]);
+  // Opens this task's conversation; the chat's back button returns to this task.
+  const chatHref = `/chat?task=${encodeURIComponent(taskId)}`;
   if (status === "cancelled" || status === "rejected")
     return (
-      <div
-        role="status"
-        className="rounded-xl border border-red-200 bg-red-50 p-4 font-semibold text-red-700"
-      >
-        Task tidak aktif.
+      <div className="grid gap-3">
+        <div
+          role="status"
+          className="rounded-xl border border-red-200 bg-red-50 p-4 font-semibold text-red-700"
+        >
+          Task tidak aktif.
+        </div>
+        {providerId && (
+          <a href={chatHref} className={`${secondaryButton} w-full`}>
+            <MessageSquareText className="size-5" /> Lihat percakapan
+          </a>
+        )}
       </div>
     );
 
@@ -181,6 +190,9 @@ export function TaskActions({
           >
             <X className="size-5" /> Tolak task
           </button>
+          <a href={chatHref} className={`${secondaryButton} w-full`}>
+            <MessageSquareText className="size-5" /> Hubungi klien
+          </a>
         </div>
       );
     if (status === "scheduled")
@@ -194,6 +206,9 @@ export function TaskActions({
           >
             <Play className="size-5" /> Mulai pekerjaan
           </button>
+          <a href={chatHref} className={`${secondaryButton} w-full`}>
+            <MessageSquareText className="size-5" /> Hubungi klien
+          </a>
           <button
             disabled={loading}
             onClick={cancel}
@@ -215,6 +230,9 @@ export function TaskActions({
           >
             <Check className="size-5" /> Tandai selesai
           </button>
+          <a href={chatHref} className={`${secondaryButton} w-full`}>
+            <MessageSquareText className="size-5" /> Hubungi klien
+          </a>
           {onlineUnpaid && (
             <p id="finish-blocked-reason" className="text-sm leading-6 text-slate-600">
               Pembayaran online dari client belum lunas. Task bisa ditandai selesai setelah pembayaran dikonfirmasi.
@@ -236,7 +254,14 @@ export function TaskActions({
           )}
         </div>
       );
-    return errorBox || null;
+    return (
+      <div className="grid gap-3">
+        {errorBox}
+        <a href={chatHref} className={`${secondaryButton} w-full`}>
+          <MessageSquareText className="size-5" /> Hubungi klien
+        </a>
+      </div>
+    );
   }
 
   // Client: after the provider finished a cash task, show what was confirmed and how to dispute it.
@@ -264,6 +289,9 @@ export function TaskActions({
       <div className="grid gap-3">
         {errorBox}
         {cashConfirmedNotice}
+        <a href={chatHref} className={`${secondaryButton} w-full`}>
+          <MessageSquareText className="size-5" /> Hubungi penyedia
+        </a>
         {existingRating ? (
           <div className="rounded-xl border border-slate-200 bg-white p-4">
             <p className="text-sm font-bold text-slate-700">Rating Anda</p>
@@ -320,7 +348,7 @@ export function TaskActions({
     <div className="grid gap-3">
       {errorBox}
       {providerId && (
-        <a href="/chat" className={`${primaryButton} w-full`}>
+        <a href={chatHref} className={`${primaryButton} w-full`}>
           <MessageSquareText className="size-5" /> Hubungi penyedia
         </a>
       )}

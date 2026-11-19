@@ -1,15 +1,18 @@
 "use client";
 
-import { ArrowLeft, Check, CheckCheck, MessageSquareText, Search, Send, UserRound } from "lucide-react";
+import { ArrowLeft, Check, CheckCheck, ChevronRight, Lock, MessageSquareText, Search, Send, UserRound } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { getConversations, getMessages, markConversationRead, sendMessage, startMarketplaceListingChat, startProviderChat } from "@/lib/api";
+import { ApiError, getConversations, getMessages, getTask, markConversationRead, sendMessage, startMarketplaceListingChat, startProviderChat, startTaskChat } from "@/lib/api";
 import { CHAT_UNREAD_CHANGED } from "@/lib/chat-events";
 import { useConversationOpen } from "@/lib/chat-view";
 import { getSupabase } from "@/lib/supabase";
-import type { Conversation, Message } from "@/types";
+import { rupiah } from "@/lib/format";
+import type { Conversation, ConversationTask, Message } from "@/types";
 import { ChatPushPrompt } from "./chat-push-prompt";
-import { PageHeader } from "./ui";
+import { TaskThumbnail } from "./task-photos";
+import { PageHeader, StatusBadge } from "./ui";
 
 function newestFirst(chats: Conversation[]) {
   return [...chats].sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
@@ -35,10 +38,10 @@ function formatChatDate(iso: string) {
   const now = new Date();
   const startOfDay = (value: Date) => new Date(value.getFullYear(), value.getMonth(), value.getDate()).getTime();
   const diffDays = Math.round((startOfDay(now) - startOfDay(date)) / 86400000);
-  if (diffDays === 0) return "Today";
-  if (diffDays === 1) return "Yesterday";
-  if (diffDays > 1 && diffDays < 7) return date.toLocaleDateString("en-US", { weekday: "long" });
-  return date.toLocaleDateString("en-GB");
+  if (diffDays === 0) return "Hari ini";
+  if (diffDays === 1) return "Kemarin";
+  if (diffDays > 1 && diffDays < 7) return date.toLocaleDateString("id-ID", { weekday: "long" });
+  return date.toLocaleDateString("id-ID");
 }
 
 // Only a visible, focused tab counts as reading; a chat left open in the
@@ -51,7 +54,8 @@ export function ChatPanel({
   initialProviderId,
   initialMarketplaceListingId,
   initialConversationId,
-}: { initialProviderId?: string; initialMarketplaceListingId?: string; initialConversationId?: string } = {}) {
+  initialTaskId,
+}: { initialProviderId?: string; initialMarketplaceListingId?: string; initialConversationId?: string; initialTaskId?: string } = {}) {
   const router = useRouter();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [active, setActive] = useState<Conversation>();
@@ -63,7 +67,9 @@ export function ChatPanel({
   const [query, setQuery] = useState("");
   const [error, setError] = useState("");
   const [mobileView, setMobileView] = useState<"list" | "chat">("list");
-  const [startingChat, setStartingChat] = useState(Boolean(initialProviderId || initialMarketplaceListingId || initialConversationId));
+  const [startingChat, setStartingChat] = useState(Boolean(initialProviderId || initialMarketplaceListingId || initialConversationId || initialTaskId));
+  // Opened from a task page: the back button returns there instead of to the chat list.
+  const [returnTo, setReturnTo] = useState<string>();
   const openChatId = useRef<string>(undefined);
   const lastMarkedRead = useRef("");
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -97,11 +103,14 @@ export function ChatPanel({
           router.replace("/chat");
           return;
         }
-        if (!initialProviderId && !initialMarketplaceListingId) return;
+        if (!initialProviderId && !initialMarketplaceListingId && !initialTaskId) return;
         try {
-          const conversation = initialMarketplaceListingId
-            ? await startMarketplaceListingChat(initialMarketplaceListingId)
-            : await startProviderChat(initialProviderId!);
+          const conversation = initialTaskId
+            ? await startTaskChat(initialTaskId)
+            : initialMarketplaceListingId
+              ? await startMarketplaceListingChat(initialMarketplaceListingId)
+              : await startProviderChat(initialProviderId!);
+          if (initialTaskId) setReturnTo(`/tasks/${encodeURIComponent(initialTaskId)}`);
           setConversations((current) => [
             conversation,
             ...current.filter((chat) => chat.id !== conversation.id),
@@ -175,9 +184,28 @@ export function ChatPanel({
       openChatId.current = undefined;
     };
   }, [active, mobileView, userId]);
+  // Keep the pinned task card's status current while the conversation is open.
+  const activeTaskId = mobileView === "chat" ? active?.task?.id : undefined;
+  useEffect(() => {
+    if (!activeTaskId) return;
+    const refresh = () => {
+      if (document.hidden) return;
+      getTask(activeTaskId)
+        .then((task) =>
+          setActive((current) =>
+            current?.task?.id === task.id && current.task.status !== task.status
+              ? { ...current, task: { ...current.task, status: task.status } }
+              : current,
+          ),
+        )
+        .catch(() => undefined);
+    };
+    const timer = window.setInterval(refresh, 10000);
+    return () => window.clearInterval(timer);
+  }, [activeTaskId]);
   async function submit(event: FormEvent) {
     event.preventDefault();
-    if (!active || !draft.trim()) return;
+    if (!active || !draft.trim() || active.readOnly) return;
     try {
       const sent = await sendMessage(active.id, draft);
       stickToBottom.current = true;
@@ -191,6 +219,10 @@ export function ChatPanel({
       );
       setDraft("");
     } catch (cause) {
+      // The 7-day window may have passed while the chat was open.
+      if (cause instanceof ApiError && cause.code === "CHAT_CLOSED") {
+        setActive((current) => (current ? { ...current, readOnly: true } : current));
+      }
       setError(cause instanceof Error ? cause.message : "Pesan gagal dikirim.");
     }
   }
@@ -221,7 +253,7 @@ export function ChatPanel({
     );
 
   const filtered = newestFirst(conversations).filter((chat) =>
-    chat.counterpartName.toLowerCase().includes(query.toLowerCase()),
+    `${chat.counterpartName} ${chat.task?.title ?? ""}`.toLowerCase().includes(query.toLowerCase()),
   );
 
   if (mobileView === "chat" && active)
@@ -232,10 +264,14 @@ export function ChatPanel({
             type="button"
             onClick={() => {
               scrolledFor.current = undefined;
+              if (returnTo) {
+                router.push(returnTo);
+                return;
+              }
               setMobileView("list");
               void refreshConversations().catch(() => undefined);
             }}
-            aria-label="Kembali ke daftar percakapan"
+            aria-label={returnTo ? "Kembali ke task" : "Kembali ke daftar percakapan"}
             className="grid size-9 shrink-0 cursor-pointer place-items-center rounded-lg hover:bg-slate-100"
           >
             <ArrowLeft className="size-5" />
@@ -245,9 +281,10 @@ export function ChatPanel({
           </span>
           <span className="min-w-0">
             <strong className="block truncate">{active.counterpartName}</strong>
-            <span className="block truncate text-xs text-slate-500">{active.listing ? `Lapak: ${active.listing.name} · ${active.listing.category}` : active.provider.title}</span>
+            <span className="block truncate text-xs text-slate-500">{conversationSubtitle(active)}</span>
           </span>
         </header>
+        {active.task && <PinnedTaskCard task={active.task} />}
         <div
           ref={scrollRef}
           onScroll={(event) => {
@@ -287,6 +324,23 @@ export function ChatPanel({
             );
           })}
         </div>
+        {error && (
+          <p role="alert" className="mt-3 shrink-0 rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-700">
+            {error}
+          </p>
+        )}
+        {active.readOnly ? (
+          <p role="status" className="flex shrink-0 items-start gap-2 border-t border-slate-200 pt-4 text-sm leading-6 text-slate-600">
+            <Lock className="mt-1 size-4 shrink-0 text-slate-400" />
+            Percakapan ini sudah ditutup karena task telah berakhir lebih dari 7 hari. Anda masih bisa membaca pesan sebelumnya.
+          </p>
+        ) : (
+        <>
+        {active.closesAt && (
+          <p className="shrink-0 pt-3 text-xs text-slate-500">
+            Task sudah berakhir. Anda masih bisa mengirim pesan sampai {closingDate.format(new Date(active.closesAt))}.
+          </p>
+        )}
         <form onSubmit={submit} className="flex shrink-0 gap-3 border-t border-slate-200 pt-4">
           <input
             value={draft}
@@ -304,6 +358,8 @@ export function ChatPanel({
             <Send className="size-5" />
           </button>
         </form>
+        </>
+        )}
       </div>
     );
 
@@ -316,7 +372,7 @@ export function ChatPanel({
         <input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search..."
+          placeholder="Cari nama atau task..."
           className="min-h-12 w-full rounded-2xl border-0 bg-slate-100 pl-12 pr-4 text-base outline-none placeholder:text-slate-400 focus:ring-4 focus:ring-blue-100"
         />
       </label>
@@ -324,7 +380,7 @@ export function ChatPanel({
       <ChatPushPrompt />
 
       <h2 className="mb-1 mt-6 font-[var(--font-manrope)] text-2xl font-extrabold text-slate-950">
-        Your chats
+        Percakapan Anda
       </h2>
 
       {error && (
@@ -340,6 +396,7 @@ export function ChatPanel({
             type="button"
             onClick={() => {
               setActive(chat);
+              setError("");
               setConversations((current) =>
                 current.map((item) => (item.id === chat.id ? { ...item, unreadCount: 0 } : item)),
               );
@@ -355,7 +412,7 @@ export function ChatPanel({
                 {chat.counterpartName}
               </strong>
               <span className={`mt-0.5 block truncate text-sm ${chat.unreadCount > 0 ? "font-semibold text-slate-800" : "text-slate-500"}`}>
-                {chat.listing ? `Lapak · ${chat.listing.category}` : chat.provider.title}
+                {conversationSubtitle(chat)}
               </span>
             </span>
             <span className="flex shrink-0 flex-col items-end gap-1.5">
@@ -376,5 +433,35 @@ export function ChatPanel({
         ))}
       </div>
     </div>
+  );
+}
+
+const closingDate = new Intl.DateTimeFormat("id-ID", { dateStyle: "medium", timeStyle: "short" });
+const taskDate = new Intl.DateTimeFormat("id-ID", { dateStyle: "medium", timeStyle: "short" });
+
+/** Second line under the other person's name: the task, the lapak, or "Chat umum". */
+function conversationSubtitle(chat: Conversation) {
+  if (chat.task) return chat.task.title;
+  if (chat.listing) return `Lapak · ${chat.listing.category}`;
+  return "Chat umum";
+}
+
+/** The task this conversation is about, pinned above the messages. */
+function PinnedTaskCard({ task }: { task: ConversationTask }) {
+  return (
+    <Link
+      href={`/tasks/${encodeURIComponent(task.id)}`}
+      className="mt-3 flex shrink-0 items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 transition hover:border-orange-300 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-orange-200"
+    >
+      <TaskThumbnail images={task.images} className="size-12" />
+      <span className="min-w-0 flex-1">
+        <strong className="block truncate text-sm text-slate-950">{task.title}</strong>
+        <span className="mt-0.5 block truncate text-xs text-slate-500">
+          {rupiah(task.budget)} · {taskDate.format(new Date(task.schedule))}
+        </span>
+      </span>
+      <StatusBadge status={task.status} />
+      <ChevronRight className="size-4 shrink-0 text-slate-400" />
+    </Link>
   );
 }

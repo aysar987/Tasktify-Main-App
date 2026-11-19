@@ -56,6 +56,22 @@ export type Conversation = {
   lastMessage: string;
   updatedAt: string;
   unreadCount: number;
+  /** The task this conversation is about; missing for general and lapak chats. */
+  task?: ConversationTask;
+  /** When sending stops (7 days after the task ended). */
+  closesAt?: string;
+  /** True once the task ended more than 7 days ago: messages can be read but not sent. */
+  readOnly: boolean;
+};
+
+export type ConversationTask = {
+  id: string;
+  title: string;
+  status: TaskStatus;
+  budget: number;
+  schedule: string;
+  /** API paths of the task photos; load with getTaskImageUrl. */
+  images: string[];
 };
 
 export type Message = {
