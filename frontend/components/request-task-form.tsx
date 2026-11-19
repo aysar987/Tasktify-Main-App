@@ -6,13 +6,20 @@ import Script from "next/script";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { createTask } from "@/lib/api";
+import { rupiah } from "@/lib/format";
 import { midtransClientKey, midtransSnapScriptUrl } from "@/lib/midtrans";
 import type { PaymentMethod } from "@/types";
 import { inputClass, primaryButton, secondaryButton } from "./ui";
 
 type TaskFields = { title: string; location: string; budget: string; schedule: string; note: string };
 const initialFields: TaskFields = { title: "", location: "", budget: "", schedule: "", note: "" };
-const TOTAL_STEPS = 7;
+const REVIEW_STEP = 7;
+const PAYMENT_STEP = 8;
+const TOTAL_STEPS = PAYMENT_STEP;
+
+function formatSchedule(value: string) {
+  return new Intl.DateTimeFormat("id-ID", { dateStyle: "full", timeStyle: "short" }).format(new Date(value));
+}
 
 export function RequestTaskForm({ providerId }: { providerId?: string }) {
   const router = useRouter();
@@ -69,8 +76,23 @@ export function RequestTaskForm({ providerId }: { providerId?: string }) {
     setStep((current) => Math.max(current - 1, 1));
   }
 
+  // Jump back from the review step to fix a single field.
+  function editStep(target: number) {
+    setError("");
+    setDirection("backward");
+    setStep(target);
+  }
+
+  const budget = Number(fields.budget) || 0;
+
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    // Enter in a field submits the form; only send from the payment step so the
+    // review and payment choice can never be skipped.
+    if (step !== PAYMENT_STEP) {
+      next();
+      return;
+    }
     const message = validate(5);
     if (message) {
       setError(message);
@@ -191,7 +213,45 @@ export function RequestTaskForm({ providerId }: { providerId?: string }) {
                     </span>
                   </StepField>
                 )}
-                {step === 7 && <PaymentOptions method={method} setMethod={setMethod} />}
+                {step === REVIEW_STEP && (
+                  <section aria-labelledby="task-review-title">
+                    <h2 id="task-review-title" className="mb-1 font-[var(--font-manrope)] text-2xl font-extrabold text-slate-950">
+                      Ringkasan pesanan
+                    </h2>
+                    <p className="mb-4 text-sm font-normal text-slate-500">Periksa kembali task Anda sebelum memilih pembayaran.</p>
+                    {imagePreview && (
+                      <span className="relative mb-4 block h-40 w-full overflow-hidden rounded-2xl border border-slate-200">
+                        <Image src={imagePreview} alt="Foto task" fill className="object-cover" unoptimized />
+                      </span>
+                    )}
+                    <dl className="divide-y divide-slate-100 rounded-2xl border border-slate-200 text-sm">
+                      <ReviewRow label="Nama task" value={fields.title.trim()} onEdit={() => editStep(1)} />
+                      <ReviewRow label="Lokasi" value={fields.location.trim()} onEdit={() => editStep(2)} />
+                      <ReviewRow label="Jadwal" value={fields.schedule ? formatSchedule(fields.schedule) : "-"} onEdit={() => editStep(4)} />
+                      <ReviewRow label="Catatan" value={fields.note.trim()} onEdit={() => editStep(5)} />
+                      <ReviewRow label="Foto" value={image ? image.name : "Tidak ada foto"} onEdit={() => editStep(6)} />
+                      <ReviewRow label="Subtotal" value={rupiah(budget)} onEdit={() => editStep(3)} />
+                      <div className="flex items-center justify-between gap-3 rounded-b-2xl bg-slate-50 px-4 py-4">
+                        <dt className="font-bold text-slate-950">Total</dt>
+                        <dd className="text-lg font-extrabold text-slate-950">{rupiah(budget)}</dd>
+                      </div>
+                    </dl>
+                  </section>
+                )}
+                {step === PAYMENT_STEP && (
+                  <>
+                    <PaymentOptions method={method} setMethod={setMethod} />
+                    <div className="mt-5 flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-4 py-4">
+                      <span className="text-sm font-bold text-slate-950">Total pembayaran</span>
+                      <strong className="text-lg font-extrabold text-slate-950">{rupiah(budget)}</strong>
+                    </div>
+                    <p className="mt-3 text-xs font-normal leading-5 text-slate-500">
+                      {method === "online"
+                        ? "Setelah dikirim, Anda akan diarahkan ke halaman pembayaran. Dana ditahan platform dan dicairkan saat task selesai."
+                        : "Task langsung dipublikasikan ke penyedia. Pembayaran dilakukan tunai saat bertemu."}
+                    </p>
+                  </>
+                )}
               </fieldset>
               {error && <p role="alert" className="mt-4 text-sm font-semibold text-red-700">{error}</p>}
               <div className="mt-8 flex items-center justify-between gap-3 border-t border-slate-200 pt-5">
@@ -227,6 +287,25 @@ export function RequestTaskForm({ providerId }: { providerId?: string }) {
         </div>
       </div>
     </form>
+  );
+}
+
+function ReviewRow({ label, value, onEdit }: { label: string; value: string; onEdit: () => void }) {
+  return (
+    <div className="flex items-start justify-between gap-4 px-4 py-3">
+      <dt className="shrink-0 font-normal text-slate-500">{label}</dt>
+      <dd className="flex min-w-0 items-start gap-3 text-right">
+        <span className="min-w-0 break-words font-semibold text-slate-950">{value}</span>
+        <button
+          type="button"
+          onClick={onEdit}
+          aria-label={`Ubah ${label.toLowerCase()}`}
+          className="shrink-0 cursor-pointer text-xs font-bold text-orange-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-200"
+        >
+          Ubah
+        </button>
+      </dd>
+    </div>
   );
 }
 
