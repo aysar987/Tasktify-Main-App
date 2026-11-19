@@ -7,7 +7,14 @@ const planeIllustrationClass =
 const buttonClass =
   "inline-flex min-h-12 items-center justify-center rounded-xl px-6 py-3 font-[var(--font-poppins)] font-semibold shadow-[0_4px_6px_rgba(0,0,0,0.25)] transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#3F93F5]/40 active:translate-y-0.5";
 
-export default function TaskSubmittedPage() {
+export default async function TaskSubmittedPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ task?: string }>;
+}) {
+  const { task } = await searchParams;
+  // The new task waits for a provider, so open the "Menunggu" tab and highlight it.
+  const activityHref = task ? `/activity?tab=menunggu&new=${encodeURIComponent(task)}` : "/activity?tab=menunggu";
   return (
     <section className="-mx-4 -mt-7 -mb-[calc(6rem+env(safe-area-inset-bottom))] flex min-h-dvh items-center justify-center overflow-hidden bg-white px-4 pb-[calc(6rem+env(safe-area-inset-bottom))] sm:-mx-6 sm:-mb-7 sm:px-6 lg:-mx-10 lg:-mt-10 lg:-mb-10 lg:px-10 lg:pb-0">
       <Image
@@ -28,7 +35,7 @@ export default function TaskSubmittedPage() {
         </p>
         <div className="mt-8 flex flex-wrap items-center justify-center gap-4 sm:gap-6">
           <Link
-            href="/activity"
+            href={activityHref}
             className={`${buttonClass} bg-[#3F93F5] text-white hover:bg-[#2879D8]`}
           >
             Pantau aktifitas

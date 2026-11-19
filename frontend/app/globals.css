@@ -60,6 +60,14 @@ body {
 .wizard-slide-forward { animation: wizard-slide-forward 360ms ease-in-out both; }
 .wizard-slide-backward { animation: wizard-slide-backward 360ms ease-in-out both; }
 
+/* Soft flash on a task card the user just created (Activity page). */
+@keyframes task-highlight {
+  0%, 60% { background-color: var(--color-orange-50); border-color: var(--color-orange-300); box-shadow: 0 0 0 4px var(--color-orange-100); }
+  100% { background-color: #fff; box-shadow: 0 0 0 0 transparent; }
+}
+
+.task-highlight { animation: task-highlight 2s ease-out both; }
+
 button,
 a {
   -webkit-tap-highlight-color: transparent;

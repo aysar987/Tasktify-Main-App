@@ -130,7 +130,7 @@ export function RequestTaskForm({ providerId }: { providerId?: string }) {
         router.push(`/tasks/${task.id}`);
         return;
       }
-      router.push("/task-submitted");
+      router.push(`/task-submitted?task=${encodeURIComponent(task.id)}`);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Task gagal dikirim.");
       setLoading(false);

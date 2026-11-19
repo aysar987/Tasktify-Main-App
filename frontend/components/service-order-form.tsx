@@ -143,7 +143,7 @@ export function ServiceOrderForm({ listingId, serviceIndex }: { listingId: strin
         }
         return;
       }
-      router.push("/task-submitted");
+      router.push(`/task-submitted?task=${encodeURIComponent(task.id)}`);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Pesanan gagal dikirim.");
       setLoading(false);
