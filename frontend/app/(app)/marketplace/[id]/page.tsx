@@ -1,8 +1,9 @@
 "use client";
 
-import { CalendarDays, Check, CircleDollarSign, LoaderCircle, MapPin, Navigation } from "lucide-react";
+import { CalendarDays, Check, CircleDollarSign, LoaderCircle, MapPin } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { TaskGallery } from "@/components/task-photos";
 import { PageHeader, primaryButton } from "@/components/ui";
 import { claimTask, getOpenTask } from "@/lib/api";
 import { rupiah } from "@/lib/format";
@@ -45,6 +46,7 @@ export default function MarketplaceTaskDetailPage() {
   return (
     <>
       <PageHeader eyebrow={task.id} title={task.title} description="Detail permintaan dari client, siap diambil siapa cepat." backHref="/marketplace" />
+      <TaskGallery images={task.images} />
       <div className="grid gap-6 xl:grid-cols-[1fr_340px]">
         <section className="rounded-2xl border border-slate-200 bg-white p-6">
           <h2 className="font-[var(--font-manrope)] text-xl font-extrabold">Informasi task</h2>
@@ -53,7 +55,6 @@ export default function MarketplaceTaskDetailPage() {
               { icon: MapPin, label: "Lokasi", value: task.location },
               { icon: CalendarDays, label: "Jadwal", value: task.date },
               { icon: CircleDollarSign, label: "Anggaran", value: rupiah(task.budget) },
-              { icon: Navigation, label: "Kategori", value: task.category },
             ].map(({ icon: Icon, label, value }) => (
               <div key={label} className="flex gap-3">
                 <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-slate-100 text-slate-600">

@@ -4,7 +4,6 @@ import {
   CalendarDays,
   CircleDollarSign,
   MapPin,
-  Navigation,
   ShieldCheck,
   Star,
 } from "lucide-react";
@@ -13,6 +12,7 @@ import { useEffect, useState } from "react";
 import { TaskActions } from "@/components/task-actions";
 import { LiveLocation } from "@/components/live-location";
 import { PaymentPanel } from "@/components/payment-panel";
+import { TaskGallery } from "@/components/task-photos";
 import { PageHeader, StatusBadge } from "@/components/ui";
 import { getTask } from "@/lib/api";
 import { rating, rupiah } from "@/lib/format";
@@ -51,6 +51,7 @@ export default function TaskDetailPage() {
         backHref="/activity"
         action={<StatusBadge status={task.status} />}
       />
+      <TaskGallery images={task.images} />
       <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
         <div className="space-y-6">
           <section className="rounded-2xl border border-slate-200 bg-white p-6">
@@ -66,7 +67,6 @@ export default function TaskDetailPage() {
                   label: "Anggaran",
                   value: rupiah(task.budget),
                 },
-                { icon: Navigation, label: "Kategori", value: task.category },
               ].map(({ icon: Icon, label, value }) => (
                 <div key={label} className="flex gap-3">
                   <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-slate-100 text-slate-600">

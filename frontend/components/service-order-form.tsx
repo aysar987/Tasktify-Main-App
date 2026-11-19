@@ -28,8 +28,8 @@ function formatSchedule(value: string) {
 }
 
 /**
- * Ordering flow for a service picked on a lapak page: the service name, price
- * and category come from the listing, so the buyer only chooses where/when,
+ * Ordering flow for a service picked on a lapak page: the service name and
+ * price come from the listing, so the buyer only chooses where/when,
  * how to pay, and confirms a summary before the order is sent.
  */
 export function ServiceOrderForm({ listingId, serviceIndex }: { listingId: string; serviceIndex: number }) {
@@ -126,7 +126,6 @@ export function ServiceOrderForm({ listingId, serviceIndex }: { listingId: strin
     try {
       const { task, payment } = await createTask({
         title: `${service.name} - ${listing.name}`.slice(0, 160),
-        category: listing.category,
         location: location.trim(),
         budget: total,
         schedule: new Date(schedule).toISOString(),

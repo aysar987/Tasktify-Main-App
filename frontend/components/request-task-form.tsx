@@ -108,7 +108,6 @@ export function RequestTaskForm({ providerId }: { providerId?: string }) {
     try {
       const { task, payment } = await createTask({
         title: fields.title,
-        category: "Umum",
         location: fields.location,
         budget: Number(fields.budget),
         schedule: new Date(fields.schedule).toISOString(),

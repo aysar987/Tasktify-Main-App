@@ -22,7 +22,6 @@ export type Provider = {
 export type Task = {
   id: string;
   title: string;
-  category: string;
   location: string;
   budget: number;
   date: string;
@@ -30,7 +29,10 @@ export type Task = {
   provider?: Provider;
   note: string;
   perspective?: "client" | "provider";
-  imageUrl?: string;
+  /** API paths of the task photos; load with getTaskImageUrl. */
+  images: string[];
+  /** Client name; only sent to the provider assigned to the task. */
+  clientName?: string;
 };
 
 export type Profile = {
@@ -152,5 +154,7 @@ export type Payment = {
   snapToken?: string;
   paymentType?: string;
   paidAt?: string;
+  /** When the provider confirmed receiving the cash. */
+  cashConfirmedAt?: string;
   createdAt: string;
 };

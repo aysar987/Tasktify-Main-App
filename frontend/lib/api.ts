@@ -34,7 +34,6 @@ type ApiEnvelope<T> = {
 type TaskResponse = {
   id: string;
   title: string;
-  category: string;
   location: string;
   budget: number;
   schedule: string;
@@ -42,14 +41,14 @@ type TaskResponse = {
   provider?: Provider;
   note: string;
   perspective?: "client" | "provider";
-  imageUrl?: string;
+  images?: string[];
+  clientName?: string;
 };
 
 function mapTask(row: TaskResponse): Task {
   return {
     id: row.id,
     title: row.title,
-    category: row.category,
     location: row.location,
     budget: row.budget,
     date: new Intl.DateTimeFormat("id-ID", {
@@ -60,8 +59,17 @@ function mapTask(row: TaskResponse): Task {
     provider: row.provider,
     note: row.note,
     perspective: row.perspective,
-    imageUrl: row.imageUrl,
+    images: row.images ?? [],
+    clientName: row.clientName,
   };
+}
+
+/** An API error that keeps the backend's error code (e.g. "CASH_CONFIRMATION_REQUIRED"). */
+export class ApiError extends Error {
+  constructor(message: string, readonly code?: string) {
+    super(message);
+    this.name = "ApiError";
+  }
 }
 
 async function apiRequest<T>(
@@ -106,7 +114,7 @@ async function apiRequest<T>(
   }
 
   if (!response.ok || !payload.success) {
-    throw new Error(payload.error?.message ?? "Operasi gagal diproses.");
+    throw new ApiError(payload.error?.message ?? "Operasi gagal diproses.", payload.error?.code);
   }
   return payload.data as T;
 }
@@ -118,7 +126,6 @@ type CreateTaskResponse = {
 
 export async function createTask(payload: {
   title: string;
-  category: string;
   location: string;
   budget: number;
   schedule: string;
@@ -129,7 +136,6 @@ export async function createTask(payload: {
 }) {
   const form = new FormData();
   form.set("title", payload.title);
-  form.set("category", payload.category);
   form.set("location", payload.location);
   form.set("budget", String(payload.budget));
   form.set("schedule", payload.schedule);
@@ -186,11 +192,13 @@ export async function cancelTask(id: string) {
 export async function transitionTask(
   id: string,
   transition: "accept" | "reject" | "start" | "complete",
+  options: { cashReceived?: boolean } = {},
 ) {
   return mapTask(
     await apiRequest<TaskResponse>(`/tasks/${encodeURIComponent(id)}/transition`, {
       method: "POST",
-      body: JSON.stringify({ transition }),
+      // cashReceived with "complete" confirms the cash payment in the same action.
+      body: JSON.stringify({ transition, cashReceived: options.cashReceived ?? false }),
     }),
   );
 }
@@ -374,6 +382,19 @@ async function apiRequestBlobUrl(path: string): Promise<string> {
     throw new Error("Gagal memuat gambar.");
   }
   return URL.createObjectURL(await response.blob());
+}
+
+const taskImageCache = new Map<string, Promise<string>>();
+
+/** Loads a task photo (an API path from `task.images`) with the bearer token; cached per session. */
+export function getTaskImageUrl(path: string): Promise<string> {
+  let pending = taskImageCache.get(path);
+  if (!pending) {
+    pending = apiRequestBlobUrl(path);
+    pending.catch(() => taskImageCache.delete(path));
+    taskImageCache.set(path, pending);
+  }
+  return pending;
 }
 
 export function getOwnProviderKtpUrl(): Promise<string> {
