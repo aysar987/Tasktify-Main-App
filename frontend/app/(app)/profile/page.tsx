@@ -2,7 +2,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import {
-  BriefcaseBusiness,
+  ArrowRight,
   Camera,
   IdCard,
   LoaderCircle,
@@ -14,24 +14,33 @@ import {
   ShieldQuestion,
   UserRound,
 } from "lucide-react";
+import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { ProviderReviews } from "@/components/provider-reviews";
-import { PageHeader, inputClass, primaryButton } from "@/components/ui";
+import { PageHeader, inputClass, primaryButton, secondaryButton } from "@/components/ui";
+import { VerificationUnlocks } from "@/components/verification-gate";
 import {
   getOwnProviderKtpUrl,
   getProfile,
   getProviderRatings,
-  saveProviderProfile,
+  submitAccountVerification,
   updateProfile,
   uploadAvatar,
 } from "@/lib/api";
-import type { Profile, Rating } from "@/types";
+import type { AccountVerificationStatus, Profile, Rating } from "@/types";
 
-const VERIFICATION_META = {
-  pending: { icon: ShieldQuestion, label: "Menunggu review admin", className: "bg-amber-50 text-amber-800" },
-  verified: { icon: ShieldCheck, label: "Terverifikasi", className: "bg-emerald-50 text-emerald-700" },
-  rejected: { icon: ShieldAlert, label: "Ditolak", className: "bg-red-50 text-red-700" },
+const VERIFICATION_META: Record<AccountVerificationStatus, { icon: typeof ShieldCheck; label: string; className: string }> = {
+  unverified: { icon: ShieldQuestion, label: "Belum terverifikasi", className: "border-slate-200 bg-slate-50 text-slate-700" },
+  pending: { icon: ShieldQuestion, label: "Sedang ditinjau · biasanya 1×24 jam", className: "border-amber-200 bg-amber-50 text-amber-800" },
+  verified: { icon: ShieldCheck, label: "Akun terverifikasi", className: "border-emerald-200 bg-emerald-50 text-emerald-700" },
+  rejected: { icon: ShieldAlert, label: "Verifikasi ditolak", className: "border-red-200 bg-red-50 text-red-700" },
 };
+
+/** `?next=` from a gate screen: where to return after approval (in-app paths only). */
+function readReturnTo() {
+  const next = new URLSearchParams(window.location.search).get("next");
+  return next && next.startsWith("/") && !next.startsWith("//") ? next : undefined;
+}
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<Profile>();
@@ -40,6 +49,8 @@ export default function ProfilePage() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [ktpPreview, setKtpPreview] = useState<string>();
+  const [returnTo, setReturnTo] = useState<string>();
+  useEffect(() => setReturnTo(readReturnTo()), []);
   useEffect(() => {
     getProfile()
       .then(setProfile)
@@ -106,9 +117,11 @@ export default function ProfilePage() {
       setSaving(false);
     }
   }
-  async function providerSubmit(event: FormEvent<HTMLFormElement>) {
+  async function verificationSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
+    // Keep the element: event.currentTarget is null once the await below resumes.
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     const ktpFile = form.get("ktp");
     if (!(ktpFile instanceof File) || ktpFile.size === 0) {
       setError("Unggah foto KTP terlebih dahulu.");
@@ -118,22 +131,26 @@ export default function ProfilePage() {
     setError("");
     setMessage("");
     try {
-      await saveProviderProfile(ktpFile);
+      await submitAccountVerification(ktpFile, returnTo);
       setProfile(await getProfile());
-      setMessage("Pendaftaran penyedia terkirim, menunggu verifikasi admin.");
-      event.currentTarget.reset();
+      setMessage("Verifikasi akun terkirim. Biasanya selesai dalam 1×24 jam, kami akan memberi tahu lewat notifikasi.");
+      formElement.reset();
     } catch (cause) {
       setError(
         cause instanceof Error
           ? cause.message
-          : "Profil provider gagal disimpan.",
+          : "Verifikasi akun gagal dikirim.",
       );
     } finally {
       setSaving(false);
     }
   }
   const identityComplete = Boolean(profile?.phone) && Boolean(profile?.email);
-  const isVerifiedProvider = profile?.provider?.verificationStatus === "verified";
+  const verification = profile?.verification;
+  const verificationStatus = verification?.status ?? "unverified";
+  const canSubmitVerification = verificationStatus === "unverified" || verificationStatus === "rejected";
+  // After approval, offer to continue what the user was doing (e.g. taking a task).
+  const continueTo = returnTo ?? verification?.returnTo;
   const initials = (profile?.fullName || profile?.username || "U")
     .split(/\s+/)
     .slice(0, 2)
@@ -145,7 +162,7 @@ export default function ProfilePage() {
       <PageHeader
         eyebrow="Akun"
         title="Profil pengguna"
-        description="Kelola identitas client dan profil layanan provider Anda."
+        description="Kelola data diri dan Verifikasi akun Anda."
       />
       <div className="grid gap-6 xl:grid-cols-[300px_1fr]">
         <aside className="h-fit rounded-2xl border border-slate-200 bg-white p-6 text-center">
@@ -242,66 +259,86 @@ export default function ProfilePage() {
             </div>
           </form>
           <form
-            onSubmit={providerSubmit}
-            className="rounded-2xl border border-slate-200 bg-white p-5 md:p-7"
+            id="verifikasi-akun"
+            onSubmit={verificationSubmit}
+            className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-5 md:p-7"
           >
             <div className="flex items-center gap-3">
-              <BriefcaseBusiness className="size-6 text-orange-600" />
+              <ShieldCheck className="size-6 text-orange-600" />
               <div>
                 <h2 className="font-[var(--font-manrope)] text-xl font-extrabold">
-                  Daftar sebagai penyedia
+                  Verifikasi akun
                 </h2>
                 <p className="text-sm text-slate-500">
-                  Verifikasi identitas untuk mulai menerima task.
+                  Cukup sekali untuk menerima task dan membuka lapak.
                 </p>
               </div>
             </div>
-            {!isVerifiedProvider && profile?.provider && (() => {
-              const meta = VERIFICATION_META[profile.provider.verificationStatus];
+            {profile && (() => {
+              const meta = VERIFICATION_META[verificationStatus];
               const StatusIcon = meta.icon;
               return (
-                <span className={`mt-5 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-bold ${meta.className}`}>
+                <span className={`mt-5 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-bold ${meta.className}`}>
                   <StatusIcon className="size-4" />
                   {meta.label}
                 </span>
               );
             })()}
-            {isVerifiedProvider && (
-              <span className="mt-5 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700">
-                <ShieldCheck className="size-4" />
-                Tasker terverifikasi
-              </span>
-            )}
-            {profile?.provider?.verificationNote && (
+            {verificationStatus === "rejected" && verification?.note && (
               <p className="mt-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-                <strong>Alasan ditolak:</strong> {profile.provider.verificationNote}
+                <strong>Alasan ditolak:</strong> {verification.note}
               </p>
             )}
-            <div className="mt-6 grid gap-5 md:grid-cols-2">
-              <div>
-                <span className="block text-sm font-bold text-slate-700">Nama lengkap</span>
-                <p className="mt-2 flex min-h-12 items-center rounded-xl border border-slate-200 bg-slate-50 px-4 text-slate-700">{profile?.fullName || "-"}</p>
-              </div>
-              <div>
-                <span className="block text-sm font-bold text-slate-700">Username</span>
-                <p className="mt-2 flex min-h-12 items-center rounded-xl border border-slate-200 bg-slate-50 px-4 text-slate-700">@{profile?.username || "-"}</p>
-              </div>
-              <div>
-                <span className="block text-sm font-bold text-slate-700">Nomor HP</span>
-                <p className="mt-2 flex min-h-12 items-center rounded-xl border border-slate-200 bg-slate-50 px-4 text-slate-700">{profile?.phone || "Belum diisi"}</p>
-              </div>
-              <div>
-                <span className="block text-sm font-bold text-slate-700">Email</span>
-                <p className="mt-2 flex min-h-12 items-center rounded-xl border border-slate-200 bg-slate-50 px-4 text-slate-700">{profile?.email || "Belum diisi"}</p>
-              </div>
+            <div className="mt-5 rounded-xl bg-slate-50 p-4">
+              <p className="mb-3 text-sm font-bold text-slate-900">
+                {verificationStatus === "verified" ? "Sudah terbuka untuk Anda:" : "Yang Anda dapatkan setelah terverifikasi:"}
+              </p>
+              <VerificationUnlocks />
+              {verificationStatus === "verified" && (
+                <div className="mt-4 flex flex-wrap gap-3">
+                  {continueTo ? (
+                    <Link href={continueTo} className={primaryButton}>
+                      Lanjutkan <ArrowRight className="size-5" />
+                    </Link>
+                  ) : (
+                    <>
+                      <Link href="/penyedia" className={primaryButton}>Cari task</Link>
+                      <Link href="/manage-listing" className={secondaryButton}>Kelola lapak</Link>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
-            {!identityComplete && !isVerifiedProvider && (
-              <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-800">
-                Lengkapi nomor HP dan email di bagian &quot;Informasi pribadi&quot; di atas sebelum mendaftar sebagai penyedia.
+            {verificationStatus === "pending" && (
+              <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                Verifikasi sedang ditinjau admin. Biasanya selesai dalam 1×24 jam. Anda akan mendapat notifikasi, jadi tidak perlu mengirim ulang.
               </p>
             )}
-            {!isVerifiedProvider && (
+            {canSubmitVerification && (
               <>
+                <div className="mt-6 grid gap-5 md:grid-cols-2">
+                  <div>
+                    <span className="block text-sm font-bold text-slate-700">Nama lengkap</span>
+                    <p className="mt-2 flex min-h-12 items-center rounded-xl border border-slate-200 bg-slate-50 px-4 text-slate-700">{profile?.fullName || "-"}</p>
+                  </div>
+                  <div>
+                    <span className="block text-sm font-bold text-slate-700">Username</span>
+                    <p className="mt-2 flex min-h-12 items-center rounded-xl border border-slate-200 bg-slate-50 px-4 text-slate-700">@{profile?.username || "-"}</p>
+                  </div>
+                  <div>
+                    <span className="block text-sm font-bold text-slate-700">Nomor HP</span>
+                    <p className="mt-2 flex min-h-12 items-center rounded-xl border border-slate-200 bg-slate-50 px-4 text-slate-700">{profile?.phone || "Belum diisi"}</p>
+                  </div>
+                  <div>
+                    <span className="block text-sm font-bold text-slate-700">Email</span>
+                    <p className="mt-2 flex min-h-12 items-center rounded-xl border border-slate-200 bg-slate-50 px-4 text-slate-700">{profile?.email || "Belum diisi"}</p>
+                  </div>
+                </div>
+                {!identityComplete && (
+                  <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-800">
+                    Lengkapi nomor HP dan email di bagian &quot;Informasi pribadi&quot; di atas sebelum Verifikasi akun.
+                  </p>
+                )}
                 <label className="mt-5 block text-sm font-bold text-slate-700">
                   Foto KTP <span className="text-red-600">*</span>
                   <span className="mt-2 flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-3">
@@ -310,19 +347,19 @@ export default function ProfilePage() {
                   </span>
                   <span className="mt-2 block text-xs font-normal text-slate-500">JPG, PNG, atau WebP, maksimal 5 MB. Dipakai admin untuk verifikasi identitas, tidak ditampilkan ke publik.</span>
                 </label>
-                {ktpPreview && (
-                  <div className="mt-4">
-                    <span className="block text-sm font-bold text-slate-700">KTP tersimpan saat ini</span>
-                    <img src={ktpPreview} alt="Foto KTP" className="mt-2 max-h-48 rounded-xl border border-slate-200 object-contain" />
-                  </div>
-                )}
               </>
             )}
-            {!isVerifiedProvider && (
+            {ktpPreview && verificationStatus !== "verified" && (
+              <div className="mt-4">
+                <span className="block text-sm font-bold text-slate-700">KTP yang terkirim</span>
+                <img src={ktpPreview} alt="Foto KTP" className="mt-2 max-h-48 rounded-xl border border-slate-200 object-contain" />
+              </div>
+            )}
+            {canSubmitVerification && (
               <div className="mt-7 flex justify-end border-t border-slate-200 pt-6">
                 <button disabled={saving || !profile || !identityComplete} className={`${primaryButton} disabled:opacity-50`}>
                   {saving && <LoaderCircle className="size-5 animate-spin" />}
-                  {profile?.provider ? "Kirim ulang untuk verifikasi" : "Daftar sebagai penyedia"}
+                  {verificationStatus === "rejected" ? "Kirim ulang verifikasi" : "Kirim verifikasi"}
                 </button>
               </div>
             )}

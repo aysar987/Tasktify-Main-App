@@ -98,7 +98,7 @@ export function AdminListingCard({
         <p className="mt-3 line-clamp-2 text-sm leading-6 text-slate-600">{listing.description}</p>
         {!listing.providerId && (
           <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-            Belum tertaut ke penyedia terverifikasi. Verifikasi akan gagal sampai pemilik menyelesaikan verifikasi KTP.
+            Pemilik lapak mungkin belum menyelesaikan Verifikasi akun. Lapak hanya bisa diverifikasi setelah akun pemiliknya terverifikasi.
           </p>
         )}
         {listing.verificationNote && (

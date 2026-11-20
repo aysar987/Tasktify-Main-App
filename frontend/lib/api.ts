@@ -299,7 +299,7 @@ export async function getProfile(): Promise<Profile> {
 }
 
 export async function updateProfile(
-  profile: Omit<Profile, "id" | "avatarUrl" | "provider" | "role">,
+  profile: Omit<Profile, "id" | "avatarUrl" | "provider" | "role" | "verification">,
 ) {
   const { data } = await getSupabase().auth.getUser();
   if (data.user?.email && profile.email !== data.user.email) {
@@ -355,14 +355,22 @@ export async function getMessages(conversationId: string, viewing = false): Prom
   );
 }
 
-export async function saveProviderProfile(ktpFile: File) {
+/**
+ * Submits "Verifikasi akun" (KTP photo). `returnTo` is the in-app page to come
+ * back to once it is approved, e.g. the task the user wanted to take.
+ */
+export async function submitAccountVerification(ktpFile: File, returnTo?: string) {
   const form = new FormData();
   form.set("ktp", ktpFile);
-  return apiRequest<Provider>("/me/provider", {
+  if (returnTo) form.set("returnTo", returnTo);
+  return apiRequest<Provider>("/me/verification", {
     method: "PUT",
     body: form,
   });
 }
+
+/** Backend error codes meaning the account must be verified first. */
+export const VERIFICATION_ERROR_CODES = ["VERIFICATION_REQUIRED", "VERIFICATION_PENDING", "VERIFICATION_REJECTED"];
 
 async function apiRequestBlobUrl(path: string): Promise<string> {
   const {

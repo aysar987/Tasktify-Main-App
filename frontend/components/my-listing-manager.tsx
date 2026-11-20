@@ -4,10 +4,11 @@ import { CheckCircle2, ImagePlus, LoaderCircle, Plus, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
-import { getMyMarketplaceListing, saveMarketplaceListing } from "@/lib/api";
+import { getMyMarketplaceListing, getProfile, saveMarketplaceListing } from "@/lib/api";
 import { marketplaceCategories } from "@/lib/marketplace-categories";
-import type { MarketplaceListing, MarketplaceOperatingHours, MarketplaceListingService } from "@/types";
+import type { AccountVerification, MarketplaceListing, MarketplaceOperatingHours, MarketplaceListingService } from "@/types";
 import { PageHeader, inputClass, primaryButton } from "./ui";
+import { VerificationGate } from "./verification-gate";
 
 const weekdays = [
   ["monday", "Senin"],
@@ -86,6 +87,8 @@ export function MyListingManager() {
   const [whatsApp, setWhatsApp] = useState("");
   const [image, setImage] = useState<File>();
   const [imagePreview, setImagePreview] = useState("");
+  // Opening or editing a lapak needs "Verifikasi akun".
+  const [verification, setVerification] = useState<AccountVerification>();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
@@ -97,6 +100,9 @@ export function MyListingManager() {
 
   useEffect(() => {
     let active = true;
+    getProfile()
+      .then((profile) => { if (active) setVerification(profile.verification); })
+      .catch(() => undefined);
     getMyMarketplaceListing()
       .then((current) => {
         if (!active || !current) return;
@@ -376,6 +382,17 @@ export function MyListingManager() {
         <p className="py-16 text-center text-slate-500">Memuat lapak...</p>
       ) : error && !listing ? (
         <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">{error}</p>
+      ) : verification && verification.status !== "verified" ? (
+        <VerificationGate verification={verification} returnTo="/manage-listing">
+          {listing && (
+            // Lapaks opened before "Verifikasi akun" was required stay as they are.
+            <p className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-3 text-left text-sm text-amber-900">
+              Lapak <strong>{listing.name}</strong> tetap{" "}
+              {listing.verificationStatus === "verified" ? "tampil di marketplace" : "tersimpan"}. Untuk mengubah atau mengajukan
+              ulang lapak, selesaikan Verifikasi akun terlebih dahulu.
+            </p>
+          )}
+        </VerificationGate>
       ) : (
         <form
           noValidate

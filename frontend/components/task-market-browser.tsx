@@ -4,15 +4,15 @@ import { Briefcase, Search } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { getActiveMarketplaceTask, getOpenTasks, getProfile } from "@/lib/api";
-import type { Task } from "@/types";
+import type { AccountVerification, Task } from "@/types";
 import { TaskMarketCard } from "./task-market-card";
-import { primaryButton } from "./ui";
+import { VerificationGate } from "./verification-gate";
 
 export function TaskMarketBrowser({ initialQuery = "" }: { initialQuery?: string }) {
   const [query, setQuery] = useState(initialQuery);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [activeTask, setActiveTask] = useState<Task>();
-  const [isProvider, setIsProvider] = useState<boolean>();
+  const [verification, setVerification] = useState<AccountVerification>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -24,8 +24,8 @@ export function TaskMarketBrowser({ initialQuery = "" }: { initialQuery?: string
       try {
         const profile = await getProfile();
         if (cancelled) return;
-        setIsProvider(Boolean(profile.provider));
-        if (profile.provider) {
+        setVerification(profile.verification);
+        if (profile.verification.status === "verified") {
           const [openTasks, active] = await Promise.all([getOpenTasks(), getActiveMarketplaceTask()]);
           if (cancelled) return;
           setTasks(openTasks);
@@ -52,15 +52,8 @@ export function TaskMarketBrowser({ initialQuery = "" }: { initialQuery?: string
 
   if (loading) return <p className="py-16 text-center text-slate-500">Memuat marketplace...</p>;
 
-  if (isProvider === false)
-    return (
-      <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center">
-        <Briefcase className="mx-auto size-9 text-slate-400" />
-        <h2 className="mt-4 font-[var(--font-manrope)] text-xl font-extrabold">Verifikasi untuk dapat Task</h2>
-        <p className="mt-2 text-slate-500">Lengkapi profil penyedia Anda di halaman Profil untuk mulai mengambil task dari marketplace.</p>
-        <Link href="/profile" className={`${primaryButton} mt-5 inline-flex`}>Lengkapi profil penyedia</Link>
-      </div>
-    );
+  // Taking tasks needs "Verifikasi akun"; after approval the user comes back here.
+  if (verification && verification.status !== "verified") return <VerificationGate verification={verification} returnTo="/penyedia" />;
 
   return (
     <>

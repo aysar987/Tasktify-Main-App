@@ -4,10 +4,11 @@ import { CalendarDays, Check, CircleDollarSign, LoaderCircle, MapPin } from "luc
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { TaskGallery } from "@/components/task-photos";
+import { VerificationGate } from "@/components/verification-gate";
 import { PageHeader, primaryButton } from "@/components/ui";
-import { claimTask, getOpenTask } from "@/lib/api";
+import { ApiError, VERIFICATION_ERROR_CODES, claimTask, getOpenTask, getProfile } from "@/lib/api";
 import { rupiah } from "@/lib/format";
-import type { Task } from "@/types";
+import type { AccountVerification, Task } from "@/types";
 
 export default function MarketplaceTaskDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -15,13 +16,24 @@ export default function MarketplaceTaskDetailPage() {
   const [task, setTask] = useState<Task>();
   const [error, setError] = useState("");
   const [claiming, setClaiming] = useState(false);
+  // Set when the account must be verified before taking tasks.
+  const [gate, setGate] = useState<AccountVerification>();
+
+  // An unverified account gets the verification screen instead of an error.
+  function handleError(cause: unknown, fallback: string) {
+    if (cause instanceof ApiError && cause.code && VERIFICATION_ERROR_CODES.includes(cause.code)) {
+      getProfile()
+        .then((profile) => setGate(profile.verification))
+        .catch(() => setError(cause.message));
+      return;
+    }
+    setError(cause instanceof Error ? cause.message : fallback);
+  }
 
   useEffect(() => {
     getOpenTask(id)
       .then(setTask)
-      .catch((cause: unknown) =>
-        setError(cause instanceof Error ? cause.message : "Task gagal dimuat."),
-      );
+      .catch((cause: unknown) => handleError(cause, "Task gagal dimuat."));
   }, [id]);
 
   async function claim() {
@@ -30,11 +42,13 @@ export default function MarketplaceTaskDetailPage() {
       await claimTask(id);
       router.push(`/tasks/${id}`);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Task gagal diambil.");
+      handleError(cause, "Task gagal diambil.");
       setClaiming(false);
     }
   }
 
+  // After approval the notification brings the user back to this task.
+  if (gate) return <VerificationGate verification={gate} returnTo={`/marketplace/${id}`} />;
   if (error)
     return (
       <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 p-6 font-semibold text-red-700">

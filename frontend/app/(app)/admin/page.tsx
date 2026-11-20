@@ -17,7 +17,7 @@ const tabs: { value: ProviderVerificationStatus | "all"; label: string }[] = [
 ];
 
 const sections = [
-  { value: "providers", label: "Verifikasi penyedia" },
+  { value: "providers", label: "Verifikasi akun" },
   { value: "listings", label: "Lapak" },
   { value: "banners", label: "Banner dashboard" },
 ] as const;
@@ -89,10 +89,10 @@ export default function AdminPage() {
     <>
       <PageHeader
         eyebrow="Admin"
-        title={section === "providers" ? "Verifikasi penyedia" : section === "listings" ? "Lapak" : "Banner dashboard"}
+        title={section === "providers" ? "Verifikasi akun" : section === "listings" ? "Lapak" : "Banner dashboard"}
         description={
           section === "providers"
-            ? "Review pendaftar penyedia layanan sebelum mereka bisa menerima task."
+            ? "Tinjau KTP pengguna. Akun yang terverifikasi bisa menerima task dan membuka lapak."
             : section === "listings"
               ? "Verifikasi lapak sebelum tampil di marketplace, atau hapus lapak yang tidak sesuai."
               : "Atur banner promosi yang tampil di dashboard pengguna tanpa perlu mengubah kode."
@@ -173,7 +173,7 @@ export default function AdminPage() {
             <p className="py-16 text-center text-slate-500">Memuat...</p>
           ) : providers.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center text-slate-500">
-              Tidak ada penyedia di kategori ini.
+              Tidak ada pengajuan Verifikasi akun di kategori ini.
             </div>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">

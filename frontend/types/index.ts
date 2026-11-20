@@ -48,6 +48,20 @@ export type Profile = {
   avatarUrl?: string;
   role: "client" | "admin";
   provider?: Provider;
+  /** "Verifikasi akun": unlocks taking tasks and opening a lapak. */
+  verification: AccountVerification;
+};
+
+export type AccountVerificationStatus = "unverified" | "pending" | "verified" | "rejected";
+
+export type AccountVerification = {
+  status: AccountVerificationStatus;
+  /** Rejection reason from the admin. */
+  note?: string;
+  submittedAt?: string;
+  verifiedAt?: string;
+  /** In-app page to return to after approval (e.g. the task the user wanted to take). */
+  returnTo?: string;
 };
 
 export type Conversation = {
