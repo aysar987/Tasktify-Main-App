@@ -15,7 +15,7 @@ import {
   UserRound,
 } from "lucide-react";
 import Link from "next/link";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useState, useSyncExternalStore } from "react";
 import { ProviderReviews } from "@/components/provider-reviews";
 import { PageHeader, inputClass, primaryButton, secondaryButton } from "@/components/ui";
 import { VerificationUnlocks } from "@/components/verification-gate";
@@ -36,6 +36,8 @@ const VERIFICATION_META: Record<AccountVerificationStatus, { icon: typeof Shield
   rejected: { icon: ShieldAlert, label: "Verifikasi ditolak", className: "border-red-200 bg-red-50 text-red-700" },
 };
 
+const noSubscribe = () => () => undefined;
+
 /** `?next=` from a gate screen: where to return after approval (in-app paths only). */
 function readReturnTo() {
   const next = new URLSearchParams(window.location.search).get("next");
@@ -49,8 +51,7 @@ export default function ProfilePage() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [ktpPreview, setKtpPreview] = useState<string>();
-  const [returnTo, setReturnTo] = useState<string>();
-  useEffect(() => setReturnTo(readReturnTo()), []);
+  const returnTo = useSyncExternalStore(noSubscribe, readReturnTo, () => undefined);
   useEffect(() => {
     getProfile()
       .then(setProfile)

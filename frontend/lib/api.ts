@@ -1,21 +1,5 @@
 import { getSupabase } from "@/lib/supabase";
-import type {
-  Banner,
-  Conversation,
-  Message,
-  Notification,
-  MarketplaceListing,
-  MarketplaceListingService,
-  Payment,
-  PaymentMethod,
-  Profile,
-  Provider,
-  ProviderVerificationStatus,
-  Rating,
-  Task,
-  TaskLocation,
-  TaskStatus,
-} from "@/types";
+import type { Banner, Conversation, Message, Notification, MarketplaceListing, MarketplaceListingService, Payment, PaymentMethod, Profile, Provider, ProviderVerificationStatus, Rating, Task, TaskLocation, TaskStatus, TermsStatus } from "@/types";
 
 const apiBaseUrl = (
   process.env.NEXT_PUBLIC_API_URL ??
@@ -114,6 +98,11 @@ async function apiRequest<T>(
   }
 
   if (!response.ok || !payload.success) {
+    // The terms changed (or were never accepted): ask once, then come back here.
+    if (payload.error?.code === "TERMS_ACCEPTANCE_REQUIRED" && typeof window !== "undefined" && window.location.pathname !== "/terms-accept") {
+      const next = window.location.pathname + window.location.search;
+      window.location.assign(`/terms-accept?next=${encodeURIComponent(next)}`);
+    }
     throw new ApiError(payload.error?.message ?? "Operasi gagal diproses.", payload.error?.code);
   }
   return payload.data as T;
@@ -294,12 +283,20 @@ export async function saveMarketplaceListing(payload: {
   });
 }
 
+/** Records that the signed-in user accepted the given Syarat & Ketentuan version. */
+export async function acceptTerms(termsVersion: string) {
+  return apiRequest<TermsStatus>("/me/terms-acceptance", {
+    method: "POST",
+    body: JSON.stringify({ termsVersion }),
+  });
+}
+
 export async function getProfile(): Promise<Profile> {
   return apiRequest<Profile>("/me");
 }
 
 export async function updateProfile(
-  profile: Omit<Profile, "id" | "avatarUrl" | "provider" | "role" | "verification">,
+  profile: Omit<Profile, "id" | "avatarUrl" | "provider" | "role" | "verification" | "terms">,
 ) {
   const { data } = await getSupabase().auth.getUser();
   if (data.user?.email && profile.email !== data.user.email) {

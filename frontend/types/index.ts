@@ -50,6 +50,16 @@ export type Profile = {
   provider?: Provider;
   /** "Verifikasi akun": unlocks taking tasks and opening a lapak. */
   verification: AccountVerification;
+  /** Acceptance of the Syarat & Ketentuan / Kebijakan Privasi. */
+  terms: TermsStatus;
+};
+
+export type TermsStatus = {
+  currentVersion: string;
+  acceptedVersion?: string;
+  acceptedAt?: string;
+  /** True when the current version still has to be accepted. */
+  required: boolean;
 };
 
 export type AccountVerificationStatus = "unverified" | "pending" | "verified" | "rejected";

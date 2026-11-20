@@ -3,6 +3,8 @@
 import { CircleCheck, LoaderCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { acceptTerms } from "@/lib/api";
+import { rememberTermsOnDevice } from "@/lib/legal";
 import { getSupabase } from "@/lib/supabase";
 
 export default function AuthCallbackPage() {
@@ -34,20 +36,13 @@ export default function AuthCallbackPage() {
       const consentRecord = sessionStorage.getItem("tasktify_legal_consent");
       if (consentRecord) {
         try {
-          const consent = JSON.parse(consentRecord) as {
-            acceptedAt: string;
-            termsVersion: string;
-            privacyVersion: string;
-          };
-          const { error: updateError } = await getSupabase().auth.updateUser({
-            data: {
-              terms_accepted_at: consent.acceptedAt,
-              terms_version: consent.termsVersion,
-              privacy_version: consent.privacyVersion,
-            },
-          });
-          if (updateError) throw updateError;
+          const consent = JSON.parse(consentRecord) as { termsVersion: string };
+          // Google sign-in: the checkbox was ticked before leaving for Google;
+          // record it on the account now that there is a session.
+          await acceptTerms(consent.termsVersion);
+          rememberTermsOnDevice();
         } catch (cause) {
+          await getSupabase().auth.signOut();
           if (active) setError(cause instanceof Error ? cause.message : "Persetujuan tidak dapat disimpan.");
           return;
         } finally {
