@@ -83,6 +83,8 @@ export default function AdminPage() {
         <h2 className="mt-4 font-[var(--font-manrope)] text-xl font-extrabold">Akses ditolak</h2>
         <p className="mt-2 text-slate-600">Halaman ini khusus untuk admin.</p>
       </div>
+
+      
     );
 
   return (
