@@ -5,11 +5,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { acceptTerms } from "@/lib/api";
+import { USERNAME_TAKEN_MESSAGE, normalizeUsername, usernameRuleError } from "@/lib/forms/username";
 import { TERMS_VERSION, rememberTermsOnDevice } from "@/lib/legal";
 import { getSiteUrl } from "@/lib/site-url";
 import { getSupabase } from "@/lib/supabase";
 import { LegalConsent, useLegalConsent } from "./legal-consent";
 import { FieldLabelText, RequiredNote } from "./ui";
+import { UsernameField, type UsernameStatus } from "./username-field";
 
 const authInputClass = "mt-2 min-h-12 w-full rounded-full border-0 bg-[#E5F0FF] px-5 text-base text-slate-950 outline-none transition placeholder:text-slate-600 focus:ring-4 focus:ring-[#4294F7]/35";
 const authPrimaryButton = "inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-full bg-[#4294F7] px-5 font-bold text-white transition hover:bg-[#2879D8] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#4294F7]/35 disabled:cursor-not-allowed disabled:opacity-50";
@@ -28,6 +30,10 @@ export function AuthForm({ mode }: { mode: "login" | "register" | "reset" | "upd
   const consent = useLegalConsent();
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  // Sign-up: the username is checked while typing and kept exactly as chosen.
+  const [fullName, setFullName] = useState("");
+  const [username, setUsername] = useState("");
+  const [usernameStatus, setUsernameStatus] = useState<UsernameStatus>("idle");
 
   async function signInWithGoogle() {
     if (!consent.require()) return;
@@ -85,6 +91,12 @@ export function AuthForm({ mode }: { mode: "login" | "register" | "reset" | "upd
         router.replace(next && next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard");
         router.refresh();
       } else if (mode === "register") {
+        const chosen = normalizeUsername(username);
+        const ruleError = usernameRuleError(chosen);
+        if (ruleError || usernameStatus === "taken") {
+          setError(ruleError || `${USERNAME_TAKEN_MESSAGE} Pilih salah satu saran atau username lain.`);
+          return;
+        }
         const callback = `${getSiteUrl()}/auth/callback?next=${encodeURIComponent("/dashboard")}`;
         const { error: authError } = await supabase.auth.signUp({
           email,
@@ -92,7 +104,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" | "reset" | "upd
           options: {
             emailRedirectTo: callback,
             data: {
-              username: String(form.get("username")),
+              username: chosen,
               full_name: String(form.get("fullName")),
               phone: String(form.get("phone")),
               // Recorded on the account at the first sign-in, even if the
@@ -221,11 +233,17 @@ export function AuthForm({ mode }: { mode: "login" | "register" | "reset" | "upd
         <>
           <label className="block text-sm font-semibold">
             <FieldLabelText label="Nama lengkap" required />
-            <input name="fullName" required autoComplete="name" placeholder="Contoh: Boy Steven" className={authInputClass} />
+            <input name="fullName" required autoComplete="name" placeholder="Contoh: Boy Steven" value={fullName} onChange={(event) => setFullName(event.target.value)} className={authInputClass} />
           </label>
           <label className="block text-sm font-semibold">
             <FieldLabelText label="Username" required />
-            <input name="username" required minLength={3} autoComplete="username" placeholder="Contoh: boysteven" className={authInputClass} />
+            <UsernameField
+              value={username}
+              onChange={setUsername}
+              onStatus={setUsernameStatus}
+              fullName={fullName}
+              inputClassName={authInputClass}
+            />
           </label>
           <label className="block text-sm font-semibold">
             <FieldLabelText label="Nomor telepon" optional />

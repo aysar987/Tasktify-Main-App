@@ -57,6 +57,8 @@ export type Task = {
 export type Profile = {
   id: string;
   username: string;
+  /** False when the username was generated (Google sign-in, chosen name taken, old random suffix): confirm or change it once. */
+  usernameConfirmed: boolean;
   fullName: string;
   phone: string;
   email: string;
@@ -124,6 +126,14 @@ export type Message = {
   body: string;
   readAt?: string | null;
   createdAt: string;
+};
+
+/** Answer to "can I use this username?" while typing. */
+export type UsernameCheck = {
+  username: string;
+  available: boolean;
+  message: string;
+  suggestions: string[];
 };
 
 export type Notification = {

@@ -3,7 +3,7 @@
 import { Briefcase, Bell, ChevronDown, Home, LogOut, MessageSquareText, Search, ShieldCheck, Store } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { getProfile, getUnreadConversationCount } from "@/lib/api";
 import { CHAT_UNREAD_CHANGED } from "@/lib/chat-events";
@@ -31,13 +31,24 @@ function UnreadBadge({ count, className = "" }: { count: number; className?: str
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [profile, setProfile] = useState<Profile>();
   const [unreadChats, setUnreadChats] = useState(0);
   const conversationOpen = useConversationOpen((state) => state.open);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(() => { getProfile().then(setProfile).catch(() => undefined); }, []);
+  useEffect(() => {
+    getProfile()
+      .then((loaded) => {
+        setProfile(loaded);
+        // A username the user didn't choose (Google, taken meanwhile, old random
+        // suffix): ask once to keep or change it, then come back here.
+        if (!loaded.usernameConfirmed) router.replace(`/username?next=${encodeURIComponent(window.location.pathname + window.location.search)}`);
+      })
+      .catch(() => undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per app load
+  }, []);
   useEffect(() => {
     let cancelled = false;
     const refresh = () =>

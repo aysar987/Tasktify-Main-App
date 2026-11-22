@@ -1,6 +1,6 @@
 import { normalizeOperatingHours } from "@/lib/opening-hours";
 import { getSupabase } from "@/lib/supabase";
-import type { Banner, Conversation, Message, Notification, MarketplaceListing, MarketplaceListingService, Payment, PaymentMethod, Profile, Provider, ProviderVerificationStatus, Rating, Task, TaskClient, TaskLocation, TaskPerspective, TaskStatus, TermsStatus } from "@/types";
+import type { Banner, Conversation, Message, Notification, MarketplaceListing, MarketplaceListingService, Payment, PaymentMethod, Profile, Provider, ProviderVerificationStatus, Rating, Task, TaskClient, TaskLocation, TaskPerspective, TaskStatus, TermsStatus, UsernameCheck } from "@/types";
 
 const apiBaseUrl = (
   process.env.NEXT_PUBLIC_API_URL ??
@@ -236,6 +236,17 @@ export const MARKETPLACE_SEARCH_MAX = 100;
  * Lapaks matching `query` in their name, category, location, description or
  * services, best matches first. Returns one page; ask for the next with `offset`.
  */
+/** Whether a username can be used (public: also called while signing up). `name` helps suggest alternatives. */
+export async function checkUsername(username: string, name = "", signal?: AbortSignal) {
+  const params = new URLSearchParams({ username: username.slice(0, 100), name: name.slice(0, 100) });
+  return apiRequest<UsernameCheck>(`/usernames/check?${params.toString()}`, { signal }, false);
+}
+
+/** Keeps (same username) or changes the username and marks it confirmed. */
+export async function confirmUsername(username: string) {
+  return apiRequest<Profile>("/me/username", { method: "POST", body: JSON.stringify({ username }) });
+}
+
 export async function getMarketplaceListings(query = "", category = "", offset = 0) {
   const params = new URLSearchParams();
   if (query.trim()) params.set("q", query.trim().slice(0, MARKETPLACE_SEARCH_MAX));
@@ -341,7 +352,7 @@ export async function getProfile(): Promise<Profile> {
 }
 
 export async function updateProfile(
-  profile: Omit<Profile, "id" | "avatarUrl" | "provider" | "role" | "verification" | "terms">,
+  profile: Omit<Profile, "id" | "avatarUrl" | "provider" | "role" | "verification" | "terms" | "usernameConfirmed">,
 ) {
   const { data } = await getSupabase().auth.getUser();
   if (data.user?.email && profile.email !== data.user.email) {

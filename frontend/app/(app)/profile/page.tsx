@@ -20,7 +20,9 @@ import { ProviderReviews } from "@/components/provider-reviews";
 import { FieldLabelText, PageHeader, RequiredNote, inputClass, primaryButton, secondaryButton } from "@/components/ui";
 import { VerificationUnlocks } from "@/components/verification-gate";
 import { userErrorMessage } from "@/lib/errors";
+import { UsernameField, type UsernameStatus } from "@/components/username-field";
 import {
+  ApiError,
   getOwnProviderKtpUrl,
   getProfile,
   getProviderRatings,
@@ -55,6 +57,11 @@ export default function ProfilePage() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [ktpPreview, setKtpPreview] = useState<string>();
+  // Username is checked while typing; usernames saved under older rules stay valid until changed.
+  const [usernameDraft, setUsernameDraft] = useState<string>();
+  const [usernameStatus, setUsernameStatus] = useState<UsernameStatus>("idle");
+  const [usernameError, setUsernameError] = useState("");
+  const [usernameRecheck, setUsernameRecheck] = useState(0);
   // Result of sending the verification, shown inside the "Verifikasi akun" section.
   const [verificationFeedback, setVerificationFeedback] = useState<{ tone: "success" | "error"; text: string }>();
   const returnTo = useSyncExternalStore(noSubscribe, readReturnTo, () => undefined);
@@ -86,7 +93,13 @@ export default function ProfilePage() {
     setSaving(true);
     setError("");
     setMessage("");
+    setUsernameError("");
     const form = new FormData(event.currentTarget);
+    if (usernameStatus === "taken" || usernameStatus === "invalid") {
+      setUsernameError(usernameStatus === "taken" ? "Username sudah dipakai." : "Periksa kembali username Anda.");
+      setSaving(false);
+      return;
+    }
     try {
       await updateProfile({
         username: String(form.get("username")),
@@ -98,7 +111,13 @@ export default function ProfilePage() {
       setMessage("Profil berhasil disimpan.");
       setProfile(await getProfile());
     } catch (cause) {
-      setError(userErrorMessage(cause, "Profil gagal disimpan. Coba lagi."));
+      if (cause instanceof ApiError && cause.field === "username") {
+        // Shown under the field; check again for fresh suggestions.
+        setUsernameError(cause.message);
+        setUsernameRecheck((count) => count + 1);
+      } else {
+        setError(userErrorMessage(cause, "Profil gagal disimpan. Coba lagi."));
+      }
     } finally {
       setSaving(false);
     }
@@ -229,16 +248,22 @@ export default function ProfilePage() {
                   minLength={2}
                   maxLength={100}
                 />
-                <Field
-                  icon={UserRound}
-                  label="Username"
-                  name="username"
-                  placeholder="Contoh: boysteven"
-                  defaultValue={profile.username}
-                  required
-                  minLength={3}
-                  maxLength={40}
-                />
+                <label className="block text-sm font-bold text-slate-700">
+                  <FieldLabelText label="Username" required />
+                  <UsernameField
+                    value={usernameDraft ?? profile.username}
+                    onChange={(next) => {
+                      setUsernameDraft(next);
+                      setUsernameError("");
+                    }}
+                    onStatus={setUsernameStatus}
+                    fullName={profile.fullName}
+                    currentUsername={profile.username}
+                    serverError={usernameError}
+                    recheck={usernameRecheck}
+                    inputClassName={inputClass}
+                  />
+                </label>
                 <Field
                   icon={Phone}
                   label="Nomor telepon"
