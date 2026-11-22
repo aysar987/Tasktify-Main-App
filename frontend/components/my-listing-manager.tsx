@@ -5,9 +5,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
 import { getMyMarketplaceListing, getProfile, saveMarketplaceListing } from "@/lib/api";
+import { LISTING_LIMITS as L, emptyMessage, labelProps, normalizeWhatsApp } from "@/lib/forms/listing";
 import { marketplaceCategories } from "@/lib/marketplace-categories";
 import type { AccountVerification, MarketplaceListing, MarketplaceOperatingHours, MarketplaceListingService } from "@/types";
-import { PageHeader, inputClass, primaryButton } from "./ui";
+import { FieldLabelText, PageHeader, RequiredNote, inputClass, primaryButton } from "./ui";
 import { VerificationGate } from "./verification-gate";
 
 const weekdays = [
@@ -55,15 +56,6 @@ const emptyHours = (): FormOperatingHours =>
 
 function formatRupiah(value: number) {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(value);
-}
-
-function normalizeWhatsApp(value: string) {
-  let number = value.trim().replace(/[ ().-]/g, "");
-  if (!/^\+?[0-9]+$/.test(number)) return "";
-  number = number.replace(/^\+/, "");
-  if (number.startsWith("0")) number = `62${number.slice(1)}`;
-  else if (number.startsWith("8")) number = `62${number}`;
-  return /^628[1-9][0-9]{7,10}$/.test(number) ? number : "";
 }
 
 function toServiceDraft(service: MarketplaceListingService): ServiceDraft {
@@ -213,6 +205,8 @@ export function MyListingManager() {
     setImagePreview(URL.createObjectURL(file));
   }
 
+  // Field rules (required flags, limits, messages) come from lib/forms/listing.ts,
+  // the same source as the asterisks on the labels, and match the backend.
   function validate(form: FormData) {
     const next: FormErrors = {};
     const value = (key: string) => String(form.get(key) ?? "").trim();
@@ -224,17 +218,22 @@ export function MyListingManager() {
     const instagramUrl = value("instagramUrl");
     const tiktokUrl = value("tiktokUrl");
     const termsWarranty = value("termsWarranty");
+    const text = description.trim();
 
-    if (name.length < 3 || name.length > 120) next.name = "Nama lapak wajib diisi (3-120 karakter).";
-    if (!category) next.category = "Pilih kategori lapak.";
-    if (!location || location.length > 160) next.location = "Kota atau area layanan wajib diisi (maksimal 160 karakter).";
-    if (description.trim().length < 20 || description.trim().length > 500) {
-      next.description = "Deskripsi layanan wajib 20-500 karakter.";
-    }
-    if (!normalizeWhatsApp(whatsApp)) next.whatsapp = "Masukkan nomor WhatsApp Indonesia yang valid.";
-    if (!address || address.length > 500) next.fullAddress = "Alamat lengkap wajib diisi (maksimal 500 karakter).";
-    if (serviceTypes.length === 0) next.serviceTypes = "Pilih minimal satu tipe layanan.";
-    if (termsWarranty.length > 300) next.termsWarranty = "Syarat dan garansi maksimal 300 karakter.";
+    if (!name) next.name = emptyMessage("name");
+    else if (name.length < L.nameMin || name.length > L.nameMax) next.name = `Nama lapak ${L.nameMin}-${L.nameMax} karakter.`;
+    if (!category) next.category = emptyMessage("category");
+    if (!location) next.location = emptyMessage("location");
+    else if (location.length > L.locationMax) next.location = `Kota atau area layanan maksimal ${L.locationMax} karakter.`;
+    if (!text) next.description = emptyMessage("description");
+    else if (text.length < L.descriptionMin || text.length > L.descriptionMax) next.description = `Deskripsi layanan ${L.descriptionMin}-${L.descriptionMax} karakter.`;
+    if (!whatsApp.trim()) next.whatsapp = emptyMessage("whatsapp");
+    else if (!normalizeWhatsApp(whatsApp)) next.whatsapp = "Format nomor WhatsApp tidak valid";
+    if (!address) next.fullAddress = emptyMessage("fullAddress");
+    else if (address.length < L.addressMin) next.fullAddress = `Alamat minimal ${L.addressMin} karakter, lengkapi jalan atau patokannya.`;
+    else if (address.length > L.addressMax) next.fullAddress = `Alamat maksimal ${L.addressMax} karakter.`;
+    if (serviceTypes.length === 0) next.serviceTypes = emptyMessage("serviceTypes");
+    if (termsWarranty.length > L.termsMax) next.termsWarranty = `Syarat dan garansi maksimal ${L.termsMax} karakter.`;
 
     for (const [field, input] of [["instagramUrl", instagramUrl], ["tiktokUrl", tiktokUrl]]) {
       if (input) {
@@ -257,37 +256,35 @@ export function MyListingManager() {
     let activeValidServices = 0;
     services.forEach((service, index) => {
       const prefix = `service.${index}`;
-      if (!service.name.trim() || service.name.trim().length > 120) {
-        next[`${prefix}.name`] = "Nama jasa wajib diisi (maksimal 120 karakter).";
-      }
+      const serviceName = service.name.trim();
+      if (!serviceName) next[`${prefix}.name`] = emptyMessage("serviceName");
+      else if (serviceName.length > L.serviceNameMax) next[`${prefix}.name`] = `Nama jasa maksimal ${L.serviceNameMax} karakter.`;
       const price = service.price === "" ? Number.NaN : Number(service.price);
-      if (!Number.isSafeInteger(price) || price < 0 || price > 2_147_483_647) {
+      if (service.price === "") next[`${prefix}.price`] = emptyMessage("servicePrice");
+      else if (!Number.isSafeInteger(price) || price < 0 || price > L.priceMax) {
         next[`${prefix}.price`] = "Masukkan harga bulat antara Rp0 dan Rp2.147.483.647.";
       }
-      if (!serviceUnits.some(([unit]) => unit === service.unit)) {
-        next[`${prefix}.unit`] = "Pilih satuan jasa.";
+      if (!serviceUnits.some(([unit]) => unit === service.unit)) next[`${prefix}.unit`] = emptyMessage("serviceUnit");
+      if (service.description.trim().length > L.serviceDescriptionMax) {
+        next[`${prefix}.description`] = `Deskripsi jasa maksimal ${L.serviceDescriptionMax} karakter.`;
       }
-      if (service.description.trim().length > 500) {
-        next[`${prefix}.description`] = "Deskripsi jasa maksimal 500 karakter.";
+      if (service.duration.trim().length > L.serviceDurationMax) {
+        next[`${prefix}.duration`] = `Estimasi durasi maksimal ${L.serviceDurationMax} karakter.`;
       }
-      if (service.duration.trim().length > 80) {
-        next[`${prefix}.duration`] = "Estimasi durasi maksimal 80 karakter.";
-      }
-      if (service.isActive && service.name.trim() && Number.isSafeInteger(price) && price >= 0 && price <= 2_147_483_647) {
+      if (service.isActive && serviceName && Number.isSafeInteger(price) && price >= 0 && price <= L.priceMax) {
         activeValidServices++;
       }
     });
-    if (services.length === 0 || activeValidServices === 0) {
-      next.services = "Tambahkan minimal satu jasa valid yang berstatus aktif.";
-    }
+    if (services.length === 0 || activeValidServices === 0) next.services = emptyMessage("services");
     return next;
   }
 
+  // Scroll to and focus the first problem in page order (not the order the
+  // checks ran in). Everything the user typed stays in the form.
   function scrollToFirstError(next: FormErrors) {
-    const firstKey = Object.keys(next)[0];
-    if (!firstKey) return;
     requestAnimationFrame(() => {
-      const target = document.querySelector<HTMLElement>(`[data-validation-key="${firstKey}"]`);
+      const target = Array.from(document.querySelectorAll<HTMLElement>("[data-validation-key]"))
+        .find((element) => next[element.dataset.validationKey ?? ""]);
       target?.scrollIntoView({ behavior: "smooth", block: "center" });
       target?.focus({ preventScroll: true });
     });
@@ -350,19 +347,6 @@ export function MyListingManager() {
     .filter((service) => service.isActive && service.name.trim() && service.price !== "")
     .map((service) => Number(service.price));
   const lowestActivePrice = activePrices.length ? Math.min(...activePrices) : null;
-  const hasActiveValidService = services.some((service) => {
-    const price = Number(service.price);
-    return (
-      service.isActive &&
-      service.name.trim().length > 0 &&
-      service.name.trim().length <= 120 &&
-      service.price !== "" &&
-      Number.isSafeInteger(price) &&
-      price >= 0 &&
-      price <= 2_147_483_647 &&
-      serviceUnits.some(([unit]) => unit === service.unit)
-    );
-  });
 
   return (
     <>
@@ -401,13 +385,14 @@ export function MyListingManager() {
           className="max-w-4xl space-y-6 rounded-2xl border border-slate-200 bg-white p-5 md:p-7"
         >
           <ListingStatusBanner listing={listing} />
+          <RequiredNote />
 
           <div className="grid gap-5 md:grid-cols-2">
-            <label className="block text-sm font-bold text-slate-700">Nama lapak
+            <label className="block text-sm font-bold text-slate-700"><FieldLabelText {...labelProps("name")} />
               <input id="field-name" data-validation-key="name" name="name" required defaultValue={listing?.name} placeholder="Contoh: Budi Plumbing" aria-invalid={Boolean(errors.name)} className={inputClass} />
               <InlineError message={errors.name} />
             </label>
-            <label className="block text-sm font-bold text-slate-700">Kategori
+            <label className="block text-sm font-bold text-slate-700"><FieldLabelText {...labelProps("category")} />
               <select id="field-category" data-validation-key="category" name="category" required defaultValue={listing?.category ?? ""} aria-invalid={Boolean(errors.category)} className={inputClass}>
                 <option value="" disabled>Pilih kategori</option>
                 {listing?.category && !marketplaceCategories.some((category) => category === listing.category) && <option value={listing.category}>{listing.category}</option>}
@@ -415,7 +400,7 @@ export function MyListingManager() {
               </select>
               <InlineError message={errors.category} />
             </label>
-            <label className="block text-sm font-bold text-slate-700">Kota atau area layanan
+            <label className="block text-sm font-bold text-slate-700"><FieldLabelText {...labelProps("location")} />
               <input id="field-location" data-validation-key="location" name="location" required defaultValue={listing?.location} placeholder="Contoh: Jakarta Selatan" aria-invalid={Boolean(errors.location)} className={inputClass} />
               <InlineError message={errors.location} />
             </label>
@@ -428,7 +413,7 @@ export function MyListingManager() {
             </div>
           </div>
 
-          <label className="block text-sm font-bold text-slate-700">Deskripsi layanan
+          <label className="block text-sm font-bold text-slate-700"><FieldLabelText {...labelProps("description")} />
             <textarea
               id="field-description"
               data-validation-key="description"
@@ -448,7 +433,7 @@ export function MyListingManager() {
           </label>
 
           <section>
-            <p className="text-sm font-bold text-slate-700">Foto lapak</p>
+            <p className="text-sm font-bold text-slate-700"><FieldLabelText {...labelProps("image")} /></p>
             <div className="mt-2 flex flex-wrap items-center gap-4">
               <span className="relative flex h-24 w-36 items-center justify-center overflow-hidden rounded-xl border border-dashed border-slate-300 bg-slate-50">
                 {imagePreview || listing?.imageUrl ? (
@@ -476,7 +461,7 @@ export function MyListingManager() {
           <section className="border-t border-slate-200 pt-5">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-sm font-bold">Jenis jasa</p>
+                <p className="text-sm font-bold"><FieldLabelText {...labelProps("services")} /></p>
                 <p className="mt-1 text-xs text-slate-500">Jasa aktif menentukan harga mulai yang ditampilkan di marketplace.</p>
               </div>
               <button
@@ -498,7 +483,7 @@ export function MyListingManager() {
                     <ServiceInput
                       id={`service-${index}-name`}
                       errorKey={`service.${index}.name`}
-                      label="Nama jasa"
+                      label={<FieldLabelText {...labelProps("serviceName")} />}
                       value={service.name}
                       error={errors[`service.${index}.name`]}
                       onChange={(value) => updateService(index, "name", value)}
@@ -507,14 +492,14 @@ export function MyListingManager() {
                     <ServiceInput
                       id={`service-${index}-description`}
                       errorKey={`service.${index}.description`}
-                      label="Deskripsi singkat (opsional)"
+                      label={<FieldLabelText {...labelProps("serviceDescription")} />}
                       value={service.description}
                       error={errors[`service.${index}.description`]}
                       onChange={(value) => updateService(index, "description", value)}
                       placeholder="Penjelasan singkat jasa"
                     />
                     <label className="block text-sm font-bold text-slate-700">
-                      Harga
+                      <FieldLabelText {...labelProps("servicePrice")} />
                       <input
                         id={`service-${index}-price`}
                         data-validation-key={`service.${index}.price`}
@@ -530,7 +515,7 @@ export function MyListingManager() {
                       <InlineError message={errors[`service.${index}.price`]} />
                     </label>
                     <label className="block text-sm font-bold text-slate-700">
-                      Satuan
+                      <FieldLabelText {...labelProps("serviceUnit")} />
                       <select
                         id={`service-${index}-unit`}
                         data-validation-key={`service.${index}.unit`}
@@ -546,7 +531,7 @@ export function MyListingManager() {
                     <ServiceInput
                       id={`service-${index}-duration`}
                       errorKey={`service.${index}.duration`}
-                      label="Estimasi durasi (opsional)"
+                      label={<FieldLabelText {...labelProps("serviceDuration")} />}
                       value={service.duration}
                       error={errors[`service.${index}.duration`]}
                       onChange={(value) => updateService(index, "duration", value)}
@@ -587,7 +572,7 @@ export function MyListingManager() {
           <section className="border-t border-slate-200 pt-5">
             <h2 className="text-sm font-bold text-slate-700">Informasi kontak dan lokasi</h2>
             <div className="mt-4 grid gap-5 md:grid-cols-2">
-              <label className="block text-sm font-bold text-slate-700">Nomor WhatsApp
+              <label className="block text-sm font-bold text-slate-700"><FieldLabelText {...labelProps("whatsapp")} />
                 <input
                   id="field-whatsapp"
                   data-validation-key="whatsapp"
@@ -596,19 +581,21 @@ export function MyListingManager() {
                   value={whatsApp}
                   onChange={(event) => setWhatsApp(event.target.value)}
                   placeholder="Contoh: 081234567890"
+                  required
                   aria-invalid={Boolean(errors.whatsapp)}
                   className={inputClass}
                 />
-                <span className="mt-1 block text-xs font-normal text-slate-500">Nomor akan disimpan dengan awalan 62.</span>
+                <span className="mt-1 block text-xs font-normal text-slate-500">Boleh diawali 08, +62, atau 62. Disimpan dengan awalan 62.</span>
                 <InlineError message={errors.whatsapp} />
               </label>
-              <label className="block text-sm font-bold text-slate-700 md:col-span-2">Alamat lengkap / patokan lokasi
+              <label className="block text-sm font-bold text-slate-700 md:col-span-2"><FieldLabelText {...labelProps("fullAddress")} />
                 <textarea
                   id="field-fullAddress"
                   data-validation-key="fullAddress"
                   name="fullAddress"
                   required
-                  maxLength={500}
+                  minLength={L.addressMin}
+                  maxLength={L.addressMax}
                   rows={3}
                   defaultValue={listing?.fullAddress}
                   placeholder="Alamat lengkap atau patokan untuk menemukan lokasi"
@@ -618,8 +605,8 @@ export function MyListingManager() {
                 <InlineError message={errors.fullAddress} />
               </label>
               <fieldset className="md:col-span-2">
-                <legend className="text-sm font-bold text-slate-700">Tipe layanan</legend>
-                <div id="field-serviceTypes" className="mt-3 flex flex-wrap gap-x-6 gap-y-3">
+                <legend className="text-sm font-bold text-slate-700"><FieldLabelText {...labelProps("serviceTypes")} /></legend>
+                <div id="field-serviceTypes" aria-invalid={Boolean(errors.serviceTypes)} className="mt-3 flex flex-wrap gap-x-6 gap-y-3">
                   {serviceTypeOptions.map(([value, label]) => (
                     <label key={value} className="inline-flex items-center gap-2 text-sm font-medium text-slate-700">
                       <input
@@ -704,17 +691,17 @@ export function MyListingManager() {
           </section>
 
           <section className="border-t border-slate-200 pt-5">
-            <h2 className="text-sm font-bold text-slate-700">Informasi tambahan (opsional)</h2>
+            <h2 className="text-sm font-bold text-slate-700">Informasi tambahan</h2>
             <div className="mt-4 grid gap-5 md:grid-cols-2">
-              <label className="block text-sm font-bold text-slate-700">Link Instagram
+              <label className="block text-sm font-bold text-slate-700"><FieldLabelText {...labelProps("instagramUrl")} />
                 <input id="field-instagramUrl" data-validation-key="instagramUrl" name="instagramUrl" type="url" defaultValue={listing?.instagramUrl} placeholder="https://instagram.com/akun" aria-invalid={Boolean(errors.instagramUrl)} className={inputClass} />
                 <InlineError message={errors.instagramUrl} />
               </label>
-              <label className="block text-sm font-bold text-slate-700">Link TikTok
+              <label className="block text-sm font-bold text-slate-700"><FieldLabelText {...labelProps("tiktokUrl")} />
                 <input id="field-tiktokUrl" data-validation-key="tiktokUrl" name="tiktokUrl" type="url" defaultValue={listing?.tiktokUrl} placeholder="https://tiktok.com/@akun" aria-invalid={Boolean(errors.tiktokUrl)} className={inputClass} />
                 <InlineError message={errors.tiktokUrl} />
               </label>
-              <label className="block text-sm font-bold text-slate-700 md:col-span-2">Syarat &amp; garansi
+              <label className="block text-sm font-bold text-slate-700 md:col-span-2"><FieldLabelText {...labelProps("termsWarranty")} />
                 <textarea id="field-termsWarranty" data-validation-key="termsWarranty" name="termsWarranty" maxLength={300} rows={3} defaultValue={listing?.termsWarranty} placeholder="Jelaskan syarat layanan atau garansi (maks. 300 karakter)" aria-invalid={Boolean(errors.termsWarranty)} className={`${inputClass} py-3`} />
                 <span className="mt-1 block text-right text-xs font-normal text-slate-500">Maksimal 300 karakter</span>
                 <InlineError message={errors.termsWarranty} />
@@ -723,12 +710,11 @@ export function MyListingManager() {
           </section>
 
           <div className="flex justify-end border-t border-slate-200 pt-5">
-            <button disabled={saving || !hasActiveValidService} className={primaryButton}>
+            <button disabled={saving} className={primaryButton}>
               {saving ? <LoaderCircle className="size-5 animate-spin" /> : <CheckCircle2 className="size-5" />}
               {saving ? "Menyimpan..." : listing ? "Simpan perubahan" : "Ajukan lapak"}
             </button>
           </div>
-          {!hasActiveValidService && <p className="text-right text-xs font-semibold text-slate-500">Tambahkan minimal satu jasa aktif dengan nama dan harga yang valid untuk mengajukan lapak.</p>}
           {error && <p role="alert" className="rounded-xl bg-red-50 p-4 text-sm font-semibold text-red-700">{error}</p>}
           {message && <p role="status" className="rounded-xl bg-emerald-50 p-4 text-sm font-semibold text-emerald-700">{message}</p>}
         </form>
@@ -765,7 +751,7 @@ function ServiceInput({
 }: {
   id: string;
   errorKey: string;
-  label: string;
+  label: React.ReactNode;
   value: string;
   error?: string;
   onChange: (value: string) => void;

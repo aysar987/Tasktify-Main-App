@@ -9,6 +9,7 @@ import { TERMS_VERSION, rememberTermsOnDevice } from "@/lib/legal";
 import { getSiteUrl } from "@/lib/site-url";
 import { getSupabase } from "@/lib/supabase";
 import { LegalConsent, useLegalConsent } from "./legal-consent";
+import { FieldLabelText, RequiredNote } from "./ui";
 
 const authInputClass = "mt-2 min-h-12 w-full rounded-full border-0 bg-[#E5F0FF] px-5 text-base text-slate-950 outline-none transition placeholder:text-slate-600 focus:ring-4 focus:ring-[#4294F7]/35";
 const authPrimaryButton = "inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-full bg-[#4294F7] px-5 font-bold text-white transition hover:bg-[#2879D8] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#4294F7]/35 disabled:cursor-not-allowed disabled:opacity-50";
@@ -213,33 +214,34 @@ export function AuthForm({ mode }: { mode: "login" | "register" | "reset" | "upd
     <form onSubmit={submit} className={`${mode === "register" ? "space-y-3" : "space-y-5"} text-slate-950`}>
       <div className="text-center">
         <h1 tabIndex={-1} className="text-4xl font-bold tracking-tight">{title}</h1>
+        {mode === "register" && <RequiredNote className="mt-2" />}
       </div>
 
       {mode === "register" && (
         <>
           <label className="block text-sm font-semibold">
-            Nama lengkap
+            <FieldLabelText label="Nama lengkap" required />
             <input name="fullName" required autoComplete="name" placeholder="Contoh: Boy Steven" className={authInputClass} />
           </label>
           <label className="block text-sm font-semibold">
-            Username
+            <FieldLabelText label="Username" required />
             <input name="username" required minLength={3} autoComplete="username" placeholder="Contoh: boysteven" className={authInputClass} />
           </label>
           <label className="block text-sm font-semibold">
-            Nomor telepon
+            <FieldLabelText label="Nomor telepon" optional />
             <input name="phone" type="tel" autoComplete="tel" placeholder="Contoh: +62 812 3456 7890" className={authInputClass} />
           </label>
         </>
       )}
       {mode !== "update" && (
         <label className="block text-sm font-semibold">
-          Email
+          <FieldLabelText label="Email" required={mode === "register"} />
           <input name="email" type="email" required autoComplete="email" placeholder="nama@email.com" className={authInputClass} />
         </label>
       )}
       {mode !== "reset" && (
         <label className="block text-sm font-semibold">
-          {mode === "update" ? "Password baru" : "Password"}
+          <FieldLabelText label={mode === "update" ? "Password baru" : "Password"} required={mode === "register"} />
           <input
             name="password"
             type="password"

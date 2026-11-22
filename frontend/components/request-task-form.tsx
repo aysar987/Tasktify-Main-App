@@ -6,10 +6,11 @@ import Script from "next/script";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { createTask } from "@/lib/api";
+import { TASK_LIMITS, taskLabel, validateTaskField } from "@/lib/forms/task";
 import { rupiah } from "@/lib/format";
 import { midtransClientKey, midtransSnapScriptUrl } from "@/lib/midtrans";
 import type { PaymentMethod } from "@/types";
-import { inputClass, primaryButton, secondaryButton } from "./ui";
+import { FieldLabelText, RequiredNote, inputClass, primaryButton, secondaryButton } from "./ui";
 
 type TaskFields = { title: string; location: string; budget: string; schedule: string; note: string };
 const initialFields: TaskFields = { title: "", location: "", budget: "", schedule: "", note: "" };
@@ -46,17 +47,23 @@ export function RequestTaskForm({ providerId }: { providerId?: string }) {
     });
   }
 
+  // Rules (required flags, limits) live in lib/forms/task.ts and match the backend.
   function validate(current: number) {
-    if (current === 1 && !fields.title.trim()) return "Nama task wajib diisi.";
-    if (current === 2 && !fields.location.trim()) return "Lokasi wajib diisi.";
-    if (current === 3) {
-      const budget = Number(fields.budget);
-      if (!fields.budget || budget < 15000) return "Biaya minimal Rp15.000.";
-      if (budget % 500 !== 0) return "Biaya harus diisi dengan kelipatan Rp500.";
-    }
-    if (current === 4 && !fields.schedule) return "Jadwal wajib diisi.";
-    if (current === 5 && !fields.note.trim()) return "Catatan pekerjaan wajib diisi.";
+    if (current === 1) return validateTaskField("title", fields.title);
+    if (current === 2) return validateTaskField("location", fields.location);
+    if (current === 3) return validateTaskField("budget", fields.budget);
+    if (current === 4) return validateTaskField("schedule", fields.schedule);
+    if (current === 5) return validateTaskField("note", fields.note);
     return "";
+  }
+
+  // Before sending, re-check every step (a field may have been changed via "Ubah").
+  function firstInvalidStep() {
+    for (const current of [1, 2, 3, 4, 5]) {
+      const message = validate(current);
+      if (message) return { step: current, message };
+    }
+    return undefined;
   }
 
   function next() {
@@ -93,9 +100,11 @@ export function RequestTaskForm({ providerId }: { providerId?: string }) {
       next();
       return;
     }
-    const message = validate(5);
-    if (message) {
-      setError(message);
+    const invalid = firstInvalidStep();
+    if (invalid) {
+      // Go back to the step with the problem; everything typed stays as it is.
+      editStep(invalid.step);
+      setError(invalid.message);
       return;
     }
     setLoading(true);
@@ -158,36 +167,37 @@ export function RequestTaskForm({ providerId }: { providerId?: string }) {
           </div>
         </div>
         <div className="overflow-hidden rounded-[24px] border border-white/70 bg-white p-5 shadow-2xl shadow-slate-950/20 md:p-8">
+          <RequiredNote className="mb-4" />
           <div key={step} className={direction === "forward" ? "wizard-slide-forward" : "wizard-slide-backward"}>
             <div className="flex flex-col">
               <fieldset className="flex-1">
                 {step === 1 && (
-                  <StepField label="Nama task">
-                    <input {...fieldProps("title")} className={inputClass} placeholder="Contoh: Perbaiki pipa wastafel bocor" autoFocus />
+                  <StepField {...taskLabel("title")}>
+                    <input {...fieldProps("title")} required maxLength={TASK_LIMITS.titleMax} className={inputClass} placeholder="Contoh: Perbaiki pipa wastafel bocor" autoFocus />
                   </StepField>
                 )}
                 {step === 2 && (
-                  <StepField label="Lokasi">
-                    <input {...fieldProps("location")} className={inputClass} placeholder="Alamat pengerjaan" autoFocus />
+                  <StepField {...taskLabel("location")}>
+                    <input {...fieldProps("location")} required maxLength={TASK_LIMITS.locationMax} className={inputClass} placeholder="Alamat pengerjaan" autoFocus />
                   </StepField>
                 )}
                 {step === 3 && (
-                  <StepField label="Biaya" helper="Biaya harus diisi dengan kelipatan Rp500">
-                    <input {...fieldProps("budget")} type="number" min="15000" step="500" className={inputClass} placeholder="Rp 500000" autoFocus />
+                  <StepField {...taskLabel("budget")} helper="Minimal Rp15.000, kelipatan Rp500">
+                    <input {...fieldProps("budget")} required type="number" min={TASK_LIMITS.budgetMin} step={TASK_LIMITS.budgetStep} className={inputClass} placeholder="Rp 500000" autoFocus />
                   </StepField>
                 )}
                 {step === 4 && (
-                  <StepField label="Jadwal yang diinginkan">
-                    <input {...fieldProps("schedule")} type="datetime-local" className={inputClass} autoFocus />
+                  <StepField {...taskLabel("schedule")}>
+                    <input {...fieldProps("schedule")} required type="datetime-local" className={inputClass} autoFocus />
                   </StepField>
                 )}
                 {step === 5 && (
-                  <StepField label="Catatan pekerjaan" helper="Semakin detail catatan Anda, semakin cepat penyedia yang tepat mengambil task ini.">
-                    <textarea {...fieldProps("note")} rows={5} className={`${inputClass} py-3`} placeholder="Jelaskan masalah, kondisi lokasi, dan hasil yang Anda harapkan..." autoFocus />
+                  <StepField {...taskLabel("note")} helper="Semakin detail catatan Anda, semakin cepat penyedia yang tepat mengambil task ini.">
+                    <textarea {...fieldProps("note")} required maxLength={TASK_LIMITS.noteMax} rows={5} className={`${inputClass} py-3`} placeholder="Jelaskan masalah, kondisi lokasi, dan hasil yang Anda harapkan..." autoFocus />
                   </StepField>
                 )}
                 {step === 6 && (
-                  <StepField label="Foto task" required={false} helper="Bantu penyedia memahami kondisi pekerjaan lewat foto.">
+                  <StepField {...taskLabel("image")} helper="Bantu penyedia memahami kondisi pekerjaan lewat foto.">
                     <span className="mt-2 flex items-center gap-4">
                       <span className="relative flex h-24 w-36 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-dashed border-slate-300 bg-slate-50">
                         {imagePreview ? (
@@ -265,7 +275,6 @@ export function RequestTaskForm({ providerId }: { providerId?: string }) {
                   <button
                     type="button"
                     onClick={next}
-                    disabled={Boolean(validate(step))}
                     className={`${primaryButton} rounded-full disabled:bg-slate-300 disabled:text-slate-500 sm:min-w-36`}
                   >
                     Lanjut
@@ -273,7 +282,7 @@ export function RequestTaskForm({ providerId }: { providerId?: string }) {
                 ) : (
                   <button
                     type="submit"
-                    disabled={loading || Boolean(validate(step))}
+                    disabled={loading}
                     className={`${primaryButton} rounded-full disabled:bg-slate-300 disabled:text-slate-500 sm:min-w-36`}
                   >
                     {loading && <LoaderCircle className="size-5 animate-spin" />}
@@ -321,7 +330,7 @@ export function StepField({
 }) {
   return (
     <label className="block text-sm font-bold text-slate-700">
-      {label} {required && <span className="text-red-600">*</span>}
+      <FieldLabelText label={label} required={required} />
       {children}
       {helper && <span className="mt-2 block text-xs font-normal leading-5 text-slate-500">{helper}</span>}
     </label>

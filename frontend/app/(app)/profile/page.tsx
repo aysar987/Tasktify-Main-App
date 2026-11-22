@@ -17,7 +17,7 @@ import {
 import Link from "next/link";
 import { FormEvent, useEffect, useState, useSyncExternalStore } from "react";
 import { ProviderReviews } from "@/components/provider-reviews";
-import { PageHeader, inputClass, primaryButton, secondaryButton } from "@/components/ui";
+import { FieldLabelText, PageHeader, RequiredNote, inputClass, primaryButton, secondaryButton } from "@/components/ui";
 import { VerificationUnlocks } from "@/components/verification-gate";
 import {
   getOwnProviderKtpUrl,
@@ -208,6 +208,7 @@ export default function ProfilePage() {
             <h2 className="font-[var(--font-manrope)] text-xl font-extrabold">
               Informasi pribadi
             </h2>
+            <RequiredNote className="mt-1" />
             {profile && (
               <div className="mt-6 grid gap-5 md:grid-cols-2">
                 <Field
@@ -216,6 +217,9 @@ export default function ProfilePage() {
                   name="fullName"
                   placeholder="Contoh: Boy Steven"
                   defaultValue={profile.fullName}
+                  required
+                  minLength={2}
+                  maxLength={100}
                 />
                 <Field
                   icon={UserRound}
@@ -223,6 +227,9 @@ export default function ProfilePage() {
                   name="username"
                   placeholder="Contoh: boysteven"
                   defaultValue={profile.username}
+                  required
+                  minLength={3}
+                  maxLength={40}
                 />
                 <Field
                   icon={Phone}
@@ -231,6 +238,7 @@ export default function ProfilePage() {
                   type="tel"
                   placeholder="Contoh: +62 812 3456 7890"
                   defaultValue={profile.phone}
+                  maxLength={30}
                 />
                 <Field
                   icon={Mail}
@@ -239,6 +247,7 @@ export default function ProfilePage() {
                   type="email"
                   placeholder="nama@email.com"
                   defaultValue={profile.email}
+                  maxLength={254}
                 />
                 <Field
                   icon={MapPin}
@@ -246,6 +255,7 @@ export default function ProfilePage() {
                   name="address"
                   placeholder="Contoh: Jakarta Selatan"
                   defaultValue={profile.address}
+                  maxLength={500}
                 />
               </div>
             )}
@@ -341,7 +351,7 @@ export default function ProfilePage() {
                   </p>
                 )}
                 <label className="mt-5 block text-sm font-bold text-slate-700">
-                  Foto KTP <span className="text-red-600">*</span>
+                  <FieldLabelText label="Foto KTP" required />
                   <span className="mt-2 flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-3">
                     <IdCard className="size-5 shrink-0 text-slate-400" />
                     <input type="file" name="ktp" accept="image/png,image/jpeg,image/webp" required disabled={!identityComplete} className="w-full text-sm" />
@@ -401,6 +411,9 @@ function Field({
   type = "text",
   defaultValue,
   placeholder,
+  required = false,
+  minLength,
+  maxLength,
 }: {
   icon: typeof UserRound;
   label: string;
@@ -408,10 +421,13 @@ function Field({
   type?: string;
   defaultValue: string;
   placeholder: string;
+  required?: boolean;
+  minLength?: number;
+  maxLength?: number;
 }) {
   return (
     <label className="block text-sm font-bold text-slate-700">
-      {label}
+      <FieldLabelText label={label} required={required} />
       <span className="relative block">
         <Icon className="absolute left-4 top-[calc(50%+.25rem)] size-5 -translate-y-1/2 text-slate-400" />
         <input
@@ -419,7 +435,9 @@ function Field({
           type={type}
           defaultValue={defaultValue}
           placeholder={placeholder}
-          required={name === "username" || name === "fullName"}
+          required={required}
+          minLength={minLength}
+          maxLength={maxLength}
           className={`${inputClass} pl-12`}
         />
       </span>

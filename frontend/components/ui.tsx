@@ -35,3 +35,34 @@ export function StatusBadge({ status }: { status: string }) {
   const labels: Record<string, string> = { awaiting_payment: "Menunggu pembayaran", ongoing: "Sedang berjalan", scheduled: "Terjadwal", history: "Selesai", waiting: "Menunggu", cancelled: "Dibatalkan", rejected: "Ditolak" };
   return <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold ${styles[status] ?? styles.waiting}`}><CheckCircle2 className="size-3.5" />{labels[status] ?? status}</span>;
 }
+
+/**
+ * Label text with the app's one required/optional marking: a red asterisk
+ * for required fields, "(opsional)" for optional ones on forms where most
+ * fields are required. Forms take `required` from their validation rules, so
+ * the mark and the check can't drift apart.
+ */
+export function FieldLabelText({ label, required, optional }: { label: string; required?: boolean; optional?: boolean }) {
+  return (
+    <>
+      {label}
+      {required && (
+        <>
+          {" "}
+          <span className="text-red-600" aria-hidden="true">*</span>
+          <span className="sr-only"> (wajib diisi)</span>
+        </>
+      )}
+      {optional && <span className="font-normal text-slate-500"> (opsional)</span>}
+    </>
+  );
+}
+
+/** "* wajib diisi" note shown at the top of forms that mark required fields. */
+export function RequiredNote({ className = "" }: { className?: string }) {
+  return (
+    <p className={`text-xs text-slate-500 ${className}`}>
+      <span className="text-red-600" aria-hidden="true">*</span> wajib diisi
+    </p>
+  );
+}

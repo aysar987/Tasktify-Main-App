@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { BannerCropModal, BannerCropPreset } from "@/components/banner-crop-modal";
 import { createBanner, deleteBanner, getAdminBanners, updateBanner } from "@/lib/api";
-import { inputClass, primaryButton, secondaryButton } from "@/components/ui";
+import { FieldLabelText, inputClass, primaryButton, secondaryButton } from "@/components/ui";
 import type { Banner } from "@/types";
 
 type FormState = {
@@ -259,7 +259,7 @@ export function AdminBannerManager() {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="block text-sm font-bold text-slate-700">
-              Tautan tujuan <span className="text-red-600">*</span>
+              <FieldLabelText label="Tautan tujuan" required />
               <input
                 value={form.href}
                 onChange={(event) => setForm({ ...form, href: event.target.value })}

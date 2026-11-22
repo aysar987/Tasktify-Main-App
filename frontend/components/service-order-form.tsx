@@ -10,7 +10,7 @@ import { rupiah, serviceUnitLabels } from "@/lib/format";
 import { midtransClientKey, midtransSnapScriptUrl } from "@/lib/midtrans";
 import type { MarketplaceListing, MarketplaceListingService, PaymentMethod } from "@/types";
 import { PaymentOptions, StepField } from "./request-task-form";
-import { inputClass, primaryButton, secondaryButton } from "./ui";
+import { RequiredNote, inputClass, primaryButton, secondaryButton } from "./ui";
 
 // Must match the backend's minimum task budget (createTaskInput.Budget).
 const MINIMUM_ORDER = 15000;
@@ -171,6 +171,7 @@ export function ServiceOrderForm({ listingId, serviceIndex }: { listingId: strin
         </div>
 
         <div className="overflow-hidden rounded-[24px] border border-white/70 bg-white p-5 shadow-2xl shadow-slate-950/20 md:p-8">
+          <RequiredNote className="mb-4" />
           <div className="mb-6 flex items-start justify-between gap-3 rounded-2xl bg-blue-50 p-4">
             <div className="min-w-0">
               <p className="text-xs font-semibold text-blue-800">{listing.name}</p>
