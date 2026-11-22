@@ -66,6 +66,16 @@ export class ApiError extends Error {
   }
 }
 
+const SESSION_EXPIRED_MESSAGE = "Sesi Anda berakhir. Silakan masuk kembali.";
+
+/** A request that never got a response: offline, blocked, or timed out (see taskActionSignal). */
+function networkError(cause: unknown) {
+  if (cause instanceof DOMException && (cause.name === "TimeoutError" || cause.name === "AbortError")) {
+    return new ApiError("Permintaan terlalu lama. Periksa koneksi Anda lalu coba lagi.", "TIMEOUT");
+  }
+  return new ApiError("Layanan belum dapat dihubungi. Coba beberapa saat lagi.", "NETWORK_ERROR");
+}
+
 async function apiRequest<T>(
   path: string,
   init: RequestInit = {},
@@ -82,7 +92,7 @@ async function apiRequest<T>(
       error,
     } = await getSupabase().auth.getSession();
     if (error || !session) {
-      throw new Error("Sesi Anda berakhir. Silakan masuk kembali.");
+      throw new ApiError(SESSION_EXPIRED_MESSAGE, "SESSION_EXPIRED");
     }
     headers.set("Authorization", `Bearer ${session.access_token}`);
   }
@@ -94,8 +104,8 @@ async function apiRequest<T>(
       headers,
       cache: "no-store",
     });
-  } catch {
-    throw new Error("Layanan belum dapat dihubungi. Coba beberapa saat lagi.");
+  } catch (cause) {
+    throw networkError(cause);
   }
 
   if (response.status === 204) return undefined as T;
@@ -103,8 +113,10 @@ async function apiRequest<T>(
   let payload: ApiEnvelope<T>;
   try {
     payload = (await response.json()) as ApiEnvelope<T>;
-  } catch {
-    throw new Error("Respons layanan tidak valid.");
+  } catch (cause) {
+    // e.g. a proxy error page instead of JSON.
+    console.error(cause);
+    throw new ApiError("Layanan sedang bermasalah. Coba beberapa saat lagi.", "INVALID_RESPONSE");
   }
 
   if (!response.ok || !payload.success) {
@@ -229,7 +241,7 @@ export async function getMarketplaceListing(id: string): Promise<MarketplaceList
     {},
     false,
   );
-  if (!listing) throw new Error("Lapak tidak ditemukan atau belum dipublikasikan.");
+  if (!listing) throw new ApiError("Lapak tidak ditemukan atau belum dipublikasikan.", "NOT_FOUND");
   return normalizeMarketplaceListing(listing);
 }
 
@@ -320,7 +332,11 @@ export async function updateProfile(
   const { data } = await getSupabase().auth.getUser();
   if (data.user?.email && profile.email !== data.user.email) {
     const { error } = await getSupabase().auth.updateUser({ email: profile.email });
-    if (error) throw new Error(error.message);
+    if (error) {
+      // Supabase's own message is technical English; log it and say what failed.
+      console.error(error);
+      throw new ApiError("Email gagal diperbarui. Periksa alamat email atau coba lagi nanti.", "EMAIL_UPDATE_FAILED");
+    }
   }
   return apiRequest<Profile>("/me", {
     method: "PUT",
@@ -394,7 +410,7 @@ async function apiRequestBlobUrl(path: string): Promise<string> {
     error,
   } = await getSupabase().auth.getSession();
   if (error || !session) {
-    throw new Error("Sesi Anda berakhir. Silakan masuk kembali.");
+    throw new ApiError(SESSION_EXPIRED_MESSAGE, "SESSION_EXPIRED");
   }
   let response: Response;
   try {
@@ -402,11 +418,11 @@ async function apiRequestBlobUrl(path: string): Promise<string> {
       headers: { Authorization: `Bearer ${session.access_token}` },
       cache: "no-store",
     });
-  } catch {
-    throw new Error("Layanan belum dapat dihubungi. Coba beberapa saat lagi.");
+  } catch (cause) {
+    throw networkError(cause);
   }
   if (!response.ok) {
-    throw new Error("Gagal memuat gambar.");
+    throw new ApiError("Gagal memuat gambar.", "IMAGE_LOAD_FAILED");
   }
   return URL.createObjectURL(await response.blob());
 }

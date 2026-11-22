@@ -8,6 +8,7 @@ import { Toast, useToast } from "@/components/toast";
 import { VerificationGate } from "@/components/verification-gate";
 import { PageHeader, primaryButton } from "@/components/ui";
 import { ApiError, VERIFICATION_ERROR_CODES, claimTask, getOpenTask, getProfile } from "@/lib/api";
+import { isConnectionError, userErrorMessage } from "@/lib/errors";
 import { rupiah } from "@/lib/format";
 import type { AccountVerification, Task } from "@/types";
 
@@ -54,8 +55,9 @@ export default function MarketplaceTaskDetailPage() {
         return;
       }
       // The task stays on screen; the error is shown as a toast.
-      const message =
-        cause instanceof ApiError && cause.code !== "INTERNAL_ERROR" ? cause.message : "Gagal mengambil task. Coba lagi.";
+      const message = isConnectionError(cause)
+        ? "Gagal mengambil task. Coba lagi."
+        : userErrorMessage(cause, "Gagal mengambil task. Coba lagi.");
       // Taken by someone else or cancelled meanwhile (not "you already have an active task").
       if (cause instanceof ApiError && (cause.code === "NOT_FOUND" || cause.code === "CONFLICT")) {
         setUnavailable(message);

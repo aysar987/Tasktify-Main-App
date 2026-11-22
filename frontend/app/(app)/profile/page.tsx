@@ -19,6 +19,7 @@ import { FormEvent, useEffect, useState, useSyncExternalStore } from "react";
 import { ProviderReviews } from "@/components/provider-reviews";
 import { FieldLabelText, PageHeader, RequiredNote, inputClass, primaryButton, secondaryButton } from "@/components/ui";
 import { VerificationUnlocks } from "@/components/verification-gate";
+import { userErrorMessage } from "@/lib/errors";
 import {
   getOwnProviderKtpUrl,
   getProfile,
@@ -38,6 +39,9 @@ const VERIFICATION_META: Record<AccountVerificationStatus, { icon: typeof Shield
 
 const noSubscribe = () => () => undefined;
 
+const VERIFICATION_SENT =
+  "Verifikasi akun berhasil dikirim. Kami akan meninjau dalam 1×24 jam dan memberi tahu Anda lewat notifikasi.";
+
 /** `?next=` from a gate screen: where to return after approval (in-app paths only). */
 function readReturnTo() {
   const next = new URLSearchParams(window.location.search).get("next");
@@ -51,15 +55,13 @@ export default function ProfilePage() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [ktpPreview, setKtpPreview] = useState<string>();
+  // Result of sending the verification, shown inside the "Verifikasi akun" section.
+  const [verificationFeedback, setVerificationFeedback] = useState<{ tone: "success" | "error"; text: string }>();
   const returnTo = useSyncExternalStore(noSubscribe, readReturnTo, () => undefined);
   useEffect(() => {
     getProfile()
       .then(setProfile)
-      .catch((cause: unknown) =>
-        setError(
-          cause instanceof Error ? cause.message : "Profil gagal dimuat.",
-        ),
-      );
+      .catch((cause: unknown) => setError(userErrorMessage(cause, "Profil gagal dimuat. Coba lagi.")));
   }, []);
   useEffect(() => {
     const providerId = profile?.provider?.id;
@@ -96,9 +98,7 @@ export default function ProfilePage() {
       setMessage("Profil berhasil disimpan.");
       setProfile(await getProfile());
     } catch (cause) {
-      setError(
-        cause instanceof Error ? cause.message : "Profil gagal disimpan.",
-      );
+      setError(userErrorMessage(cause, "Profil gagal disimpan. Coba lagi."));
     } finally {
       setSaving(false);
     }
@@ -113,38 +113,46 @@ export default function ProfilePage() {
       setProfile(await getProfile());
       setMessage("Foto profil berhasil diperbarui.");
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Foto gagal diunggah.");
+      setError(userErrorMessage(cause, "Foto gagal diunggah. Coba lagi."));
     } finally {
       setSaving(false);
     }
   }
   async function verificationSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    // Keep the element: event.currentTarget is null once the await below resumes.
+    // Keep the element: React clears event.currentTarget once an await resumes.
     const formElement = event.currentTarget;
-    const form = new FormData(formElement);
-    const ktpFile = form.get("ktp");
+    const ktpFile = new FormData(formElement).get("ktp");
     if (!(ktpFile instanceof File) || ktpFile.size === 0) {
-      setError("Unggah foto KTP terlebih dahulu.");
+      setVerificationFeedback({ tone: "error", text: "Unggah foto KTP terlebih dahulu." });
       return;
     }
     setSaving(true);
+    setVerificationFeedback(undefined);
     setError("");
     setMessage("");
     try {
       await submitAccountVerification(ktpFile, returnTo);
-      setProfile(await getProfile());
-      setMessage("Verifikasi akun terkirim. Biasanya selesai dalam 1×24 jam, kami akan memberi tahu lewat notifikasi.");
-      formElement.reset();
     } catch (cause) {
-      setError(
-        cause instanceof Error
-          ? cause.message
-          : "Verifikasi akun gagal dikirim.",
-      );
-    } finally {
+      // Nothing was sent: keep the chosen file so the user can try again.
+      setVerificationFeedback({ tone: "error", text: userErrorMessage(cause, "Verifikasi akun gagal dikirim. Coba lagi.") });
       setSaving(false);
+      return;
     }
+    // Sent. What follows only refreshes the screen, so a problem here must
+    // never be reported as a failed submit.
+    setVerificationFeedback({ tone: "success", text: VERIFICATION_SENT });
+    setProfile((current) =>
+      current && { ...current, verification: { ...current.verification, status: "pending", note: undefined } },
+    );
+    formElement.reset();
+    try {
+      setProfile(await getProfile());
+    } catch (cause) {
+      // The status shown above is already "pending"; the next visit loads the rest.
+      console.error(cause);
+    }
+    setSaving(false);
   }
   const identityComplete = Boolean(profile?.phone) && Boolean(profile?.email);
   const verification = profile?.verification;
@@ -320,7 +328,11 @@ export default function ProfilePage() {
                 </div>
               )}
             </div>
-            {verificationStatus === "pending" && (
+            {verificationFeedback?.tone === "success" ? (
+              <p role="status" className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm font-semibold text-emerald-700">
+                {verificationFeedback.text}
+              </p>
+            ) : verificationStatus === "pending" && (
               <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
                 Verifikasi sedang ditinjau admin. Biasanya selesai dalam 1×24 jam. Anda akan mendapat notifikasi, jadi tidak perlu mengirim ulang.
               </p>
@@ -365,6 +377,11 @@ export default function ProfilePage() {
                 <span className="block text-sm font-bold text-slate-700">KTP yang terkirim</span>
                 <img src={ktpPreview} alt="Foto KTP" className="mt-2 max-h-48 rounded-xl border border-slate-200 object-contain" />
               </div>
+            )}
+            {verificationFeedback?.tone === "error" && (
+              <p role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-700">
+                {verificationFeedback.text}
+              </p>
             )}
             {canSubmitVerification && (
               <div className="mt-7 flex justify-end border-t border-slate-200 pt-6">

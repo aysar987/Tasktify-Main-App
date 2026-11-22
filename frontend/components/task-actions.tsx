@@ -3,6 +3,7 @@
 import { Ban, Banknote, Check, Flag, LoaderCircle, MessageSquareText, Play, Star, X } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ApiError, cancelTask, getPayment, getTask, getTaskRating, rateTask, subscribePayment, transitionTask } from "@/lib/api";
+import { isConnectionError, userErrorMessage } from "@/lib/errors";
 import { rupiah } from "@/lib/format";
 import type { Payment, Rating, TaskStatus } from "@/types";
 import { Toast, useToast } from "./toast";
@@ -33,11 +34,11 @@ const SUCCESS_MESSAGE: Record<StatusAction, string> = {
 
 /**
  * The server's message when it is written for users (validation, conflicts,
- * payment rules); otherwise - server errors, network errors, timeouts - a
- * generic one.
+ * payment rules); otherwise - server errors, network errors, timeouts, bugs -
+ * a generic one.
  */
 function actionErrorMessage(cause: unknown, fallback = ACTION_FAILED) {
-  return cause instanceof ApiError && cause.code !== "INTERNAL_ERROR" && cause.message ? cause.message : fallback;
+  return isConnectionError(cause) ? fallback : userErrorMessage(cause, fallback);
 }
 
 export function TaskActions({
