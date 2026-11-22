@@ -7,6 +7,7 @@ import { FormEvent, useCallback, useEffect, useLayoutEffect, useRef, useState } 
 import { ApiError, getConversations, getMessages, getTask, markConversationRead, sendMessage, startMarketplaceListingChat, startProviderChat, startTaskChat } from "@/lib/api";
 import { CHAT_UNREAD_CHANGED } from "@/lib/chat-events";
 import { useConversationOpen } from "@/lib/chat-view";
+import { userErrorMessage } from "@/lib/errors";
 import { getSupabase } from "@/lib/supabase";
 import { rupiah } from "@/lib/format";
 import type { Conversation, ConversationTask, Message } from "@/types";
@@ -19,6 +20,8 @@ function newestFirst(chats: Conversation[]) {
 }
 
 const NO_MESSAGES: Message[] = [];
+/** Longest message the server accepts. */
+const MESSAGE_MAX = 2000;
 const messageTime = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
 
 // Bubble corners are fully round (50) except the "tail" corner (15) at the bottom
@@ -64,6 +67,15 @@ export function ChatPanel({
   const [thread, setThread] = useState<{ id: string; items: Message[] }>();
   const [userId, setUserId] = useState("");
   const [draft, setDraft] = useState("");
+  const [sending, setSending] = useState(false);
+  const draftRef = useRef<HTMLTextAreaElement | null>(null);
+  // Grow the message box with its text, up to about five lines.
+  useLayoutEffect(() => {
+    const box = draftRef.current;
+    if (!box) return;
+    box.style.height = "auto";
+    box.style.height = `${Math.min(box.scrollHeight, 144)}px`;
+  }, [draft]);
   const [query, setQuery] = useState("");
   const [error, setError] = useState("");
   const [mobileView, setMobileView] = useState<"list" | "chat">("list");
@@ -80,9 +92,12 @@ export function ChatPanel({
 
   const refreshConversations = useCallback(async () => {
     const items = await getConversations();
-    setConversations(
-      items.map((chat) => (chat.id === openChatId.current ? { ...chat, unreadCount: 0 } : chat)),
-    );
+    setConversations((current) => {
+      const next = items.map((chat) => (chat.id === openChatId.current ? { ...chat, unreadCount: 0 } : chat));
+      // The inbox only lists chats with messages; keep a just-opened empty chat visible.
+      const open = current.find((chat) => chat.id === openChatId.current);
+      return open && !next.some((chat) => chat.id === open.id) ? [open, ...next] : next;
+    });
   }, []);
 
   useEffect(() => {
@@ -205,7 +220,13 @@ export function ChatPanel({
   }, [activeTaskId]);
   async function submit(event: FormEvent) {
     event.preventDefault();
-    if (!active || !draft.trim() || active.readOnly) return;
+    if (!active || !draft.trim() || active.readOnly || sending) return;
+    if ([...draft.trim()].length > MESSAGE_MAX) {
+      setError(`Pesan maksimal ${MESSAGE_MAX} karakter.`);
+      return;
+    }
+    setSending(true);
+    setError("");
     try {
       const sent = await sendMessage(active.id, draft);
       stickToBottom.current = true;
@@ -223,7 +244,9 @@ export function ChatPanel({
       if (cause instanceof ApiError && cause.code === "CHAT_CLOSED") {
         setActive((current) => (current ? { ...current, readOnly: true } : current));
       }
-      setError(cause instanceof Error ? cause.message : "Pesan gagal dikirim.");
+      setError(userErrorMessage(cause, "Pesan gagal dikirim. Coba lagi."));
+    } finally {
+      setSending(false);
     }
   }
 
@@ -341,17 +364,38 @@ export function ChatPanel({
             Task sudah berakhir. Anda masih bisa mengirim pesan sampai {closingDate.format(new Date(active.closesAt))}.
           </p>
         )}
-        <form onSubmit={submit} className="flex shrink-0 gap-3 border-t border-slate-200 pt-4">
-          <input
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-            aria-label="Tulis pesan"
-            placeholder="Tulis pesan..."
-            className="min-h-12 flex-1 rounded-xl border border-slate-300 px-4 outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
-          />
+        <form onSubmit={submit} className="flex shrink-0 items-start gap-3 border-t border-slate-200 pt-4">
+          <span className="flex min-w-0 flex-1 flex-col">
+            <textarea
+              ref={draftRef}
+              value={draft}
+              onChange={(event) => setDraft(event.target.value)}
+              onKeyDown={(event) => {
+                // Enter sends; Shift+Enter adds a new line (not while composing text, e.g. IME).
+                if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
+                  event.preventDefault();
+                  event.currentTarget.form?.requestSubmit();
+                }
+              }}
+              rows={1}
+              maxLength={MESSAGE_MAX}
+              aria-label="Tulis pesan"
+              aria-describedby="message-hint"
+              placeholder="Tulis pesan..."
+              className="max-h-36 min-h-12 w-full resize-none rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
+            />
+            <span id="message-hint" className="mt-1 flex justify-between gap-2 text-xs text-slate-400">
+              <span className="hidden sm:inline">Enter untuk kirim, Shift+Enter untuk baris baru</span>
+              {draft.length >= MESSAGE_MAX - 200 && (
+                <span className={`ml-auto tabular-nums ${draft.length >= MESSAGE_MAX ? "text-red-600" : ""}`}>
+                  {draft.length}/{MESSAGE_MAX}
+                </span>
+              )}
+            </span>
+          </span>
           <button
             type="submit"
-            disabled={!draft.trim()}
+            disabled={!draft.trim() || sending}
             aria-label="Kirim pesan"
             className="grid size-12 cursor-pointer place-items-center rounded-xl bg-blue-600 text-white disabled:cursor-not-allowed disabled:opacity-50"
           >

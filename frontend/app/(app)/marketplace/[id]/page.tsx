@@ -78,7 +78,7 @@ export default function MarketplaceTaskDetailPage() {
 
   return (
     <>
-      <PageHeader eyebrow={task.id} title={task.title} description="Detail permintaan dari client, siap diambil siapa cepat." backHref="/marketplace" />
+      <PageHeader eyebrow={task.id} title={task.title} description="Detail permintaan dari klien, siap diambil siapa cepat." backHref="/marketplace" />
       <TaskGallery images={task.images} />
       <div className="grid gap-6 xl:grid-cols-[1fr_340px]">
         <section className="rounded-2xl border border-slate-200 bg-white p-6">
@@ -116,7 +116,7 @@ export default function MarketplaceTaskDetailPage() {
             </p>
           ) : (
             <>
-              <p className="text-sm leading-6 text-slate-600">Alamat lengkap dan kontak client ditampilkan setelah Anda mengambil task ini.</p>
+              <p className="text-sm leading-6 text-slate-600">Alamat lengkap dan kontak klien ditampilkan setelah Anda mengambil task ini.</p>
               <button type="button" disabled={claiming} onClick={claim} className={`${primaryButton} w-full`}>
                 {claiming ? <LoaderCircle className="size-5 animate-spin" /> : <Check className="size-5" />} Ambil task ini
               </button>

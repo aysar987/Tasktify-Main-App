@@ -274,7 +274,7 @@ export function TaskActions({
             </button>
             {onlineUnpaid && (
               <p id="finish-blocked-reason" className="text-sm leading-6 text-slate-600">
-                Pembayaran online dari client belum lunas. Task bisa ditandai selesai setelah pembayaran dikonfirmasi.
+                Pembayaran online dari klien belum lunas. Task bisa ditandai selesai setelah pembayaran dikonfirmasi.
               </p>
             )}
             {hint && (
@@ -403,7 +403,7 @@ export function TaskActions({
       {cashSheetOpen && (
         <ConfirmSheet
           icon={<Banknote className="size-6" />}
-          title={`Sudah terima pembayaran tunai ${rupiah(task?.budget ?? payment?.amount ?? 0)} dari ${task?.clientName || "client"}?`}
+          title={`Sudah terima pembayaran tunai ${rupiah(task?.budget ?? payment?.amount ?? 0)} dari ${task?.clientName || "klien"}?`}
           description="Task akan ditandai selesai dan pembayaran dicatat lunas sekaligus."
           confirmLabel="Ya, sudah diterima"
           cancelLabel="Belum"

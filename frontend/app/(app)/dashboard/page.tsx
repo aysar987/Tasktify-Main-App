@@ -189,19 +189,19 @@ export default function DashboardPage() {
         <div className="absolute inset-x-4 top-4 z-20 flex items-center gap-3 sm:hidden">
           <form onSubmit={search} className="relative min-w-0 flex-1">
             <Search className="absolute left-4 top-1/2 size-5 -translate-y-1/2 text-slate-500" />
-            <input name="query" aria-label="Search" placeholder="Search..." className="min-h-11 w-full rounded-full border-0 bg-white/95 pl-12 pr-4 text-slate-900 shadow-sm outline-none focus:ring-4 focus:ring-white/50" />
+            <input name="query" aria-label="Cari jasa atau lapak" placeholder="Cari jasa atau lapak..." className="min-h-11 w-full rounded-full border-0 bg-white/95 pl-12 pr-4 text-slate-900 shadow-sm outline-none focus:ring-4 focus:ring-white/50" />
           </form>
           <div ref={menuRef} className="relative shrink-0">
             <button
               type="button"
-              aria-label="Account menu"
+              aria-label="Menu akun"
               aria-expanded={menuOpen}
               aria-haspopup="menu"
               onClick={() => setMenuOpen((current) => !current)}
               className="flex size-11 items-center justify-center rounded-full border-2 border-white bg-white/95 p-0.5 shadow-sm focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/50"
             >
               {profile?.avatarUrl ? (
-                <Image unoptimized src={profile.avatarUrl} alt="Profile" width={40} height={40} className="size-9 rounded-full object-cover" />
+                <Image unoptimized src={profile.avatarUrl} alt="Foto profil" width={40} height={40} className="size-9 rounded-full object-cover" />
               ) : (
                 <span className="grid size-9 place-items-center rounded-full bg-slate-900 text-xs font-bold text-white">{initials}</span>
               )}
@@ -210,13 +210,13 @@ export default function DashboardPage() {
             {menuOpen && (
               <div className="absolute right-0 top-full z-30 mt-2 w-56 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
                 <div className="border-b border-slate-200 px-3 py-2">
-                  <p className="text-xs font-semibold uppercase tracking-[.15em] text-slate-400">Account</p>
+                  <p className="text-xs font-semibold uppercase tracking-[.15em] text-slate-400">Akun</p>
                   <p className="mt-1 truncate text-sm font-semibold text-slate-900">{profile?.fullName || profile?.username || "Pengguna"}</p>
                 </div>
                 <div className="py-1.5">
-                  <Link href="/profile" onClick={() => setMenuOpen(false)} className="flex items-center justify-between px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"><span>Manage Account</span><ChevronDown className="size-4 -rotate-90" /></Link>
-                  <Link href="/activity" onClick={() => setMenuOpen(false)} className="flex items-center justify-between px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"><span>Activities</span><ChevronDown className="size-4 -rotate-90" /></Link>
-                  <button type="button" onClick={() => { setMenuOpen(false); void logout(); }} className="flex w-full items-center justify-between px-3 py-2 text-left text-sm font-medium text-red-600 transition-colors hover:bg-red-50 active:scale-100"><span>Logout</span><LogOut className="size-4" /></button>
+                  <Link href="/profile" onClick={() => setMenuOpen(false)} className="flex items-center justify-between px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"><span>Kelola akun</span><ChevronDown className="size-4 -rotate-90" /></Link>
+                  <Link href="/activity" onClick={() => setMenuOpen(false)} className="flex items-center justify-between px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"><span>Aktivitas</span><ChevronDown className="size-4 -rotate-90" /></Link>
+                  <button type="button" onClick={() => { setMenuOpen(false); void logout(); }} className="flex w-full items-center justify-between px-3 py-2 text-left text-sm font-medium text-red-600 transition-colors hover:bg-red-50 active:scale-100"><span>Keluar</span><LogOut className="size-4" /></button>
                 </div>
               </div>
             )}

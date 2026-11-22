@@ -14,9 +14,9 @@ import type { Profile } from "@/types";
 import { Brand } from "./brand";
 
 const baseNavigation = [
-  { href: "/dashboard", label: "Home", icon: Home },
+  { href: "/dashboard", label: "Beranda", icon: Home },
   { href: "/market", label: "Market", icon: Briefcase },
-  { href: "/notifications", label: "Notification", icon: Bell },
+  { href: "/notifications", label: "Notifikasi", icon: Bell },
   { href: "/chat", label: "Chat", icon: MessageSquareText },
   { href: "/manage-listing", label: "Kelola Lapak", icon: Store },
 ];
@@ -44,7 +44,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         setProfile(loaded);
         // A username the user didn't choose (Google, taken meanwhile, old random
         // suffix): ask once to keep or change it, then come back here.
-        if (!loaded.usernameConfirmed) router.replace(`/username?next=${encodeURIComponent(window.location.pathname + window.location.search)}`);
+        // Only an explicit false: an older API without this field must not trap users here.
+        if (loaded.usernameConfirmed === false) router.replace(`/username?next=${encodeURIComponent(window.location.pathname + window.location.search)}`);
       })
       .catch(() => undefined);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- once per app load
@@ -114,19 +115,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <div className="ml-auto flex min-w-0 flex-1 items-center justify-end gap-3 sm:gap-4">
               <form onSubmit={search} className="relative min-w-0 flex-1 sm:max-w-56 lg:max-w-72">
                 <Search className="absolute left-4 top-1/2 size-5 -translate-y-1/2 text-slate-400" />
-                <input name="query" aria-label="Search" placeholder="Search..." className="min-h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-12 pr-4 outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-100" />
+                <input name="query" aria-label="Cari jasa atau lapak" placeholder="Cari jasa atau lapak..." className="min-h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-12 pr-4 outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-100" />
               </form>
               <div ref={menuRef} className="relative shrink-0">
                 <button
                   type="button"
-                  aria-label="Account menu"
+                  aria-label="Menu akun"
                   aria-expanded={menuOpen}
                   aria-haspopup="menu"
                   onClick={() => setMenuOpen((current) => !current)}
                   className="flex size-11 items-center justify-center rounded-full border border-slate-200 bg-slate-50 p-0.5 transition hover:border-orange-300 hover:bg-orange-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-orange-200"
                 >
                   {profile?.avatarUrl ? (
-                    <Image unoptimized src={profile.avatarUrl} alt="Profile" width={40} height={40} className="size-10 rounded-full object-cover" />
+                    <Image unoptimized src={profile.avatarUrl} alt="Foto profil" width={40} height={40} className="size-10 rounded-full object-cover" />
                   ) : (
                     <span className="grid size-10 place-items-center rounded-full bg-slate-900 text-xs font-bold text-white">{initials}</span>
                   )}
@@ -135,24 +136,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 {menuOpen && (
                   <div className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
                     <div className="border-b border-slate-200 px-3 py-2">
-                      <p className="text-xs font-semibold uppercase tracking-[.15em] text-slate-400">Account</p>
+                      <p className="text-xs font-semibold uppercase tracking-[.15em] text-slate-400">Akun</p>
                       <p className="mt-1 truncate text-sm font-semibold text-slate-900">{profile?.fullName || profile?.username || "Pengguna"}</p>
                     </div>
                     <div className="py-1.5">
                       <Link href="/profile" onClick={() => setMenuOpen(false)} className="flex items-center justify-between px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-950">
-                        <span>Manage Account</span>
+                        <span>Kelola akun</span>
                         <ChevronDown className="size-4 rotate-[-90deg]" />
                       </Link>
                       <Link href="/activity" onClick={() => setMenuOpen(false)} className="flex items-center justify-between px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-950">
-                        <span>Activities</span>
+                        <span>Aktivitas</span>
                         <ChevronDown className="size-4 rotate-[-90deg]" />
                       </Link>
-                      <button type="button" onClick={() => setMenuOpen(false)} className="flex w-full items-center justify-between px-3 py-2 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-950">
-                        <span>Settings</span>
-                        <ChevronDown className="size-4 rotate-[-90deg]" />
-                      </button>
                       <button type="button" onClick={() => { setMenuOpen(false); void logout(); }} className="flex w-full items-center justify-between px-3 py-2 text-left text-sm font-medium text-red-600 transition hover:bg-red-50">
-                        <span>Logout</span>
+                        <span>Keluar</span>
                         <LogOut className="size-4" />
                       </button>
                     </div>

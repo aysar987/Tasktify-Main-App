@@ -47,12 +47,13 @@ export default function UsernamePage() {
       try {
         const loaded = await getProfile();
         if (!active) return;
-        if (loaded.usernameConfirmed) {
+        if (loaded.usernameConfirmed !== false) {
           router.replace(nextPath());
           return;
         }
         const wanted = normalizeUsername(String(data.session.user.user_metadata?.username ?? ""));
-        const lostChoice = Boolean(wanted) && wanted !== loaded.username;
+        // Old accounts got "name_xxxxxxxx" automatically: that is not a name taken by someone else.
+        const lostChoice = Boolean(wanted) && wanted !== loaded.username && !hasRandomSuffix(loaded.username);
         setRequested(lostChoice ? wanted : "");
         setProfile(loaded);
         // Start from the name they asked for (to show alternatives), else from the current one.

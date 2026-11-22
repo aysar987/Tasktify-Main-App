@@ -331,7 +331,7 @@ export function AdminBannerManager() {
               <button
                 type="button"
                 onClick={() => startEdit(banner)}
-                aria-label="Edit banner"
+                aria-label="Ubah banner"
                 className="grid size-10 shrink-0 place-items-center rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50"
               >
                 <Pencil className="size-4" />

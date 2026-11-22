@@ -41,15 +41,20 @@ const LEGACY_TITLE_WITH_ID = /^Task TSK-\d+ /;
 
 /**
  * Notifications sent before the wording fix contain raw status values
- * ("Status task berubah menjadi history.") and task ids in the title. New
+ * ("Status task berubah menjadi history."), task ids in the title, and
+ * "client" instead of "klien". New
  * notifications are written as sentences by the backend; this only cleans up
  * the old ones already stored.
  */
 export function readableNotification(title: string, body: string) {
   return {
     title: title.replace(LEGACY_TITLE_WITH_ID, "Task "),
-    body: body.replace(LEGACY_STATUS_SENTENCE, (_, status: string) =>
-      isKnownTaskStatus(status) ? `Status task: ${taskStatusLabel(status)}.` : `${taskStatusLabel(status)}.`,
-    ),
+    body: body
+      .replace(LEGACY_STATUS_SENTENCE, (_, status: string) =>
+        isKnownTaskStatus(status) ? `Status task: ${taskStatusLabel(status)}.` : `${taskStatusLabel(status)}.`,
+      )
+      // Older notices said "client"; the app says "klien".
+      .replace(/\bClient\b/g, "Klien")
+      .replace(/\bclient\b/g, "klien"),
   };
 }

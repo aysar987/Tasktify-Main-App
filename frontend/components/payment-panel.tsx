@@ -127,7 +127,7 @@ export function PaymentPanel({
       )}
 
       {perspective === "provider" && !payment && (
-        <p className="mt-3 text-xs text-slate-500">Menunggu client melakukan pembayaran.</p>
+        <p className="mt-3 text-xs text-slate-500">Menunggu klien melakukan pembayaran.</p>
       )}
       {perspective === "provider" && cashPendingLock && (
         <button type="button" disabled={loading} onClick={confirmCash} className={`${primaryButton} mt-4 w-full`}>
@@ -135,7 +135,7 @@ export function PaymentPanel({
         </button>
       )}
       {perspective === "provider" && payment?.method === "online" && payment.status === "pending" && (
-        <p className="mt-3 text-xs text-slate-500">Menunggu client menyelesaikan pembayaran online.</p>
+        <p className="mt-3 text-xs text-slate-500">Menunggu klien menyelesaikan pembayaran online.</p>
       )}
     </section>
   );
