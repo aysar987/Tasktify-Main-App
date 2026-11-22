@@ -1,8 +1,10 @@
 "use client";
 
 import { ArrowLeftRight, ChevronDown, Search, Store } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { getMarketplaceListings } from "@/lib/api";
+import { MARKETPLACE_PAGE_SIZE, MARKETPLACE_SEARCH_MAX, getMarketplaceListings } from "@/lib/api";
+import { userErrorMessage } from "@/lib/errors";
 import { marketplaceCategories } from "@/lib/marketplace-categories";
 import { MarketplaceListingCard } from "@/components/marketplace-listing-card";
 import type { MarketplaceListing } from "@/types";
@@ -19,6 +21,9 @@ export function MarketplaceBrowser({ initialQuery = "" }: { initialQuery?: strin
   const [query, setQuery] = useState(initialQuery);
   const [listings, setListings] = useState<MarketplaceListing[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  // True while the server may have more results than loaded so far.
+  const [hasMore, setHasMore] = useState(false);
   const [error, setError] = useState("");
 
   const [feeSort, setFeeSort] = useState<FeeSort>("default");
@@ -35,9 +40,11 @@ export function MarketplaceBrowser({ initialQuery = "" }: { initialQuery?: strin
       setLoading(true);
       setError("");
       try {
-        setListings(await getMarketplaceListings(query));
+        const page = await getMarketplaceListings(query);
+        setListings(page);
+        setHasMore(page.length === MARKETPLACE_PAGE_SIZE);
       } catch (cause) {
-        setError(cause instanceof Error ? cause.message : "Daftar marketplace gagal dimuat.");
+        setError(userErrorMessage(cause, "Daftar marketplace gagal dimuat."));
       } finally {
         setLoading(false);
       }
@@ -79,6 +86,26 @@ export function MarketplaceBrowser({ initialQuery = "" }: { initialQuery?: strin
   }, [listings, selectedCategories, verifiedOnly, relevanceSort, feeSort]);
 
   const visible = filtered.slice(0, visibleCount);
+  const searchTerm = query.trim();
+
+  // Show the next loaded lapaks, fetching the next page from the server when needed.
+  async function loadMore() {
+    if (filtered.length > visibleCount || !hasMore) {
+      setVisibleCount((count) => count + PAGE_SIZE);
+      return;
+    }
+    setLoadingMore(true);
+    try {
+      const page = await getMarketplaceListings(query, "", listings.length);
+      setListings((current) => [...current, ...page.filter((item) => !current.some((existing) => existing.id === item.id))]);
+      setHasMore(page.length === MARKETPLACE_PAGE_SIZE);
+      setVisibleCount((count) => count + PAGE_SIZE);
+    } catch (cause) {
+      setError(userErrorMessage(cause, "Daftar marketplace gagal dimuat."));
+    } finally {
+      setLoadingMore(false);
+    }
+  }
   const activeFilterCount = selectedCategories.length + (verifiedOnly ? 1 : 0);
 
   function toggleCategory(item: string) {
@@ -95,11 +122,12 @@ export function MarketplaceBrowser({ initialQuery = "" }: { initialQuery?: strin
         <Search className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-slate-400" />
         <input
           value={query}
+          maxLength={MARKETPLACE_SEARCH_MAX}
           onChange={(event) => {
             setQuery(event.target.value);
             setVisibleCount(PAGE_SIZE);
           }}
-          placeholder="Search..."
+          placeholder="Cari lapak atau jasa, misalnya keran"
           className="min-h-12 w-full rounded-2xl border-0 bg-slate-100 pl-12 pr-4 text-base outline-none placeholder:text-slate-400 focus:ring-4 focus:ring-orange-100"
         />
       </label>
@@ -259,19 +287,39 @@ export function MarketplaceBrowser({ initialQuery = "" }: { initialQuery?: strin
       {!loading && !error && filtered.length === 0 && (
         <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center">
           <Store className="mx-auto size-9 text-slate-400" />
-          <h2 className="mt-4 font-[var(--font-manrope)] text-xl font-extrabold">Belum ada lapak yang cocok</h2>
-          <p className="mt-2 text-slate-500">Coba ubah kata pencarian atau pilih kategori lain.</p>
+          {searchTerm ? (
+            <>
+              <h2 className="mt-4 font-[var(--font-manrope)] text-xl font-extrabold">Tidak ada hasil untuk &ldquo;{searchTerm}&rdquo;</h2>
+              <ul className="mx-auto mt-3 max-w-sm space-y-1 text-left text-sm text-slate-500">
+                <li>• Periksa ejaan kata pencarian.</li>
+                <li>• Coba kata yang lebih umum, misalnya &ldquo;pipa&rdquo; atau &ldquo;listrik&rdquo;.</li>
+                <li>• Atau buat task, supaya penyedia yang bisa membantu mengambilnya.</li>
+              </ul>
+              <Link
+                href="/create-task"
+                className="mt-5 inline-flex min-h-11 items-center rounded-xl bg-orange-600 px-5 text-sm font-bold text-white hover:bg-orange-700"
+              >
+                Buat task
+              </Link>
+            </>
+          ) : (
+            <>
+              <h2 className="mt-4 font-[var(--font-manrope)] text-xl font-extrabold">Belum ada lapak yang cocok</h2>
+              <p className="mt-2 text-slate-500">Coba pilih kategori lain atau hapus filter.</p>
+            </>
+          )}
         </div>
       )}
 
-      {!loading && filtered.length > visible.length && (
+      {!loading && (filtered.length > visible.length || (hasMore && filtered.length > 0)) && (
         <div className="mt-6 flex justify-center">
           <button
             type="button"
-            onClick={() => setVisibleCount((count) => count + PAGE_SIZE)}
-            className="min-h-11 cursor-pointer rounded-xl border border-slate-300 bg-white px-6 text-sm font-bold text-slate-700 transition hover:border-orange-400 hover:text-orange-700"
+            disabled={loadingMore}
+            onClick={() => void loadMore()}
+            className="min-h-11 cursor-pointer rounded-xl border border-slate-300 bg-white px-6 text-sm font-bold text-slate-700 transition hover:border-orange-400 hover:text-orange-700 disabled:opacity-50"
           >
-            Muat lebih banyak
+            {loadingMore ? "Memuat..." : "Muat lebih banyak"}
           </button>
         </div>
       )}

@@ -7,19 +7,11 @@ import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
 import { getMyMarketplaceListing, getProfile, saveMarketplaceListing } from "@/lib/api";
 import { LISTING_LIMITS as L, emptyMessage, labelProps, normalizeWhatsApp } from "@/lib/forms/listing";
 import { marketplaceCategories } from "@/lib/marketplace-categories";
+import { LISTING_DAYS, hasAnyHours, type DayHours, type DayKey } from "@/lib/opening-hours";
 import type { AccountVerification, MarketplaceListing, MarketplaceOperatingHours, MarketplaceListingService } from "@/types";
 import { FieldLabelText, PageHeader, RequiredNote, inputClass, primaryButton } from "./ui";
 import { VerificationGate } from "./verification-gate";
 
-const weekdays = [
-  ["monday", "Senin"],
-  ["tuesday", "Selasa"],
-  ["wednesday", "Rabu"],
-  ["thursday", "Kamis"],
-  ["friday", "Jumat"],
-  ["saturday", "Sabtu"],
-  ["sunday", "Minggu"],
-] as const;
 const serviceUnits = [
   ["per_pasangan", "Per pasang"],
   ["per_item", "Per item"],
@@ -44,15 +36,41 @@ const emptyService = {
 };
 type ServiceDraft = typeof emptyService;
 type ServiceType = (typeof serviceTypeOptions)[number][0];
-type DayKey = (typeof weekdays)[number][0];
-type HoursDay = NonNullable<MarketplaceOperatingHours[DayKey]>;
+/** One day in the form; "unset" days are left out when saving. Times are kept while switching states. */
+type HoursDay = { state: "unset" | DayHours["state"]; openTime: string; closeTime: string };
 type FormOperatingHours = Record<DayKey, HoursDay>;
+const hourStates: [HoursDay["state"], string][] = [
+  ["unset", "Belum diatur"],
+  ["open", "Buka"],
+  ["open24", "Buka 24 jam"],
+  ["closed", "Tutup"],
+];
 type FormErrors = Record<string, string>;
 
+// A new lapak starts with every day "not set", not "Tutup".
 const emptyHours = (): FormOperatingHours =>
   Object.fromEntries(
-    weekdays.map(([day]) => [day, { isOpen: false, openTime: "09:00", closeTime: "17:00" }]),
+    LISTING_DAYS.map(({ key }) => [key, { state: "unset", openTime: "08:00", closeTime: "17:00" }]),
   ) as FormOperatingHours;
+
+function toFormHours(saved: MarketplaceOperatingHours): FormOperatingHours {
+  const form = emptyHours();
+  for (const { key } of LISTING_DAYS) {
+    const day = saved[key];
+    if (day) form[key] = { ...form[key], ...day };
+  }
+  return form;
+}
+
+function toSavedHours(form: FormOperatingHours): MarketplaceOperatingHours {
+  const saved: MarketplaceOperatingHours = {};
+  for (const { key } of LISTING_DAYS) {
+    const day = form[key];
+    if (day.state === "open") saved[key] = { state: "open", openTime: day.openTime, closeTime: day.closeTime };
+    else if (day.state === "open24" || day.state === "closed") saved[key] = { state: day.state };
+  }
+  return saved;
+}
 
 function formatRupiah(value: number) {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(value);
@@ -101,7 +119,7 @@ export function MyListingManager() {
         setListing(current);
         setServices(current.services?.length ? current.services.map(toServiceDraft) : [{ ...emptyService }]);
         setServiceTypes(current.serviceTypes ?? []);
-        setHours({ ...emptyHours(), ...current.operatingHours });
+        setHours(toFormHours(current.operatingHours));
         setDescription(current.description);
         setWhatsApp(current.whatsapp ?? "");
       })
@@ -246,11 +264,13 @@ export function MyListingManager() {
       }
     }
 
-    for (const [day] of weekdays) {
+    for (const { key: day } of LISTING_DAYS) {
       const dayHours = hours[day];
-      if (dayHours.isOpen && (!dayHours.openTime || !dayHours.closeTime || dayHours.closeTime <= dayHours.openTime)) {
-        next[`hours.${day}`] = "Jam tutup harus setelah jam buka.";
-      }
+      if (dayHours.state !== "open") continue;
+      // An earlier closing time is fine: the lapak closes after midnight.
+      if (!dayHours.openTime || !dayHours.closeTime) next[`hours.${day}`] = "Isi jam buka dan jam tutup.";
+      else if (dayHours.closeTime === dayHours.openTime)
+        next[`hours.${day}`] = "Jam tutup tidak boleh sama dengan jam buka. Pilih \"Buka 24 jam\" bila lapak buka seharian.";
     }
 
     let activeValidServices = 0;
@@ -314,7 +334,7 @@ export function MyListingManager() {
         whatsapp: normalizeWhatsApp(whatsApp),
         fullAddress: String(form.get("fullAddress")).trim(),
         serviceTypes,
-        operatingHours: hours,
+        operatingHours: toSavedHours(hours),
         instagramUrl: String(form.get("instagramUrl")).trim(),
         tiktokUrl: String(form.get("tiktokUrl")).trim(),
         termsWarranty: String(form.get("termsWarranty")).trim(),
@@ -329,6 +349,7 @@ export function MyListingManager() {
         })),
       });
       setListing(saved);
+      setHours(toFormHours(saved.operatingHours));
       setServices(saved.services?.length ? saved.services.map(toServiceDraft) : [{ ...emptyService }]);
       setWhatsApp(saved.whatsapp ?? "");
       setImage(undefined);
@@ -385,6 +406,12 @@ export function MyListingManager() {
           className="max-w-4xl space-y-6 rounded-2xl border border-slate-200 bg-white p-5 md:p-7"
         >
           <ListingStatusBanner listing={listing} />
+          {listing && !hasAnyHours(listing.operatingHours) && (
+            <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+              Atur jam buka agar pelanggan tahu kapan lapak kamu buka.{" "}
+              <a href="#jam-operasional" className="font-bold underline">Atur sekarang</a>
+            </p>
+          )}
           <RequiredNote />
 
           <div className="grid gap-5 md:grid-cols-2">
@@ -629,64 +656,83 @@ export function MyListingManager() {
             </div>
           </section>
 
-          <section className="border-t border-slate-200 pt-5">
+          <section id="jam-operasional" className="scroll-mt-28 border-t border-slate-200 pt-5">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
                 <h2 className="text-sm font-bold text-slate-700">Jam operasional</h2>
-                <p className="mt-1 text-xs text-slate-500">Atur jam buka dan tutup untuk setiap hari.</p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Atur satu hari, lalu terapkan ke semua hari dan ubah hari yang berbeda. Waktu dalam WITA.
+                </p>
               </div>
               <div className="flex items-center gap-2">
                 <select aria-label="Hari sumber jam operasional" value={copyDay} onChange={(event) => setCopyDay(event.target.value as DayKey)} className="min-h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm">
-                  {weekdays.map(([day, label]) => <option key={day} value={day}>{label}</option>)}
+                  {LISTING_DAYS.map(({ key, label }) => <option key={key} value={key}>{label}</option>)}
                 </select>
                 <button
                   type="button"
                   onClick={() => {
                     setDirty(true);
                     const source = hours[copyDay];
-                    setHours(Object.fromEntries(weekdays.map(([day]) => [day, { ...source }])) as FormOperatingHours);
+                    setHours(Object.fromEntries(LISTING_DAYS.map(({ key }) => [key, { ...source }])) as FormOperatingHours);
+                    setErrors((current) => Object.fromEntries(Object.entries(current).filter(([key]) => !key.startsWith("hours."))));
                   }}
                   className="min-h-10 rounded-xl border border-slate-300 bg-white px-3 text-sm font-bold text-slate-700"
                 >
-                  Salin ke semua hari
+                  Terapkan ke semua hari
                 </button>
               </div>
             </div>
             <div className="mt-4 divide-y divide-slate-100 rounded-xl border border-slate-200">
-              {weekdays.map(([day, label]) => (
-                <div key={day} className="grid gap-3 p-3 sm:grid-cols-[1fr_1fr_1fr] sm:items-center">
-                  <label className="inline-flex items-center gap-3 text-sm font-bold text-slate-700">
-                    <input data-validation-key={`hours.${day}`} type="checkbox" checked={hours[day].isOpen} onChange={(event) => updateHours(day, { isOpen: event.target.checked })} className="size-4 accent-orange-600" />
-                    {label}
-                    <span className="font-normal text-slate-500">{hours[day].isOpen ? "Buka" : "Tutup"}</span>
-                  </label>
-                  {hours[day].isOpen ? (
-                    <>
-                      <label className="text-xs font-semibold text-slate-600">Jam buka
-                        <input
-                          data-validation-key={`hours.${day}`}
-                          type="time"
-                          value={hours[day].openTime}
-                          onChange={(event) => updateHours(day, { openTime: event.target.value })}
-                          aria-invalid={Boolean(errors[`hours.${day}`])}
-                          className="mt-1 min-h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm"
-                        />
-                      </label>
-                      <label className="text-xs font-semibold text-slate-600">Jam tutup
-                        <input
-                          data-validation-key={`hours.${day}`}
-                          type="time"
-                          value={hours[day].closeTime}
-                          onChange={(event) => updateHours(day, { closeTime: event.target.value })}
-                          aria-invalid={Boolean(errors[`hours.${day}`])}
-                          className="mt-1 min-h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm"
-                        />
-                        <InlineError message={errors[`hours.${day}`]} />
-                      </label>
-                    </>
-                  ) : <p className="text-sm text-slate-400 sm:col-span-2">Tutup</p>}
-                </div>
-              ))}
+              {LISTING_DAYS.map(({ key: day, label }) => {
+                const dayHours = hours[day];
+                return (
+                  <div key={day} className="grid gap-3 p-3 sm:grid-cols-[1fr_1fr_1fr] sm:items-start">
+                    <label className="text-sm font-bold text-slate-700">
+                      {label}
+                      <select
+                        data-validation-key={`hours.${day}`}
+                        value={dayHours.state}
+                        onChange={(event) => updateHours(day, { state: event.target.value as HoursDay["state"] })}
+                        className="mt-1 min-h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm font-normal"
+                      >
+                        {hourStates.map(([state, stateLabel]) => <option key={state} value={state}>{stateLabel}</option>)}
+                      </select>
+                    </label>
+                    {dayHours.state === "open" ? (
+                      <>
+                        <label className="text-xs font-semibold text-slate-600">Jam buka
+                          <input
+                            data-validation-key={`hours.${day}`}
+                            type="time"
+                            value={dayHours.openTime}
+                            onChange={(event) => updateHours(day, { openTime: event.target.value })}
+                            aria-invalid={Boolean(errors[`hours.${day}`])}
+                            className="mt-1 min-h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm"
+                          />
+                        </label>
+                        <label className="text-xs font-semibold text-slate-600">Jam tutup
+                          <input
+                            data-validation-key={`hours.${day}`}
+                            type="time"
+                            value={dayHours.closeTime}
+                            onChange={(event) => updateHours(day, { closeTime: event.target.value })}
+                            aria-invalid={Boolean(errors[`hours.${day}`])}
+                            className="mt-1 min-h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm"
+                          />
+                          {dayHours.closeTime && dayHours.closeTime < dayHours.openTime && (
+                            <span className="mt-1 block font-normal text-slate-500">Tutup keesokan harinya.</span>
+                          )}
+                          <InlineError message={errors[`hours.${day}`]} />
+                        </label>
+                      </>
+                    ) : (
+                      <p className="self-center text-sm text-slate-400 sm:col-span-2">
+                        {dayHours.state === "open24" ? "Buka seharian" : dayHours.state === "closed" ? "Tutup" : "Ditampilkan sebagai \"-\" di lapak"}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </section>
 

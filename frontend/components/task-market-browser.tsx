@@ -43,10 +43,11 @@ export function TaskMarketBrowser({ initialQuery = "" }: { initialQuery?: string
   }, []);
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    // Case-insensitive partial match on the title, description (note) and area, like the lapak search.
+    const q = query.trim().replace(/\s+/g, " ").toLowerCase();
     return tasks.filter((task) => {
       if (!q) return true;
-      return task.title.toLowerCase().includes(q) || task.location.toLowerCase().includes(q);
+      return [task.title, task.note, task.location].some((text) => text.toLowerCase().includes(q));
     });
   }, [tasks, query]);
 
@@ -63,7 +64,7 @@ export function TaskMarketBrowser({ initialQuery = "" }: { initialQuery?: string
         <input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Cari nama task atau lokasi..."
+          placeholder="Cari nama task, catatan, atau area..."
           className="min-h-12 w-full rounded-2xl border-0 bg-slate-100 pl-12 pr-4 text-base outline-none placeholder:text-slate-400 focus:ring-4 focus:ring-orange-100"
         />
       </label>

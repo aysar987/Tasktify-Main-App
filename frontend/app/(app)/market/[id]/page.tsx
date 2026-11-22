@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { getMarketplaceListing } from "@/lib/api";
 import { rupiah, serviceUnitLabels } from "@/lib/format";
 import type { MarketplaceListing } from "@/types";
+import { OpeningHoursCard } from "@/components/opening-hours-card";
 import { RatingBadge } from "@/components/rating-badge";
 
 export default function MarketplaceListingDetailPage() {
@@ -114,21 +115,7 @@ export default function MarketplaceListingDetailPage() {
         </section>
 
         <section className="grid gap-4 sm:grid-cols-2">
-          <div className="rounded-[24px] bg-white p-6 shadow-sm">
-            <h2 className="font-[var(--font-manrope)] text-lg font-extrabold text-slate-950">Jam operasional</h2>
-            {Object.keys(listing.operatingHours).length > 0 ? (
-              <ul className="mt-3 space-y-2 text-sm text-slate-600">
-                {Object.entries(listing.operatingHours).map(([day, hours]) => (
-                <li key={day} className="flex justify-between gap-3">
-                  <span>{({ monday: "Senin", tuesday: "Selasa", wednesday: "Rabu", thursday: "Kamis", friday: "Jumat", saturday: "Sabtu", sunday: "Minggu" } as Record<string, string>)[day] ?? day}</span>
-                  <span>{hours?.isOpen ? `${hours.openTime}–${hours.closeTime}` : "Tutup"}</span>
-                </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="mt-3 text-sm text-slate-500">Jam operasional belum tersedia.</p>
-            )}
-          </div>
+          <OpeningHoursCard hours={listing.operatingHours} />
           <div className="space-y-4">
             {listing.termsWarranty && (
               <div className="rounded-[24px] bg-white p-6 shadow-sm">

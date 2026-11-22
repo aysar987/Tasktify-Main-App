@@ -1,3 +1,4 @@
+import { normalizeOperatingHours } from "@/lib/opening-hours";
 import { getSupabase } from "@/lib/supabase";
 import type { Banner, Conversation, Message, Notification, MarketplaceListing, MarketplaceListingService, Payment, PaymentMethod, Profile, Provider, ProviderVerificationStatus, Rating, Task, TaskClient, TaskLocation, TaskPerspective, TaskStatus, TermsStatus } from "@/types";
 
@@ -226,10 +227,21 @@ export async function transitionTask(
   );
 }
 
-export async function getMarketplaceListings(query = "", category = "") {
+/** Lapaks per page of results; the server returns at most 100 per request. */
+export const MARKETPLACE_PAGE_SIZE = 50;
+/** Longest search the server accepts. */
+export const MARKETPLACE_SEARCH_MAX = 100;
+
+/**
+ * Lapaks matching `query` in their name, category, location, description or
+ * services, best matches first. Returns one page; ask for the next with `offset`.
+ */
+export async function getMarketplaceListings(query = "", category = "", offset = 0) {
   const params = new URLSearchParams();
-  if (query.trim()) params.set("q", query.trim());
+  if (query.trim()) params.set("q", query.trim().slice(0, MARKETPLACE_SEARCH_MAX));
   if (category && category !== "Semua") params.set("category", category);
+  params.set("limit", String(MARKETPLACE_PAGE_SIZE));
+  if (offset > 0) params.set("offset", String(offset));
   const suffix = params.size ? `?${params.toString()}` : "";
   const listings = await apiRequest<MarketplaceListing[]>(`/marketplace/listings${suffix}`, {}, false);
   return listings.map(normalizeMarketplaceListing);
@@ -261,7 +273,8 @@ function normalizeMarketplaceListing(listing: MarketplaceListing): MarketplaceLi
     whatsapp: listing.whatsapp ?? "",
     fullAddress: listing.fullAddress ?? "",
     serviceTypes: Array.isArray(listing.serviceTypes) ? listing.serviceTypes : ["buyer_location"],
-    operatingHours: listing.operatingHours ?? {},
+    // Also reads hours saved in the old {isOpen} format.
+    operatingHours: normalizeOperatingHours(listing.operatingHours),
     instagramUrl: listing.instagramUrl ?? "",
     tiktokUrl: listing.tiktokUrl ?? "",
     termsWarranty: listing.termsWarranty ?? "",
@@ -276,7 +289,8 @@ function normalizeMarketplaceListing(listing: MarketplaceListing): MarketplaceLi
 }
 
 export async function getMyMarketplaceListing(): Promise<MarketplaceListing | null> {
-  return apiRequest<MarketplaceListing | null>("/me/marketplace-listing");
+  const listing = await apiRequest<MarketplaceListing | null>("/me/marketplace-listing");
+  return listing && { ...listing, operatingHours: normalizeOperatingHours(listing.operatingHours) };
 }
 
 export async function saveMarketplaceListing(payload: {

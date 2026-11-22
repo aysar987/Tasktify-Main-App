@@ -172,10 +172,8 @@ export type MarketplaceListingService = {
   isActive: boolean;
 };
 
-export type MarketplaceOperatingHours = Partial<Record<
-  "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday",
-  { isOpen: boolean; openTime: string; closeTime: string }
->>;
+/** Per day: open (with times), open 24 hours or closed; a missing day is "not set". See lib/opening-hours.ts. */
+export type MarketplaceOperatingHours = import("@/lib/opening-hours").OperatingHours;
 
 export type MarketplaceListing = {
   id: string;
