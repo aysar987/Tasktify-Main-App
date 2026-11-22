@@ -4,6 +4,7 @@ import { CalendarDays, Check, CircleDollarSign, LoaderCircle, MapPin } from "luc
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { TaskGallery } from "@/components/task-photos";
+import { Toast, useToast } from "@/components/toast";
 import { VerificationGate } from "@/components/verification-gate";
 import { PageHeader, primaryButton } from "@/components/ui";
 import { ApiError, VERIFICATION_ERROR_CODES, claimTask, getOpenTask, getProfile } from "@/lib/api";
@@ -16,6 +17,9 @@ export default function MarketplaceTaskDetailPage() {
   const [task, setTask] = useState<Task>();
   const [error, setError] = useState("");
   const [claiming, setClaiming] = useState(false);
+  // Set when the task can no longer be taken (taken by someone else or cancelled).
+  const [unavailable, setUnavailable] = useState("");
+  const { toast, show: showToast, close: closeToast } = useToast();
   // Set when the account must be verified before taking tasks.
   const [gate, setGate] = useState<AccountVerification>();
 
@@ -37,13 +41,26 @@ export default function MarketplaceTaskDetailPage() {
   }, [id]);
 
   async function claim() {
+    if (claiming) return;
     setClaiming(true);
     try {
       await claimTask(id);
+      showToast("success", "Task berhasil diambil");
       router.push(`/tasks/${id}`);
     } catch (cause) {
-      handleError(cause, "Task gagal diambil.");
       setClaiming(false);
+      if (cause instanceof ApiError && cause.code && VERIFICATION_ERROR_CODES.includes(cause.code)) {
+        handleError(cause, "Task gagal diambil.");
+        return;
+      }
+      // The task stays on screen; the error is shown as a toast.
+      const message =
+        cause instanceof ApiError && cause.code !== "INTERNAL_ERROR" ? cause.message : "Gagal mengambil task. Coba lagi.";
+      // Taken by someone else or cancelled meanwhile (not "you already have an active task").
+      if (cause instanceof ApiError && (cause.code === "NOT_FOUND" || cause.code === "CONFLICT")) {
+        setUnavailable(message);
+      }
+      showToast("error", message);
     }
   }
 
@@ -91,11 +108,20 @@ export default function MarketplaceTaskDetailPage() {
             <span className="block text-xs text-slate-500">Harga tetap</span>
             <strong className="text-lg text-slate-950">{rupiah(task.budget)}</strong>
           </div>
-          <p className="text-sm leading-6 text-slate-600">Alamat lengkap dan kontak client ditampilkan setelah Anda mengambil task ini.</p>
-          <button type="button" disabled={claiming} onClick={claim} className={`${primaryButton} w-full`}>
-            {claiming ? <LoaderCircle className="size-5 animate-spin" /> : <Check className="size-5" />} Ambil task ini
-          </button>
+          {unavailable ? (
+            <p role="status" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-700">
+              {unavailable} Task ini tidak bisa diambil lagi.
+            </p>
+          ) : (
+            <>
+              <p className="text-sm leading-6 text-slate-600">Alamat lengkap dan kontak client ditampilkan setelah Anda mengambil task ini.</p>
+              <button type="button" disabled={claiming} onClick={claim} className={`${primaryButton} w-full`}>
+                {claiming ? <LoaderCircle className="size-5 animate-spin" /> : <Check className="size-5" />} Ambil task ini
+              </button>
+            </>
+          )}
         </aside>
+        <Toast toast={toast} onClose={closeToast} />
       </div>
     </>
   );

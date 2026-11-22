@@ -30,6 +30,7 @@ type TaskResponse = {
   images?: string[];
   clientName?: string;
   client?: TaskClient;
+  endedAt?: string;
 };
 
 function mapTask(row: TaskResponse): Task {
@@ -50,6 +51,7 @@ function mapTask(row: TaskResponse): Task {
     images: row.images ?? [],
     clientName: row.clientName,
     client: row.client,
+    endedAt: row.endedAt,
   };
 }
 
@@ -168,10 +170,17 @@ export async function getOpenTask(id: string) {
   );
 }
 
+/** Task actions give up after this long, so a hung request ends in an error instead of a spinner. */
+const TASK_ACTION_TIMEOUT_MS = 20000;
+function taskActionSignal() {
+  return typeof AbortSignal.timeout === "function" ? AbortSignal.timeout(TASK_ACTION_TIMEOUT_MS) : undefined;
+}
+
 export async function claimTask(id: string) {
   return mapTask(
     await apiRequest<TaskResponse>(`/tasks/${encodeURIComponent(id)}/claim`, {
       method: "POST",
+      signal: taskActionSignal(),
     }),
   );
 }
@@ -185,6 +194,7 @@ export async function cancelTask(id: string) {
   return mapTask(
     await apiRequest<TaskResponse>(`/tasks/${encodeURIComponent(id)}/cancel`, {
       method: "POST",
+      signal: taskActionSignal(),
     }),
   );
 }
@@ -197,6 +207,7 @@ export async function transitionTask(
   return mapTask(
     await apiRequest<TaskResponse>(`/tasks/${encodeURIComponent(id)}/transition`, {
       method: "POST",
+      signal: taskActionSignal(),
       // cashReceived with "complete" confirms the cash payment in the same action.
       body: JSON.stringify({ transition, cashReceived: options.cashReceived ?? false }),
     }),

@@ -50,6 +50,8 @@ export type Task = {
   clientName?: string;
   /** Only sent to the provider assigned to the task and admins. */
   client?: TaskClient;
+  /** When a finished, cancelled or rejected task ended (ISO time). */
+  endedAt?: string;
 };
 
 export type Profile = {

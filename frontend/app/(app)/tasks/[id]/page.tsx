@@ -16,6 +16,7 @@ import { getTask } from "@/lib/api";
 import { rupiah } from "@/lib/format";
 import type { Task } from "@/types";
 import { AssignedProviderCard, NoProviderCard, TaskClientCard } from "@/components/task-people";
+import { TaskEndedNotice } from "@/components/task-status-notice";
 
 export default function TaskDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -45,6 +46,9 @@ export default function TaskDetailPage() {
   // one task and the provider of another.
   const perspective = task.perspective ?? "client";
   const isAdmin = perspective === "admin";
+  // Cancelled and rejected tasks get one status block and nothing that says "open".
+  const ended = task.status === "cancelled" || task.status === "rejected";
+  const working = task.status === "scheduled" || task.status === "ongoing";
   const location =
     task.location ||
     (task.addressHidden === "expired"
@@ -96,12 +100,14 @@ export default function TaskDetailPage() {
           </section>
         </div>
         <aside className="h-fit space-y-5 xl:sticky xl:top-28">
+          <TaskEndedNotice task={task} perspective={perspective} />
           {/* The assigned provider sees the client; the client sees the provider; admins see both. */}
           {perspective === "provider" ? (
             task.client && <TaskClientCard client={task.client} task={task} showChat />
-          ) : task.provider ? (
-            <AssignedProviderCard provider={task.provider} />
-          ) : task.status === "awaiting_payment" ? (
+          ) : task.status === "rejected" ? null : task.provider ? (
+            // A cancelled task no longer has anyone "bertugas"; the rejection notice names the provider.
+            <AssignedProviderCard provider={task.provider} title={ended ? "Penyedia" : undefined} />
+          ) : ended ? null : task.status === "awaiting_payment" ? (
             <section className="rounded-2xl border border-amber-200 bg-amber-50 p-6">
               <h2 className="font-extrabold">Menunggu pembayaran</h2>
               <p className="mt-2 text-sm leading-6 text-slate-600">
@@ -116,19 +122,23 @@ export default function TaskDetailPage() {
           )}
           {!isAdmin && (
             <>
-              {(task.provider || task.status === "awaiting_payment") &&
-                task.status !== "cancelled" &&
-                task.status !== "rejected" && (
-                  <PaymentPanel taskId={task.id} amount={task.budget} perspective={perspective} />
-                )}
+              {(task.provider || task.status === "awaiting_payment") && !ended && (
+                <PaymentPanel taskId={task.id} amount={task.budget} perspective={perspective} />
+              )}
               <TaskActions
                 taskId={task.id}
                 status={task.status}
                 perspective={perspective}
                 providerId={task.provider?.id}
-                onStatus={(status) => setTask({ ...task, status })}
+                onStatus={(status) => {
+                  // Show the new status right away, then reload for details such as when it ended.
+                  setTask((current) => (current ? { ...current, status } : current));
+                  getTask(id).then(setTask).catch(() => undefined);
+                }}
               />
-              <LiveLocation taskId={task.id} perspective={perspective} active={task.status === "ongoing"} />
+              {task.provider && working && (
+                <LiveLocation taskId={task.id} perspective={perspective} active={task.status === "ongoing"} />
+              )}
             </>
           )}
         </aside>

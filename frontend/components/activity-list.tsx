@@ -1,23 +1,25 @@
 "use client";
 
-import { CheckCircle2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { getTasks } from "@/lib/api";
+import { TASK_STATUS_LABELS } from "@/lib/task-status";
 import type { Task, TaskStatus } from "@/types";
 import { secondaryButton } from "./ui";
 import { TaskCard } from "./task-card";
+import { Toast } from "./toast";
 
-// `slug` is the value of the Activity page's `?tab=` query param.
+// One tab per task status, labelled from the shared mapping (lib/task-status.ts).
+// `slug` is the value of the Activity page's `?tab=` query param (kept for old links).
 // `empty` completes the sentence "Belum ada task ..." for that tab.
 const tabs: { value: TaskStatus; label: string; slug: string; empty: string }[] = [
-  { value: "awaiting_payment", label: "Menunggu pembayaran", slug: "menunggu-pembayaran", empty: "yang menunggu pembayaran" },
-  { value: "ongoing", label: "Berjalan", slug: "berjalan", empty: "berjalan" },
-  { value: "scheduled", label: "Terjadwal", slug: "terjadwal", empty: "terjadwal" },
-  { value: "history", label: "Riwayat", slug: "riwayat", empty: "di riwayat" },
-  { value: "waiting", label: "Menunggu", slug: "menunggu", empty: "yang menunggu" },
-  { value: "cancelled", label: "Dibatalkan", slug: "dibatalkan", empty: "yang dibatalkan" },
-  { value: "rejected", label: "Ditolak", slug: "ditolak", empty: "yang ditolak" },
-];
+  { value: "awaiting_payment", slug: "menunggu-pembayaran", empty: "yang menunggu pembayaran" },
+  { value: "ongoing", slug: "berjalan", empty: "yang sedang dikerjakan" },
+  { value: "scheduled", slug: "terjadwal", empty: "yang terjadwal" },
+  { value: "history", slug: "riwayat", empty: "yang selesai" },
+  { value: "waiting", slug: "menunggu", empty: "yang menunggu penyedia" },
+  { value: "cancelled", slug: "dibatalkan", empty: "yang dibatalkan" },
+  { value: "rejected", slug: "ditolak", empty: "yang ditolak penyedia" },
+].map((tab) => ({ ...tab, value: tab.value as TaskStatus, label: TASK_STATUS_LABELS[tab.value as TaskStatus] }));
 
 const DEFAULT_TAB: TaskStatus = "ongoing";
 // Which non-empty tab an empty state points to first: things needing attention before history.
@@ -106,7 +108,7 @@ export function ActivityList({ tab, newTaskId }: { tab?: string; newTaskId?: str
             {suggestion ? (
               <>
                 <p className="mt-2 text-slate-500">
-                  {suggestion.value === "waiting" ? "Task baru kamu ada di Menunggu." : `Task kamu ada di ${suggestion.label}.`}
+                  {suggestion.value === "waiting" ? `Task baru kamu ada di ${suggestion.label}.` : `Task kamu ada di ${suggestion.label}.`}
                 </p>
                 <button type="button" onClick={() => setActive(suggestion.value)} className={`${secondaryButton} mt-5 rounded-full`}>
                   Lihat {suggestion.label}
@@ -118,18 +120,7 @@ export function ActivityList({ tab, newTaskId }: { tab?: string; newTaskId?: str
           </div>
         )}
       </div>
-      {toastOpen && (
-        <div
-          role="status"
-          className="fixed inset-x-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-50 mx-auto flex max-w-sm items-center gap-3 rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white shadow-xl lg:bottom-8"
-        >
-          <CheckCircle2 className="size-5 shrink-0 text-emerald-400" />
-          <span className="flex-1">Task berhasil dibuat</span>
-          <button type="button" aria-label="Tutup notifikasi" onClick={() => setToastOpen(false)} className="grid size-8 cursor-pointer place-items-center rounded-full hover:bg-white/10">
-            <X className="size-4" />
-          </button>
-        </div>
-      )}
+      <Toast toast={toastOpen ? { tone: "success", message: "Task berhasil dibuat" } : undefined} onClose={() => setToastOpen(false)} />
     </>
   );
 }

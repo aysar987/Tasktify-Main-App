@@ -1,6 +1,7 @@
 import { ArrowLeft, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { taskStatusLabel } from "@/lib/task-status";
 
 export const inputClass = "mt-2 min-h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-base text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-orange-600 focus:ring-4 focus:ring-orange-100";
 export const primaryButton = "inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-xl bg-orange-600 px-5 font-bold text-white shadow-sm shadow-orange-600/20 transition duration-150 hover:bg-orange-700 hover:shadow-md hover:shadow-orange-600/30 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-orange-200 disabled:cursor-not-allowed disabled:opacity-50";
@@ -32,8 +33,8 @@ export function StatusBadge({ status }: { status: string }) {
     cancelled: "bg-red-50 text-red-700 border-red-200",
     rejected: "bg-red-50 text-red-700 border-red-200",
   };
-  const labels: Record<string, string> = { awaiting_payment: "Menunggu pembayaran", ongoing: "Sedang berjalan", scheduled: "Terjadwal", history: "Selesai", waiting: "Menunggu", cancelled: "Dibatalkan", rejected: "Ditolak" };
-  return <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold ${styles[status] ?? styles.waiting}`}><CheckCircle2 className="size-3.5" />{labels[status] ?? status}</span>;
+  // Labels come from the one shared mapping (lib/task-status.ts).
+  return <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold ${styles[status] ?? "bg-slate-50 text-slate-700 border-slate-200"}`}><CheckCircle2 className="size-3.5" />{taskStatusLabel(status)}</span>;
 }
 
 /**

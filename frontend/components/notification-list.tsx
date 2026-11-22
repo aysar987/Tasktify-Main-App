@@ -4,6 +4,7 @@ import { Bell, CheckCheck } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getNotifications, markNotificationRead } from "@/lib/api";
+import { readableNotification } from "@/lib/task-status";
 import type { Notification } from "@/types";
 
 export function NotificationList() {
@@ -67,7 +68,10 @@ export function NotificationList() {
         </div>
       )}
       <div className="divide-y divide-slate-100">
-        {items.map((item) => (
+        {items.map((item) => {
+          // Older notifications may still contain raw status values.
+          const { title, body } = readableNotification(item.title, item.body);
+          return (
           <Link
             key={item.id}
             href={item.href || "#"}
@@ -76,14 +80,15 @@ export function NotificationList() {
           >
             <span className={`mt-1.5 size-2 shrink-0 rounded-full ${item.readAt ? "bg-transparent" : "bg-orange-600"}`} />
             <div className="min-w-0 flex-1">
-              <strong className="block text-sm">{item.title}</strong>
-              <p className="mt-1 text-sm leading-6 text-slate-600">{item.body}</p>
+              <strong className="block text-sm">{title}</strong>
+              <p className="mt-1 text-sm leading-6 text-slate-600">{body}</p>
               <span className="mt-2 block text-xs text-slate-400">
                 {new Intl.DateTimeFormat("id-ID", { dateStyle: "medium", timeStyle: "short" }).format(new Date(item.createdAt))}
               </span>
             </div>
           </Link>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

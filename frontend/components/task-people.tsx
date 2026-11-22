@@ -17,10 +17,10 @@ function initialsOf(name: string) {
 }
 
 /** "Penyedia bertugas": the provider assigned to the task, as the client (or an admin) sees it. */
-export function AssignedProviderCard({ provider }: { provider: Provider }) {
+export function AssignedProviderCard({ provider, title = "Penyedia bertugas" }: { provider: Provider; title?: string }) {
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-6">
-      <p className={cardTitle}>Penyedia bertugas</p>
+      <p className={cardTitle}>{title}</p>
       <div className="mt-5 flex items-center gap-4">
         <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-slate-900 font-bold text-white">
           {provider.initials}
