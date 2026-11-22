@@ -11,7 +11,8 @@ const apiBaseUrl = (
 type ApiEnvelope<T> = {
   success: boolean;
   data?: T;
-  error?: { code: string; message: string };
+  /** `field` names the input a validation error is about, e.g. "title". */
+  error?: { code: string; message: string; field?: string };
   requestId?: string;
 };
 
@@ -52,9 +53,12 @@ function mapTask(row: TaskResponse): Task {
   };
 }
 
-/** An API error that keeps the backend's error code (e.g. "CASH_CONFIRMATION_REQUIRED"). */
+/**
+ * An API error that keeps the backend's error code (e.g. "CASH_CONFIRMATION_REQUIRED")
+ * and, for validation errors, the field it is about (e.g. "title").
+ */
 export class ApiError extends Error {
-  constructor(message: string, readonly code?: string) {
+  constructor(message: string, readonly code?: string, readonly field?: string) {
     super(message);
     this.name = "ApiError";
   }
@@ -107,7 +111,7 @@ async function apiRequest<T>(
       const next = window.location.pathname + window.location.search;
       window.location.assign(`/terms-accept?next=${encodeURIComponent(next)}`);
     }
-    throw new ApiError(payload.error?.message ?? "Operasi gagal diproses.", payload.error?.code);
+    throw new ApiError(payload.error?.message ?? "Operasi gagal diproses.", payload.error?.code, payload.error?.field);
   }
   return payload.data as T;
 }

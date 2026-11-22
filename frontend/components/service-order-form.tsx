@@ -6,6 +6,7 @@ import Script from "next/script";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 import { createTask, getMarketplaceListing, getProfile } from "@/lib/api";
+import { nowForPicker, validateSchedule } from "@/lib/forms/task";
 import { rupiah, serviceUnitLabels } from "@/lib/format";
 import { midtransClientKey, midtransSnapScriptUrl } from "@/lib/midtrans";
 import type { MarketplaceListing, MarketplaceListingService, PaymentMethod } from "@/types";
@@ -15,13 +16,6 @@ import { RequiredNote, inputClass, primaryButton, secondaryButton } from "./ui";
 // Must match the backend's minimum task budget (createTaskInput.Budget).
 const MINIMUM_ORDER = 15000;
 const STEPS = ["Tempat & waktu", "Pembayaran", "Ringkasan"] as const;
-
-/** Earliest schedule the picker allows: now, in the datetime-local format. */
-function nowForPicker() {
-  const now = new Date();
-  now.setSeconds(0, 0);
-  return new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-}
 
 function formatSchedule(value: string) {
   return new Intl.DateTimeFormat("id-ID", { dateStyle: "full", timeStyle: "short" }).format(new Date(value));
@@ -86,8 +80,9 @@ export function ServiceOrderForm({ listingId, serviceIndex }: { listingId: strin
     if (current === 0) {
       if (!location.trim()) return "Tempat pengerjaan wajib diisi.";
       if (location.trim().length > 200) return "Tempat pengerjaan maksimal 200 karakter.";
-      if (!schedule) return "Jadwal wajib diisi.";
-      if (new Date(schedule).getTime() < Date.now()) return "Jadwal harus di waktu yang akan datang.";
+      // Same date/time rule as "Buat Task" (lib/forms/task.ts).
+      const scheduleError = validateSchedule(schedule);
+      if (scheduleError) return scheduleError;
     }
     if (current === 2 && total < MINIMUM_ORDER) {
       return `Total pesanan minimal ${rupiah(MINIMUM_ORDER)}.${quantityAdjustable ? " Tambah jumlah pesanan." : ""}`;

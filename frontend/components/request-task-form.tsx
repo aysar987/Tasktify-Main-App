@@ -5,8 +5,8 @@ import Image from "next/image";
 import Script from "next/script";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
-import { createTask } from "@/lib/api";
-import { TASK_LIMITS, taskLabel, validateTaskField } from "@/lib/forms/task";
+import { ApiError, createTask } from "@/lib/api";
+import { TASK_LIMITS, charCount, nowForPicker, taskLabel, validateTaskField } from "@/lib/forms/task";
 import { rupiah } from "@/lib/format";
 import { midtransClientKey, midtransSnapScriptUrl } from "@/lib/midtrans";
 import type { PaymentMethod } from "@/types";
@@ -17,6 +17,8 @@ const initialFields: TaskFields = { title: "", location: "", budget: "", schedul
 const REVIEW_STEP = 7;
 const PAYMENT_STEP = 8;
 const TOTAL_STEPS = PAYMENT_STEP;
+/** Step that holds each field, for showing a server-side error where it belongs. */
+const FIELD_STEPS: Record<string, number> = { title: 1, location: 2, budget: 3, schedule: 4, note: 5, image: 6, method: PAYMENT_STEP };
 
 function formatSchedule(value: string) {
   return new Intl.DateTimeFormat("id-ID", { dateStyle: "full", timeStyle: "short" }).format(new Date(value));
@@ -47,7 +49,9 @@ export function RequestTaskForm({ providerId }: { providerId?: string }) {
     });
   }
 
-  // Rules (required flags, limits) live in lib/forms/task.ts and match the backend.
+  // Rules (required flags, limits, messages) live in lib/forms/task.ts and
+  // match the backend. The schedule is checked against the current time, so
+  // checking again before sending catches a form left open past the schedule.
   function validate(current: number) {
     if (current === 1) return validateTaskField("title", fields.title);
     if (current === 2) return validateTaskField("location", fields.location);
@@ -116,11 +120,11 @@ export function RequestTaskForm({ providerId }: { providerId?: string }) {
     }
     try {
       const { task, payment } = await createTask({
-        title: fields.title,
-        location: fields.location,
+        title: fields.title.trim(),
+        location: fields.location.trim(),
         budget: Number(fields.budget),
         schedule: new Date(fields.schedule).toISOString(),
-        note: fields.note,
+        note: fields.note.trim(),
         providerId,
         method,
         image: image ?? undefined,
@@ -140,14 +144,20 @@ export function RequestTaskForm({ providerId }: { providerId?: string }) {
       }
       router.push(`/task-submitted?task=${encodeURIComponent(task.id)}`);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Task gagal dikirim.");
       setLoading(false);
+      // A field the server rejected: show its message on that field's step.
+      const fieldStep = cause instanceof ApiError && cause.field ? FIELD_STEPS[cause.field] : undefined;
+      if (fieldStep && fieldStep !== step) editStep(fieldStep);
+      setError(cause instanceof Error ? cause.message : "Task gagal dikirim.");
     }
   }
 
+  // Steps 1-6 show their error under the field; review and payment below the step.
+  const fieldError = step <= 6 ? error : "";
   const fieldProps = (name: keyof TaskFields) => ({
     name,
     value: fields[name],
+    "aria-invalid": Boolean(fieldError) || undefined,
     onChange: (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => update(name, event.target.value),
   });
 
@@ -172,32 +182,37 @@ export function RequestTaskForm({ providerId }: { providerId?: string }) {
             <div className="flex flex-col">
               <fieldset className="flex-1">
                 {step === 1 && (
-                  <StepField {...taskLabel("title")}>
+                  <StepField {...taskLabel("title")} error={fieldError} counter={{ count: charCount(fields.title), max: TASK_LIMITS.titleMax }}>
                     <input {...fieldProps("title")} required maxLength={TASK_LIMITS.titleMax} className={inputClass} placeholder="Contoh: Perbaiki pipa wastafel bocor" autoFocus />
                   </StepField>
                 )}
                 {step === 2 && (
-                  <StepField {...taskLabel("location")}>
+                  <StepField {...taskLabel("location")} error={fieldError}>
                     <input {...fieldProps("location")} required maxLength={TASK_LIMITS.locationMax} className={inputClass} placeholder="Alamat pengerjaan" autoFocus />
                   </StepField>
                 )}
                 {step === 3 && (
-                  <StepField {...taskLabel("budget")} helper="Minimal Rp15.000, kelipatan Rp500">
+                  <StepField {...taskLabel("budget")} helper="Minimal Rp15.000, kelipatan Rp500" error={fieldError}>
                     <input {...fieldProps("budget")} required type="number" min={TASK_LIMITS.budgetMin} step={TASK_LIMITS.budgetStep} className={inputClass} placeholder="Rp 500000" autoFocus />
                   </StepField>
                 )}
                 {step === 4 && (
-                  <StepField {...taskLabel("schedule")}>
-                    <input {...fieldProps("schedule")} required type="datetime-local" className={inputClass} autoFocus />
+                  <StepField {...taskLabel("schedule")} helper="Waktu mengikuti zona waktu perangkat Anda." error={fieldError}>
+                    <input {...fieldProps("schedule")} required type="datetime-local" min={nowForPicker()} className={inputClass} autoFocus />
                   </StepField>
                 )}
                 {step === 5 && (
-                  <StepField {...taskLabel("note")} helper="Semakin detail catatan Anda, semakin cepat penyedia yang tepat mengambil task ini.">
+                  <StepField
+                    {...taskLabel("note")}
+                    helper="Semakin detail catatan Anda, semakin cepat penyedia yang tepat mengambil task ini."
+                    error={fieldError}
+                    counter={{ count: charCount(fields.note), max: TASK_LIMITS.noteMax }}
+                  >
                     <textarea {...fieldProps("note")} required maxLength={TASK_LIMITS.noteMax} rows={5} className={`${inputClass} py-3`} placeholder="Jelaskan masalah, kondisi lokasi, dan hasil yang Anda harapkan..." autoFocus />
                   </StepField>
                 )}
                 {step === 6 && (
-                  <StepField {...taskLabel("image")} helper="Bantu penyedia memahami kondisi pekerjaan lewat foto.">
+                  <StepField {...taskLabel("image")} helper="Bantu penyedia memahami kondisi pekerjaan lewat foto." error={fieldError}>
                     <span className="mt-2 flex items-center gap-4">
                       <span className="relative flex h-24 w-36 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-dashed border-slate-300 bg-slate-50">
                         {imagePreview ? (
@@ -262,7 +277,7 @@ export function RequestTaskForm({ providerId }: { providerId?: string }) {
                   </>
                 )}
               </fieldset>
-              {error && <p role="alert" className="mt-4 text-sm font-semibold text-red-700">{error}</p>}
+              {error && !fieldError && <p role="alert" className="mt-4 text-sm font-semibold text-red-700">{error}</p>}
               <div className="mt-8 flex items-center justify-between gap-3 border-t border-slate-200 pt-5">
                 {step > 1 ? (
                   <button type="button" onClick={previous} className={`${secondaryButton} rounded-full`}>
@@ -321,17 +336,37 @@ export function StepField({
   label,
   helper,
   required = true,
+  error,
+  counter,
   children,
 }: {
   label: string;
   helper?: string;
   required?: boolean;
+  /** Shown under the field. */
+  error?: string;
+  /** Character counter, e.g. 12/160 (count after trimming spaces). */
+  counter?: { count: number; max: number };
   children: React.ReactNode;
 }) {
   return (
     <label className="block text-sm font-bold text-slate-700">
       <FieldLabelText label={label} required={required} />
       {children}
+      {(error || counter) && (
+        <span className="mt-2 flex items-start justify-between gap-3">
+          {error ? (
+            <span role="alert" className="text-sm font-semibold text-red-700">{error}</span>
+          ) : (
+            <span />
+          )}
+          {counter && (
+            <span className={`shrink-0 text-xs font-normal tabular-nums ${counter.count > counter.max ? "text-red-700" : "text-slate-500"}`}>
+              {counter.count}/{counter.max}
+            </span>
+          )}
+        </span>
+      )}
       {helper && <span className="mt-2 block text-xs font-normal leading-5 text-slate-500">{helper}</span>}
     </label>
   );
