@@ -22,20 +22,34 @@ export type Provider = {
   bio?: string;
 };
 
+/** Who is looking at a task, decided per task: the same account can be the client of one task and the provider of another. */
+export type TaskPerspective = "client" | "provider" | "admin";
+
+/** The client as shown to the provider assigned to the task ("Pemberi task") and to admins. */
+export type TaskClient = {
+  name: string;
+  avatarUrl?: string;
+};
+
 export type Task = {
   id: string;
   title: string;
+  /** Full address for the client, the assigned provider and admins; otherwise only the general area (may be empty). */
   location: string;
+  /** Why `location` is only the general area: not taken yet, or the task ended over 7 days ago. */
+  addressHidden?: "until_assigned" | "expired";
   budget: number;
   date: string;
   status: TaskStatus;
   provider?: Provider;
   note: string;
-  perspective?: "client" | "provider";
+  perspective?: TaskPerspective;
   /** API paths of the task photos; load with getTaskImageUrl. */
   images: string[];
-  /** Client name; only sent to the provider assigned to the task. */
+  /** Client name; only sent to the provider assigned to the task and admins. */
   clientName?: string;
+  /** Only sent to the provider assigned to the task and admins. */
+  client?: TaskClient;
 };
 
 export type Profile = {

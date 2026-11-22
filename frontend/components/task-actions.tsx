@@ -50,7 +50,7 @@ export function TaskActions({
     getTask(taskId)
       .then((task) => {
         setStatus(task.status);
-        setPerspective(task.perspective ?? "client");
+        setPerspective(task.perspective === "provider" ? "provider" : "client");
         setProviderId(task.provider?.id);
         setTask({ title: task.title, budget: task.budget, clientName: task.clientName });
         if (task.status === "history" && task.provider) {
@@ -74,7 +74,8 @@ export function TaskActions({
         >
           Task tidak aktif.
         </div>
-        {providerId && (
+        {/* The assigned provider opens the chat from the "Pemberi task" card. */}
+        {providerId && perspective !== "provider" && (
           <a href={chatHref} className={`${secondaryButton} w-full`}>
             <MessageSquareText className="size-5" /> Lihat percakapan
           </a>
@@ -190,9 +191,6 @@ export function TaskActions({
           >
             <X className="size-5" /> Tolak task
           </button>
-          <a href={chatHref} className={`${secondaryButton} w-full`}>
-            <MessageSquareText className="size-5" /> Hubungi klien
-          </a>
         </div>
       );
     if (status === "scheduled")
@@ -206,9 +204,6 @@ export function TaskActions({
           >
             <Play className="size-5" /> Mulai pekerjaan
           </button>
-          <a href={chatHref} className={`${secondaryButton} w-full`}>
-            <MessageSquareText className="size-5" /> Hubungi klien
-          </a>
           <button
             disabled={loading}
             onClick={cancel}
@@ -230,9 +225,6 @@ export function TaskActions({
           >
             <Check className="size-5" /> Tandai selesai
           </button>
-          <a href={chatHref} className={`${secondaryButton} w-full`}>
-            <MessageSquareText className="size-5" /> Hubungi klien
-          </a>
           {onlineUnpaid && (
             <p id="finish-blocked-reason" className="text-sm leading-6 text-slate-600">
               Pembayaran online dari client belum lunas. Task bisa ditandai selesai setelah pembayaran dikonfirmasi.
@@ -254,14 +246,8 @@ export function TaskActions({
           )}
         </div>
       );
-    return (
-      <div className="grid gap-3">
-        {errorBox}
-        <a href={chatHref} className={`${secondaryButton} w-full`}>
-          <MessageSquareText className="size-5" /> Hubungi klien
-        </a>
-      </div>
-    );
+    // Finished: the chat is in the "Pemberi task" card.
+    return errorBox || null;
   }
 
   // Client: after the provider finished a cash task, show what was confirmed and how to dispute it.

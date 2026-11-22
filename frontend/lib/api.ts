@@ -1,5 +1,5 @@
 import { getSupabase } from "@/lib/supabase";
-import type { Banner, Conversation, Message, Notification, MarketplaceListing, MarketplaceListingService, Payment, PaymentMethod, Profile, Provider, ProviderVerificationStatus, Rating, Task, TaskLocation, TaskStatus, TermsStatus } from "@/types";
+import type { Banner, Conversation, Message, Notification, MarketplaceListing, MarketplaceListingService, Payment, PaymentMethod, Profile, Provider, ProviderVerificationStatus, Rating, Task, TaskClient, TaskLocation, TaskPerspective, TaskStatus, TermsStatus } from "@/types";
 
 const apiBaseUrl = (
   process.env.NEXT_PUBLIC_API_URL ??
@@ -19,14 +19,16 @@ type TaskResponse = {
   id: string;
   title: string;
   location: string;
+  addressHidden?: Task["addressHidden"];
   budget: number;
   schedule: string;
   status: TaskStatus;
   provider?: Provider;
   note: string;
-  perspective?: "client" | "provider";
+  perspective?: TaskPerspective;
   images?: string[];
   clientName?: string;
+  client?: TaskClient;
 };
 
 function mapTask(row: TaskResponse): Task {
@@ -34,6 +36,7 @@ function mapTask(row: TaskResponse): Task {
     id: row.id,
     title: row.title,
     location: row.location,
+    addressHidden: row.addressHidden,
     budget: row.budget,
     date: new Intl.DateTimeFormat("id-ID", {
       dateStyle: "medium",
@@ -45,6 +48,7 @@ function mapTask(row: TaskResponse): Task {
     perspective: row.perspective,
     images: row.images ?? [],
     clientName: row.clientName,
+    client: row.client,
   };
 }
 

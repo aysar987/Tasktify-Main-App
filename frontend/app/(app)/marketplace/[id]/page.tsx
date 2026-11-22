@@ -66,7 +66,7 @@ export default function MarketplaceTaskDetailPage() {
           <h2 className="font-[var(--font-manrope)] text-xl font-extrabold">Informasi task</h2>
           <div className="mt-6 grid gap-5 sm:grid-cols-2">
             {[
-              { icon: MapPin, label: "Lokasi", value: task.location },
+              { icon: MapPin, label: "Area", value: task.location || "Ditampilkan setelah task diambil" },
               { icon: CalendarDays, label: "Jadwal", value: task.date },
               { icon: CircleDollarSign, label: "Anggaran", value: rupiah(task.budget) },
             ].map(({ icon: Icon, label, value }) => (
@@ -91,6 +91,7 @@ export default function MarketplaceTaskDetailPage() {
             <span className="block text-xs text-slate-500">Harga tetap</span>
             <strong className="text-lg text-slate-950">{rupiah(task.budget)}</strong>
           </div>
+          <p className="text-sm leading-6 text-slate-600">Alamat lengkap dan kontak client ditampilkan setelah Anda mengambil task ini.</p>
           <button type="button" disabled={claiming} onClick={claim} className={`${primaryButton} w-full`}>
             {claiming ? <LoaderCircle className="size-5 animate-spin" /> : <Check className="size-5" />} Ambil task ini
           </button>

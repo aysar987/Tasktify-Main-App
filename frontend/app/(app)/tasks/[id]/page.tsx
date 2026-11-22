@@ -4,7 +4,6 @@ import {
   CalendarDays,
   CircleDollarSign,
   MapPin,
-  ShieldCheck,
 } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -16,7 +15,7 @@ import { PageHeader, StatusBadge } from "@/components/ui";
 import { getTask } from "@/lib/api";
 import { rupiah } from "@/lib/format";
 import type { Task } from "@/types";
-import { RatingBadge } from "@/components/rating-badge";
+import { AssignedProviderCard, NoProviderCard, TaskClientCard } from "@/components/task-people";
 
 export default function TaskDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -42,6 +41,15 @@ export default function TaskDetailPage() {
     return (
       <p className="py-16 text-center text-slate-500">Memuat detail task...</p>
     );
+  // Decided by the backend per task: the same account can be the client of
+  // one task and the provider of another.
+  const perspective = task.perspective ?? "client";
+  const isAdmin = perspective === "admin";
+  const location =
+    task.location ||
+    (task.addressHidden === "expired"
+      ? "Alamat disembunyikan"
+      : "Ditampilkan setelah task diambil");
   return (
     <>
       <PageHeader
@@ -60,7 +68,7 @@ export default function TaskDetailPage() {
             </h2>
             <div className="mt-6 grid gap-5 sm:grid-cols-2">
               {[
-                { icon: MapPin, label: "Lokasi", value: task.location },
+                { icon: MapPin, label: "Lokasi", value: location },
                 { icon: CalendarDays, label: "Jadwal", value: task.date },
                 {
                   icon: CircleDollarSign,
@@ -88,29 +96,11 @@ export default function TaskDetailPage() {
           </section>
         </div>
         <aside className="h-fit space-y-5 xl:sticky xl:top-28">
-          {task.provider ? (
-            <section className="rounded-2xl border border-slate-200 bg-white p-6">
-              <p className="text-sm font-bold uppercase tracking-wider text-orange-700">
-                Penyedia bertugas
-              </p>
-              <div className="mt-5 flex items-center gap-4">
-                <span className="grid size-14 place-items-center rounded-2xl bg-slate-900 font-bold text-white">
-                  {task.provider.initials}
-                </span>
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <h2 className="font-[var(--font-manrope)] font-extrabold">
-                      {task.provider.name}
-                    </h2>
-                    <ShieldCheck className="size-4 text-blue-600" />
-                  </div>
-                  <p className="mt-1 text-sm text-slate-500">
-                    {task.provider.title}
-                  </p>
-                  <RatingBadge rating={task.provider.rating} reviewCount={task.provider.reviewCount} className="mt-2" />
-                </div>
-              </div>
-            </section>
+          {/* The assigned provider sees the client; the client sees the provider; admins see both. */}
+          {perspective === "provider" ? (
+            task.client && <TaskClientCard client={task.client} task={task} showChat />
+          ) : task.provider ? (
+            <AssignedProviderCard provider={task.provider} />
           ) : task.status === "awaiting_payment" ? (
             <section className="rounded-2xl border border-amber-200 bg-amber-50 p-6">
               <h2 className="font-extrabold">Menunggu pembayaran</h2>
@@ -119,26 +109,28 @@ export default function TaskDetailPage() {
               </p>
             </section>
           ) : (
-            <section className="rounded-2xl border border-amber-200 bg-amber-50 p-6">
-              <h2 className="font-extrabold">Menunggu penyedia</h2>
-              <p className="mt-2 text-sm leading-6 text-slate-600">
-                Task ini terbuka sampai penyedia menerima pekerjaan.
-              </p>
-            </section>
+            <NoProviderCard />
           )}
-          {(task.provider || task.status === "awaiting_payment") &&
-            task.status !== "cancelled" &&
-            task.status !== "rejected" && (
-              <PaymentPanel taskId={task.id} amount={task.budget} perspective={task.perspective ?? "client"} />
-            )}
-          <TaskActions
-            taskId={task.id}
-            status={task.status}
-            perspective={task.perspective}
-            providerId={task.provider?.id}
-            onStatus={(status) => setTask({ ...task, status })}
-          />
-          <LiveLocation taskId={task.id} perspective={task.perspective} active={task.status === "ongoing"} />
+          {isAdmin && task.client && (
+            <TaskClientCard client={task.client} task={task} showChat={false} />
+          )}
+          {!isAdmin && (
+            <>
+              {(task.provider || task.status === "awaiting_payment") &&
+                task.status !== "cancelled" &&
+                task.status !== "rejected" && (
+                  <PaymentPanel taskId={task.id} amount={task.budget} perspective={perspective} />
+                )}
+              <TaskActions
+                taskId={task.id}
+                status={task.status}
+                perspective={perspective}
+                providerId={task.provider?.id}
+                onStatus={(status) => setTask({ ...task, status })}
+              />
+              <LiveLocation taskId={task.id} perspective={perspective} active={task.status === "ongoing"} />
+            </>
+          )}
         </aside>
       </div>
     </>
