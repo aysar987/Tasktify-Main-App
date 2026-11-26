@@ -28,6 +28,7 @@ export function StatusBadge({ status }: { status: string }) {
     awaiting_payment: "bg-orange-50 text-orange-700 border-orange-200",
     ongoing: "bg-blue-50 text-blue-700 border-blue-200",
     scheduled: "bg-violet-50 text-violet-700 border-violet-200",
+    pending_confirmation: "bg-teal-50 text-teal-700 border-teal-200",
     history: "bg-emerald-50 text-emerald-700 border-emerald-200",
     waiting: "bg-amber-50 text-amber-800 border-amber-200",
     cancelled: "bg-red-50 text-red-700 border-red-200",

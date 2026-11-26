@@ -1,20 +1,25 @@
 "use client";
 
-import { Ban, Banknote, Check, Flag, LoaderCircle, MessageSquareText, Play, Star, X } from "lucide-react";
+import { Ban, Banknote, Check, Clock, Flag, LoaderCircle, MessageSquareText, Play, RotateCcw, Star, X } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { ApiError, cancelTask, getPayment, getTask, getTaskRating, rateTask, subscribePayment, transitionTask } from "@/lib/api";
+import { ApiError, cancelTask, confirmTaskCompletion, getPayment, getTask, getTaskRating, rateTask, rejectTaskCompletion, subscribePayment, transitionTask } from "@/lib/api";
 import { isConnectionError, userErrorMessage } from "@/lib/errors";
 import { rupiah } from "@/lib/format";
 import type { Payment, Rating, TaskStatus } from "@/types";
 import { Toast, useToast } from "./toast";
-import { primaryButton, secondaryButton } from "./ui";
+import { inputClass, primaryButton, secondaryButton } from "./ui";
 
 const SUPPORT_EMAIL = "admin@tasktify.id";
 const PAID_STATUSES = ["settlement", "capture", "released"];
 const ACTION_FAILED = "Gagal memperbarui task. Coba lagi.";
 const STATUS_CHANGED = "Status task sudah berubah. Halaman diperbarui.";
+// Same limits as the backend (task_confirmation.go).
+const REOPEN_REASON_MIN = 5;
+const REOPEN_REASON_MAX = 500;
+const dateTimeFormat = new Intl.DateTimeFormat("id-ID", { dateStyle: "medium", timeStyle: "short" });
 
-type StatusAction = "cancel" | "accept" | "reject" | "start" | "complete";
+// "confirm" and "reopen" are the client's answers to the provider's "complete".
+type StatusAction = "cancel" | "accept" | "reject" | "start" | "complete" | "confirm" | "reopen";
 type Action = StatusAction | "rate";
 
 const NEXT_STATUS: Record<StatusAction, TaskStatus> = {
@@ -22,14 +27,18 @@ const NEXT_STATUS: Record<StatusAction, TaskStatus> = {
   accept: "scheduled",
   reject: "rejected",
   start: "ongoing",
-  complete: "history",
+  complete: "pending_confirmation",
+  confirm: "history",
+  reopen: "ongoing",
 };
 const SUCCESS_MESSAGE: Record<StatusAction, string> = {
   cancel: "Task dibatalkan",
   accept: "Task diterima",
   reject: "Task ditolak",
   start: "Pekerjaan dimulai",
-  complete: "Task ditandai selesai",
+  complete: "Task ditandai selesai. Menunggu konfirmasi klien.",
+  confirm: "Task dikonfirmasi selesai",
+  reopen: "Task dikembalikan ke penyedia",
 };
 
 /**
@@ -77,6 +86,11 @@ export function TaskActions({
   const [payment, setPayment] = useState<Payment | null>();
   const [cashSheetOpen, setCashSheetOpen] = useState(false);
   const [cancelSheetOpen, setCancelSheetOpen] = useState(false);
+  const [confirmSheetOpen, setConfirmSheetOpen] = useState(false);
+  const [reopenSheetOpen, setReopenSheetOpen] = useState(false);
+  const [reopenReason, setReopenReason] = useState("");
+  // When a task waiting for the client's confirmation is confirmed automatically (ISO time).
+  const [deadline, setDeadline] = useState<string>();
   const [hint, setHint] = useState("");
   const { toast, show: showToast, close: closeToast } = useToast();
   const busy = pending !== null;
@@ -88,6 +102,7 @@ export function TaskActions({
         setPerspective(task.perspective === "provider" ? "provider" : "client");
         setProviderId(task.provider?.id);
         setTask({ title: task.title, budget: task.budget, clientName: task.clientName });
+        setDeadline(task.confirmationDeadline);
         if (task.status === "history" && task.provider) {
           getTaskRating(taskId).then(setExistingRating).catch(() => undefined);
         }
@@ -117,6 +132,7 @@ export function TaskActions({
     try {
       const latest = await getTask(taskId);
       setProviderId(latest.provider?.id);
+      setDeadline(latest.confirmationDeadline);
       changed(latest.status);
       return latest.status;
     } catch {
@@ -129,12 +145,13 @@ export function TaskActions({
    * confirmation on success, an error toast on failure (the task stays as it
    * was). When someone else changed the task meanwhile, it is reloaded.
    */
-  async function run(action: StatusAction, request: () => Promise<unknown>) {
+  async function run(action: StatusAction, request: () => Promise<{ confirmationDeadline?: string }>) {
     if (busy) return false;
     setPending(action);
     const before = status;
     try {
-      await request();
+      const updated = await request();
+      setDeadline(updated.confirmationDeadline);
       changed(NEXT_STATUS[action]);
       showToast("success", SUCCESS_MESSAGE[action]);
       return true;
@@ -148,6 +165,8 @@ export function TaskActions({
         const latest = await refresh();
         if (latest && latest !== before) {
           setCashSheetOpen(false);
+          setConfirmSheetOpen(false);
+          setReopenSheetOpen(false);
           showToast("error", STATUS_CHANGED);
           return false;
         }
@@ -174,6 +193,20 @@ export function TaskActions({
     setHint("");
     if (cashToConfirm) setCashSheetOpen(true);
     else void complete(false);
+  }
+  async function confirmCompletion() {
+    if (await run("confirm", () => confirmTaskCompletion(taskId))) {
+      setConfirmSheetOpen(false);
+      getPayment(taskId).then((value) => setPayment(value ?? null)).catch(() => undefined);
+    }
+  }
+  async function reopen() {
+    const reason = reopenReason.trim();
+    if (reason.length < REOPEN_REASON_MIN) return;
+    if (await run("reopen", () => rejectTaskCompletion(taskId, reason))) {
+      setReopenSheetOpen(false);
+      setReopenReason("");
+    }
   }
   function notYetPaid() {
     setCashSheetOpen(false);
@@ -284,9 +317,59 @@ export function TaskActions({
             )}
           </div>
         );
+      if (status === "pending_confirmation")
+        return (
+          <section role="status" className="rounded-xl border border-teal-200 bg-teal-50 p-4">
+            <p className="flex items-center gap-2 text-sm font-bold text-teal-900">
+              <Clock className="size-4" /> Menunggu konfirmasi klien
+            </p>
+            <p className="mt-2 text-sm leading-6 text-slate-700">
+              Klien sedang memeriksa hasil pekerjaan.
+              {payment?.method === "online" && " Pembayaran dicairkan setelah klien mengonfirmasi."}
+              {deadline && ` Jika tidak ada respons, task otomatis selesai pada ${dateTimeFormat.format(new Date(deadline))}.`}
+            </p>
+          </section>
+        );
       // Waiting for payment or finished: nothing to do; the chat is in the "Pemberi task" card.
       return null;
     }
+
+    // Client: the provider marked the task done; accept it or send it back.
+    if (status === "pending_confirmation")
+      return (
+        <div className="grid gap-3">
+          <section role="status" className="rounded-xl border border-teal-200 bg-teal-50 p-4">
+            <p className="flex items-center gap-2 text-sm font-bold text-teal-900">
+              <Check className="size-4" /> Penyedia menandai task ini selesai
+            </p>
+            <p className="mt-2 text-sm leading-6 text-slate-700">
+              Periksa hasil pekerjaannya.{" "}
+              {payment?.method === "cash" && payment.cashConfirmedAt
+                ? `Penyedia juga mencatat pembayaran tunai ${rupiah(payment.amount)} sudah diterima. `
+                : payment?.method === "online"
+                  ? "Pembayaran Anda baru diteruskan ke penyedia setelah Anda mengonfirmasi. "
+                  : ""}
+              {deadline && `Tanpa respons, task otomatis dianggap selesai pada ${dateTimeFormat.format(new Date(deadline))}.`}
+            </p>
+          </section>
+          <button type="button" disabled={busy} onClick={() => setConfirmSheetOpen(true)} className={`${primaryButton} w-full`}>
+            {icon("confirm", Check)} Konfirmasi selesai
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => setReopenSheetOpen(true)}
+            className={`${secondaryButton} w-full disabled:cursor-not-allowed disabled:opacity-50`}
+          >
+            {icon("reopen", RotateCcw)} Belum selesai
+          </button>
+          {providerId && (
+            <a href={chatHref} className={`${secondaryButton} w-full`}>
+              <MessageSquareText className="size-5" /> Hubungi penyedia
+            </a>
+          )}
+        </div>
+      );
 
     // Client: after the provider finished a cash task, show what was confirmed and how to dispute it.
     const cashConfirmedNotice = status === "history" && payment?.method === "cash" && payment.cashConfirmedAt && (
@@ -296,7 +379,7 @@ export function TaskActions({
         </p>
         <p className="mt-2 text-sm leading-6 text-slate-600">
           Penyedia menandai task ini selesai dan pembayaran tunai {rupiah(payment.amount)} diterima pada{" "}
-          {new Intl.DateTimeFormat("id-ID", { dateStyle: "medium", timeStyle: "short" }).format(new Date(payment.cashConfirmedAt))}.
+          {dateTimeFormat.format(new Date(payment.cashConfirmedAt))}.
         </p>
         <a
           href={reportMailto(taskId, task?.title, payment.amount)}
@@ -400,11 +483,59 @@ export function TaskActions({
           onCancel={() => setCancelSheetOpen(false)}
         />
       )}
+      {confirmSheetOpen && (
+        <ConfirmSheet
+          icon={<Check className="size-6" />}
+          title="Pekerjaan sudah selesai dan sesuai?"
+          description={
+            payment?.method === "online"
+              ? "Task akan ditandai selesai dan pembayaran Anda diteruskan ke penyedia. Langkah ini tidak bisa dibatalkan."
+              : "Task akan ditandai selesai. Langkah ini tidak bisa dibatalkan."
+          }
+          confirmLabel="Ya, sudah selesai"
+          cancelLabel="Periksa lagi"
+          loading={pending === "confirm"}
+          onConfirm={() => void confirmCompletion()}
+          onCancel={() => setConfirmSheetOpen(false)}
+        />
+      )}
+      {reopenSheetOpen && (
+        <ConfirmSheet
+          icon={<RotateCcw className="size-6" />}
+          tone="danger"
+          title="Apa yang belum selesai?"
+          description="Penyedia akan menerima alasan ini dan melanjutkan pekerjaan, lalu menandai selesai lagi."
+          confirmLabel="Kirim ke penyedia"
+          cancelLabel="Batal"
+          loading={pending === "reopen"}
+          confirmDisabled={reopenReason.trim().length < REOPEN_REASON_MIN}
+          focusConfirm={false}
+          onConfirm={() => void reopen()}
+          onCancel={() => setReopenSheetOpen(false)}
+        >
+          <label className="mt-4 block text-sm font-bold text-slate-700">
+            Alasan
+            <textarea
+              autoFocus
+              value={reopenReason}
+              onChange={(event) => setReopenReason(event.target.value)}
+              minLength={REOPEN_REASON_MIN}
+              maxLength={REOPEN_REASON_MAX}
+              rows={4}
+              className={`${inputClass} py-3`}
+              placeholder="Contoh: keran masih menetes setelah diperbaiki."
+            />
+          </label>
+          <p className="mt-1 text-right text-xs text-slate-500">
+            {reopenReason.trim().length}/{REOPEN_REASON_MAX}
+          </p>
+        </ConfirmSheet>
+      )}
       {cashSheetOpen && (
         <ConfirmSheet
           icon={<Banknote className="size-6" />}
           title={`Sudah terima pembayaran tunai ${rupiah(task?.budget ?? payment?.amount ?? 0)} dari ${task?.clientName || "klien"}?`}
-          description="Task akan ditandai selesai dan pembayaran dicatat lunas sekaligus."
+          description="Pembayaran dicatat lunas dan klien diminta mengonfirmasi bahwa pekerjaan sudah selesai."
           confirmLabel="Ya, sudah diterima"
           cancelLabel="Belum"
           loading={pending === "complete"}
@@ -429,7 +560,11 @@ function reportMailto(taskId: string, title: string | undefined, amount: number)
   return `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
-/** Bottom sheet asking to confirm an action (cancelling, confirming cash) before it is sent. */
+/**
+ * Bottom sheet asking to confirm an action (cancelling, confirming cash or the
+ * finished work) before it is sent. `children` adds fields, e.g. a reason; give
+ * one `autoFocus` and pass `focusConfirm={false}`.
+ */
 function ConfirmSheet({
   icon,
   tone = "default",
@@ -438,6 +573,9 @@ function ConfirmSheet({
   confirmLabel,
   cancelLabel,
   loading = false,
+  confirmDisabled = false,
+  focusConfirm = true,
+  children,
   onConfirm,
   onCancel,
 }: {
@@ -448,6 +586,9 @@ function ConfirmSheet({
   confirmLabel: string;
   cancelLabel: string;
   loading?: boolean;
+  confirmDisabled?: boolean;
+  focusConfirm?: boolean;
+  children?: ReactNode;
   onConfirm: () => void;
   onCancel: () => void;
 }) {
@@ -458,8 +599,9 @@ function ConfirmSheet({
     cancelRef.current = onCancel;
     loadingRef.current = loading;
   });
+  const focusConfirmRef = useRef(focusConfirm);
   useEffect(() => {
-    confirmRef.current?.focus();
+    if (focusConfirmRef.current) confirmRef.current?.focus();
     function onKey(event: KeyboardEvent) {
       if (event.key === "Escape" && !loadingRef.current) cancelRef.current();
     }
@@ -487,8 +629,9 @@ function ConfirmSheet({
           {title}
         </h2>
         <p className="mt-2 text-sm leading-6 text-slate-600">{description}</p>
+        {children}
         <div className="mt-6 grid gap-3">
-          <button ref={confirmRef} type="button" disabled={loading} onClick={onConfirm} className={`${primaryButton} w-full`}>
+          <button ref={confirmRef} type="button" disabled={loading || confirmDisabled} onClick={onConfirm} className={`${primaryButton} w-full`}>
             {loading ? <LoaderCircle className="size-5 animate-spin" /> : <Check className="size-5" />} {confirmLabel}
           </button>
           <button type="button" disabled={loading} onClick={onCancel} className={`${secondaryButton} w-full`}>

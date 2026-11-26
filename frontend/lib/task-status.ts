@@ -12,6 +12,7 @@ export const TASK_STATUS_LABELS: Record<TaskStatus, string> = {
   waiting: "Menunggu penyedia",
   scheduled: "Terjadwal",
   ongoing: "Sedang dikerjakan",
+  pending_confirmation: "Menunggu konfirmasi",
   history: "Selesai",
   cancelled: "Dibatalkan",
   rejected: "Ditolak penyedia",

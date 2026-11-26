@@ -1,4 +1,4 @@
-export type TaskStatus = "awaiting_payment" | "ongoing" | "scheduled" | "history" | "waiting" | "cancelled" | "rejected";
+export type TaskStatus = "awaiting_payment" | "ongoing" | "scheduled" | "pending_confirmation" | "history" | "waiting" | "cancelled" | "rejected";
 
 export type ProviderVerificationStatus = "pending" | "verified" | "rejected";
 
@@ -52,6 +52,8 @@ export type Task = {
   client?: TaskClient;
   /** When a finished, cancelled or rejected task ended (ISO time). */
   endedAt?: string;
+  /** While the provider's "done" waits for the client: when it is confirmed automatically (ISO time). */
+  confirmationDeadline?: string;
 };
 
 export type Profile = {

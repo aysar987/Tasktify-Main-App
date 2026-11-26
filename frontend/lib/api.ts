@@ -32,6 +32,7 @@ type TaskResponse = {
   clientName?: string;
   client?: TaskClient;
   endedAt?: string;
+  confirmationDeadline?: string;
 };
 
 function mapTask(row: TaskResponse): Task {
@@ -53,6 +54,7 @@ function mapTask(row: TaskResponse): Task {
     clientName: row.clientName,
     client: row.client,
     endedAt: row.endedAt,
+    confirmationDeadline: row.confirmationDeadline,
   };
 }
 
@@ -223,6 +225,27 @@ export async function transitionTask(
       signal: taskActionSignal(),
       // cashReceived with "complete" confirms the cash payment in the same action.
       body: JSON.stringify({ transition, cashReceived: options.cashReceived ?? false }),
+    }),
+  );
+}
+
+/** Client: accept the work the provider marked done; releases a held online payment. */
+export async function confirmTaskCompletion(id: string) {
+  return mapTask(
+    await apiRequest<TaskResponse>(`/tasks/${encodeURIComponent(id)}/confirm-completion`, {
+      method: "POST",
+      signal: taskActionSignal(),
+    }),
+  );
+}
+
+/** Client: the work isn't done yet; the task goes back to the provider with `reason`. */
+export async function rejectTaskCompletion(id: string, reason: string) {
+  return mapTask(
+    await apiRequest<TaskResponse>(`/tasks/${encodeURIComponent(id)}/reject-completion`, {
+      method: "POST",
+      signal: taskActionSignal(),
+      body: JSON.stringify({ reason }),
     }),
   );
 }

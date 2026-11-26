@@ -14,6 +14,7 @@ import { Toast } from "./toast";
 const tabs: { value: TaskStatus; label: string; slug: string; empty: string }[] = [
   { value: "awaiting_payment", slug: "menunggu-pembayaran", empty: "yang menunggu pembayaran" },
   { value: "ongoing", slug: "berjalan", empty: "yang sedang dikerjakan" },
+  { value: "pending_confirmation", slug: "konfirmasi", empty: "yang menunggu konfirmasi" },
   { value: "scheduled", slug: "terjadwal", empty: "yang terjadwal" },
   { value: "history", slug: "riwayat", empty: "yang selesai" },
   { value: "waiting", slug: "menunggu", empty: "yang menunggu penyedia" },
@@ -23,7 +24,7 @@ const tabs: { value: TaskStatus; label: string; slug: string; empty: string }[] 
 
 const DEFAULT_TAB: TaskStatus = "ongoing";
 // Which non-empty tab an empty state points to first: things needing attention before history.
-const SUGGESTION_ORDER: TaskStatus[] = ["waiting", "awaiting_payment", "scheduled", "ongoing", "history", "cancelled", "rejected"];
+const SUGGESTION_ORDER: TaskStatus[] = ["pending_confirmation", "waiting", "awaiting_payment", "scheduled", "ongoing", "history", "cancelled", "rejected"];
 
 function tabFromSlug(slug?: string): TaskStatus {
   return tabs.find((tab) => tab.slug === slug)?.value ?? DEFAULT_TAB;
